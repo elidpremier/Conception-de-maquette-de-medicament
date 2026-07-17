@@ -1,1269 +1,1486 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Conception de Maquette de Comprimé & Sirop - Paracétamol</title>
-  <!-- SEO & Fonts -->
-  <meta name="description" content="Générateur de patron de boîte de médicament interactif et professionnel pour Paracétamol. Formats Comprimés et Sirop.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --primary: #1e3a8a;
-      --accent: #f97316;
-      --bg-workspace: #f1f5f9;
-      --bg-panel: #ffffff;
-      --border-color: #cbd5e1;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      
-      /* Box Geometry Variables (scaled in JS) */
-      --box-w: 252px;
-      --box-h: 168px;
-      --box-d: 67px;
-      --box-flap: 126px;
-      --box-glue: 33px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conception de Maquette de Comprimé & Sirop - Paracétamol</title>
+    <!-- SEO & Fonts -->
+    <meta
+      name="description"
+      content="Générateur de patron de boîte de médicament interactif et professionnel pour Paracétamol. Formats Comprimés et Sirop." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet" />
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
+    <style>
+      :root {
+        --primary: #1e3a8a;
+        --accent: #f97316;
+        --bg-workspace: #f1f5f9;
+        --bg-panel: #ffffff;
+        --border-color: #cbd5e1;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
 
-    body {
-      background: #0f172a;
-      color: #f8fafc;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+        /* Box Geometry Variables (scaled in JS) */
+        --box-w: 252px;
+        --box-h: 168px;
+        --box-d: 67px;
+        --box-flap: 126px;
+        --box-glue: 33px;
 
-    header {
-      background: #1e293b;
-      padding: 16px 24px;
-      border-bottom: 1px solid #334155;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 10;
-    }
-
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header-logo svg {
-      width: 32px;
-      height: 32px;
-    }
-
-    .header-logo h1 {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .header-logo span {
-      background: #3b82f6;
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 9999px;
-      letter-spacing: 0.05em;
-    }
-
-    .main-layout {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      flex: 1;
-      overflow: hidden;
-      height: calc(100vh - 65px);
-    }
-
-    @media (max-width: 1100px) {
-      .main-layout {
-        grid-template-columns: 1fr;
-        height: auto;
-        overflow: auto;
+        /* Global typography scale (adjustable via sidebar sliders) */
+        --fs-scale-title: 1;
+        --fs-scale-body: 1;
+        --fs-scale-flap: 1;
+        --fs-scale-small: 1;
       }
-    }
 
-    /* Sidebar Form Panel */
-    .sidebar {
-      background: #1e293b;
-      border-right: 1px solid #334155;
-      padding: 24px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
 
-    .sidebar h2 {
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #94a3b8;
-      border-bottom: 1px solid #334155;
-      padding-bottom: 8px;
-      margin-bottom: 4px;
-    }
-
-    fieldset {
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: #1e293b;
-    }
-
-    legend {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent);
-      padding: 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .input-group label {
-      font-size: 10px;
-      text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      color: #94a3b8;
-    }
-
-    .input-group input, 
-    .input-group textarea, 
-    .input-group select {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #f8fafc;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      transition: all 0.2s;
-    }
-
-    .input-group input:focus, 
-    .input-group textarea:focus, 
-    .input-group select:focus {
-      border-color: #3b82f6;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-    }
-
-    .color-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .color-input-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-
-    .color-input-wrapper input[type="color"] {
-      border: none;
-      background: none;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .action-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .action-btn:hover {
-      background: #2563eb;
-    }
-
-    .secondary-btn {
-      background: #334155;
-      color: #f8fafc;
-    }
-    
-    .secondary-btn:hover {
-      background: #475569;
-    }
-
-    /* Workspace / Preview Wrap */
-    .workspace {
-      background: var(--bg-workspace);
-      padding: 40px;
-      overflow: auto;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      position: relative;
-    }
-
-    /* Packaging Die Cut Outline Sheet */
-    .patron-sheet {
-      position: relative;
-      background: transparent;
-      transform-origin: top left;
-      transition: transform 0.1s;
-    }
-
-    /* Precise Absolute Positioning for the Flat Pattern */
-    .box-grid {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Base styles for all box parts */
-    .panel {
-      background: #ffffff;
-      color: #0f172a;
-      position: absolute;
-      overflow: hidden;
-      display: flex;
-      box-sizing: border-box;
-      border: 1px dashed rgba(148, 163, 184, 0.5); /* Fold line simulation */
-    }
-
-    /* Outer Red Cut Contour Overlay (masking borders inside the SVG) */
-    .die-lines {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 90;
-    }
-
-    /* Labels overlay */
-    .panel-label {
-      position: absolute;
-      top: 4px;
-      left: 4px;
-      font-size: 8px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      background: rgba(15, 23, 42, 0.75);
-      color: #ffffff;
-      padding: 1px 4px;
-      border-radius: 2px;
-      z-index: 20;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-      pointer-events: none;
-    }
-
-    .hide-labels .panel-label {
-      opacity: 0;
-    }
-
-    /* Safe zone / Margins simulation */
-    .safe-margin {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      border: 1px dotted rgba(34, 197, 94, 0.4);
-      pointer-events: none;
-      z-index: 19;
-      display: none;
-    }
-
-    .show-margins .safe-margin {
-      display: block;
-    }
-
-    /* Orange Tuck Flap Left (Row 1 / Horizontal tablet style) */
-    .orange-flap-left {
-      background: var(--accent);
-      color: #ffffff;
-      clip-path: polygon(100% 0, 100% 100%, 0% 85%, 0% 15%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-    }
-
-    .orange-flap-left .rot-text {
-      transform: rotate(-90deg);
-      white-space: nowrap;
-      text-align: center;
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.05em;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .orange-flap-left .rot-text span {
-      font-size: 8px;
-      font-weight: 400;
-      opacity: 0.9;
-    }
-
-    /* Orange Tuck Flap Right (Row 3 / Horizontal style) */
-    .orange-flap-right {
-      background: var(--accent);
-      color: #ffffff;
-      clip-path: polygon(0 0, 0 100%, 100% 85%, 100% 15%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-    }
-
-    .orange-flap-right .rot-text {
-      transform: rotate(90deg);
-      white-space: nowrap;
-      text-align: center;
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.05em;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .orange-flap-right .rot-text span {
-      font-size: 8px;
-      font-weight: 400;
-      opacity: 0.9;
-    }
-
-    /* Vertical Top/Bottom flaps (Fidelity matching liquid model) */
-    .vertical-tuck-top {
-      clip-path: polygon(5% 100%, 95% 100%, 80% 25%, 70% 0, 30% 0, 20% 25%);
-      background: #ffffff;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      padding-bottom: 12px;
-    }
-
-    .vertical-tuck-top .flap-stripe-blue {
-      width: 100%;
-      height: 18px;
-      background: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .vertical-tuck-top .flap-stripe-orange {
-      width: 100%;
-      height: 10px;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 6px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-
-    .vertical-tuck-bottom {
-      clip-path: polygon(5% 0, 95% 0, 80% 75%, 70% 100%, 30% 100%, 20% 75%);
-      background: #ffffff;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding-top: 12px;
-    }
-
-    .vertical-tuck-bottom .flap-stripe-blue {
-      width: 100%;
-      height: 18px;
-      background: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      transform: rotate(180deg);
-    }
-
-    .vertical-tuck-bottom .flap-stripe-orange {
-      width: 100%;
-      height: 10px;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 6px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      transform: rotate(180deg);
-    }
-
-    /* White Tuck Flaps */
-    .white-tuck-left {
-      clip-path: polygon(100% 0, 100% 100%, 25% 85%, 25% 15%);
-    }
-
-    .white-tuck-right {
-      clip-path: polygon(0 0, 0 100%, 75% 85%, 75% 15%);
-    }
-
-    /* Dust Flaps (Tapered side flaps) */
-    .dust-left-top {
-      clip-path: polygon(100% 0, 100% 100%, 20% 80%, 20% 0);
-    }
-    .dust-right-top {
-      clip-path: polygon(0 0, 0 100%, 80% 80%, 80% 0);
-    }
-    .dust-left-bottom {
-      clip-path: polygon(100% 0, 100% 100%, 20% 100%, 20% 20%);
-    }
-    .dust-right-bottom {
-      clip-path: polygon(0 0, 0 100%, 80% 100%, 80% 20%);
-    }
-
-    /* Glue Flap */
-    .glue-flap {
-      clip-path: polygon(5% 0, 95% 0, 85% 100%, 15% 100%);
-      background: #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      color: #94a3b8;
-      font-weight: 700;
-    }
-
-    .glue-flap-vertical {
-      clip-path: polygon(0 5%, 0 95%, 100% 85%, 100% 15%);
-      background: #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      color: #94a3b8;
-      font-weight: 700;
-    }
-    
-    .glue-flap-vertical span {
-      transform: rotate(-90deg);
-      white-space: nowrap;
-    }
-
-    /* Main Front / Back Panels Content Layout */
-    .main-panel-content {
-      width: 100%;
-      height: 100%;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-    }
-
-    /* Brand dots pattern */
-    .dots-grid {
-      position: absolute;
-      top: 24px;
-      right: 24px;
-      width: 60px;
-      height: 30px;
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      gap: 4px;
-      opacity: 0.25;
-    }
-
-    .dot {
-      width: 3px;
-      height: 3px;
-      background: #000000;
-      border-radius: 50%;
-    }
-
-    .main-panel-content .brand-title {
-      font-size: calc(var(--box-w) * 0.11);
-      font-weight: 800;
-      color: var(--primary);
-      line-height: 1;
-      letter-spacing: -0.03em;
-      word-wrap: break-word;
-    }
-
-    .main-panel-content .brand-title sup {
-      font-size: 10px;
-      font-weight: 600;
-      top: -8px;
-      left: 1px;
-    }
-
-    .main-panel-content .brand-subtitle {
-      font-size: calc(var(--box-w) * 0.045);
-      color: #1e293b;
-      margin-top: 4px;
-      font-weight: 500;
-    }
-
-    /* Liquid Mode Brand Header Layout (High Fidelity Vecteezy match) */
-    .liquid-brand-header {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      margin-top: 6px;
-    }
-
-    .liquid-logo-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .liquid-logo-widget {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .liquid-logo-widget svg {
-      width: 24px;
-      height: 24px;
-    }
-
-    .liquid-logo-widget span {
-      font-size: 9px;
-      font-weight: 800;
-      color: #475569;
-      letter-spacing: 0.04em;
-    }
-
-    .liquid-qty-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: #475569;
-    }
-
-    .liquid-bar-blue {
-      background: var(--primary);
-      color: #ffffff;
-      padding: 8px 12px;
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: left;
-      line-height: 1.1;
-    }
-
-    .liquid-bar-orange {
-      background: var(--accent);
-      color: #ffffff;
-      padding: 4px 12px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: right;
-      line-height: 1.1;
-    }
-
-    .liquid-decor-leaves {
-      position: absolute;
-      bottom: -32px;
-      left: 12px;
-      width: 46px;
-      height: 46px;
-      opacity: 0.15;
-      pointer-events: none;
-    }
-
-    .liquid-desc-text {
-      font-size: 8px;
-      line-height: 1.3;
-      color: #475569;
-      margin-top: 36px;
-      text-align: justify;
-    }
-
-    .liquid-bottom-footer {
-      font-size: 10px;
-      font-weight: 800;
-      color: #0f172a;
-      text-transform: uppercase;
-      border-top: 1px solid #cbd5e1;
-      padding-top: 8px;
-      margin-top: auto;
-      text-align: center;
-      letter-spacing: 0.03em;
-    }
-
-    .liquid-bottom-footer span {
-      display: block;
-      font-size: 6.5px;
-      font-weight: 600;
-      color: #64748b;
-    }
-
-    /* Logo Brand Widget */
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: auto;
-    }
-
-    .logo-icon {
-      width: 22px;
-      height: 22px;
-      background: var(--accent);
-      clip-path: polygon(50% 0%, 65% 35%, 100% 35%, 72% 57%, 85% 91%, 50% 70%, 15% 91%, 28% 57%, 0% 35%, 35% 35%);
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .logo-icon::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 6px;
-      height: 6px;
-      background: #ffffff;
-      border-radius: 50%;
-      border: 1px solid var(--primary);
-    }
-
-    .logo-text {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .logo-name {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--primary);
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-
-    .logo-slogan {
-      font-size: 7px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-
-    /* Side Panels Content */
-    .side-panel-content {
-      width: 100%;
-      height: 100%;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-
-    .qty-badge {
-      font-size: 11px;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    .side-panel-content .dots-grid {
-      position: static;
-      margin: auto 0;
-    }
-
-    /* Bottom Side Panel - Composition, Barcode, Mfg */
-    .bottom-panel-content {
-      width: 100%;
-      height: 100%;
-      padding: 8px 16px;
-      display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr;
-      gap: 12px;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    /* Vertical Syrup side panels details */
-    .liquid-side-1 {
-      width: 100%;
-      height: 100%;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .liquid-composition-table {
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    .liquid-table-title {
-      font-size: 9px;
-      font-weight: 800;
-      color: var(--primary);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 2px;
-    }
-
-    .liquid-table-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 7.5px;
-      color: #334155;
-      margin-bottom: 3px;
-    }
-
-    .liquid-table-row span:first-child {
-      position: relative;
-      flex-grow: 1;
-    }
-
-    .liquid-table-row span:first-child::after {
-      content: ' ...................................................................';
-      color: #94a3b8;
-      position: absolute;
-      overflow: hidden;
-      white-space: nowrap;
-      width: 85%;
-      padding-left: 4px;
-    }
-
-    .liquid-table-row span:last-child {
-      flex-shrink: 0;
-      font-weight: 700;
-      background: #ffffff;
-      padding-left: 4px;
-      z-index: 2;
-    }
-
-    .panel-section {
-      font-size: calc(var(--box-h) * 0.045);
-      line-height: 1.3;
-      color: #334155;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .panel-section-title {
-      font-weight: 800;
-      font-size: calc(var(--box-h) * 0.055);
-      color: #0f172a;
-      margin-bottom: 2px;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    .barcode-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    .barcode-graphic {
-      width: 100%;
-      height: 24px;
-      background: repeating-linear-gradient(90deg, 
-        #000 0px, #000 2px, 
-        transparent 2px, transparent 4px,
-        #000 4px, #000 5px,
-        transparent 5px, transparent 8px
-      );
-    }
-
-    .barcode-number {
-      font-family: 'Space Mono', monospace;
-      font-size: 8px;
-      letter-spacing: 1px;
-      margin-top: 2px;
-    }
-
-    /* Top Side Panel - Composition, Dosage */
-    .top-panel-content {
-      width: 100%;
-      height: 100%;
-      padding: 8px 16px;
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 12px;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    .bullets-list {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .bullets-list li {
-      position: relative;
-      padding-left: 10px;
-      font-size: calc(var(--box-h) * 0.042);
-      margin-bottom: 2px;
-      line-height: 1.2;
-    }
-
-    .bullets-list li::before {
-      content: '•';
-      position: absolute;
-      left: 0;
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    .legend-panel {
-      margin-top: 20px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 16px;
-    }
-
-    .legend-panel h3 {
-      font-size: 12px;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 12px;
-    }
-
-    .legend-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 11px;
-      color: #cbd5e1;
-    }
-
-    .legend-color {
-      width: 24px;
-      height: 12px;
-      border-radius: 2px;
-    }
-
-    /* Print settings overrides */
-    @media print {
       body {
-        background: white !important;
-        color: black !important;
+        background: #0f172a;
+        color: #f8fafc;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
-      .sidebar, header, .legend-panel {
-        display: none !important;
+
+      header {
+        background: #1e293b;
+        padding: 16px 24px;
+        border-bottom: 1px solid #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
       }
+
+      .header-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .header-logo svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      .header-logo h1 {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .header-logo span {
+        background: #3b82f6;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        letter-spacing: 0.05em;
+      }
+
       .main-layout {
-        display: block !important;
-        height: auto !important;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        flex: 1;
+        overflow: hidden;
+        height: calc(100vh - 65px);
       }
+
+      @media (max-width: 1100px) {
+        .main-layout {
+          grid-template-columns: 1fr;
+          height: auto;
+          overflow: auto;
+        }
+      }
+
+      /* Sidebar Form Panel */
+      .sidebar {
+        background: #1e293b;
+        border-right: 1px solid #334155;
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .sidebar h2 {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+      }
+
+      fieldset {
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #1e293b;
+      }
+
+      legend {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--accent);
+        padding: 0 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .input-group label {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+      }
+
+      .input-group input,
+      .input-group textarea,
+      .input-group select {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #f8fafc;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      .input-group input:focus,
+      .input-group textarea:focus,
+      .input-group select:focus {
+        border-color: #3b82f6;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+
+      .color-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .color-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        padding: 4px 8px;
+        border-radius: 6px;
+      }
+
+      .color-input-wrapper input[type="color"] {
+        border: none;
+        background: none;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .action-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .action-btn:hover {
+        background: #2563eb;
+      }
+
+      .secondary-btn {
+        background: #334155;
+        color: #f8fafc;
+      }
+
+      .secondary-btn:hover {
+        background: #475569;
+      }
+
+      /* Workspace / Preview Wrap */
       .workspace {
-        background: white !important;
-        padding: 0 !important;
+        background: var(--bg-workspace);
+        padding: 40px;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        position: relative;
       }
+
+      /* Packaging Die Cut Outline Sheet */
       .patron-sheet {
-        padding: 0 !important;
+        position: relative;
+        background: transparent;
+        transform-origin: top left;
+        transition: transform 0.1s;
       }
+
+      /* Precise Absolute Positioning for the Flat Pattern */
+      .box-grid {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Base styles for all box parts */
       .panel {
-        border-color: #333 !important;
+        background: #ffffff;
+        color: #0f172a;
+        position: absolute;
+        overflow: hidden;
+        display: flex;
+        box-sizing: border-box;
+        border: 1px dashed rgba(148, 163, 184, 0.5); /* Fold line simulation */
       }
+
+      /* Outer Red Cut Contour Overlay (masking borders inside the SVG) */
+      .die-lines {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 90;
+      }
+
+      /* Labels overlay */
       .panel-label {
-        display: none !important;
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: rgba(15, 23, 42, 0.75);
+        color: #ffffff;
+        padding: 1px 4px;
+        border-radius: 2px;
+        z-index: 20;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+        pointer-events: none;
       }
-    }
-  </style>
-</head>
-<body>
 
-  <header>
-    <div class="header-logo">
-      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="20" fill="#1e293b"/>
-        <path d="M30 50H70M50 30V70" stroke="#f5a623" stroke-width="8" stroke-linecap="round"/>
-        <circle cx="50" cy="50" r="10" fill="#3b82f6"/>
-      </svg>
-      <div>
-        <h1>Concepteur de Packaging Pro</h1>
-        <p style="font-size: 10px; color: #94a3b8;">Gabarit technique haute fidélité</p>
-      </div>
-    </div>
-    
-    <div style="display: flex; gap: 10px;">
-      <button class="action-btn secondary-btn" id="toggleLabelsBtn" style="padding: 8px 16px; font-size: 12px;">Masquer Zones</button>
-      <button class="action-btn secondary-btn" id="toggleMarginsBtn" style="padding: 8px 16px; font-size: 12px;">Marges Perdues</button>
-      <button class="action-btn" id="printBtn" style="padding: 8px 16px; font-size: 12px;">Imprimer / PDF</button>
-    </div>
-  </header>
+      .hide-labels .panel-label {
+        opacity: 0;
+      }
 
-  <div class="main-layout">
-    <!-- Sidebar Panel -->
-    <div class="sidebar">
-      <h2>Modèle de gabarit</h2>
-      <fieldset>
-        <legend>Sélection</legend>
-        <div class="input-group">
-          <label>Type de boîte</label>
-          <select id="boxType">
-            <option value="tablet">Comprimés (Horizontal)</option>
-            <option value="liquid">Sirop / Flacon liquide (Vertical)</option>
-          </select>
-        </div>
-      </fieldset>
+      /* Safe zone / Margins simulation */
+      .safe-margin {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        border: 1px dotted rgba(34, 197, 94, 0.4);
+        pointer-events: none;
+        z-index: 19;
+        display: none;
+      }
 
-      <h2>Dimensions & Echelle</h2>
-      <fieldset>
-        <legend>Géométrie de l'étui (mm)</legend>
-        <div class="input-group">
-          <label>Largeur (W)</label>
-          <input type="number" id="dimW" value="90" min="40" max="250">
-        </div>
-        <div class="input-group">
-          <label>Hauteur (H)</label>
-          <input type="number" id="dimH" value="60" min="40" max="250">
-        </div>
-        <div class="input-group">
-          <label>Profondeur / Épaisseur (D)</label>
-          <input type="number" id="dimD" value="24" min="15" max="150">
-        </div>
-      </fieldset>
+      .show-margins .safe-margin {
+        display: block;
+      }
 
-      <h2>Couleurs & Thème</h2>
-      <fieldset>
-        <legend>Palette</legend>
-        <div class="color-row">
-          <div class="input-group">
-            <label>Primaire</label>
-            <div class="color-input-wrapper">
-              <input type="color" id="colPrimary" value="#12233f">
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Accent</label>
-            <div class="color-input-wrapper">
-              <input type="color" id="colAccent" value="#f5a623">
-            </div>
-          </div>
-        </div>
-      </fieldset>
+      /* Orange Tuck Flap Left (Row 1 / Horizontal tablet style) */
+      .orange-flap-left {
+        background: var(--accent);
+        color: #ffffff;
+        clip-path: polygon(100% 0, 100% 100%, 0% 85%, 0% 15%);
+        border: none;
+        position: absolute;
+      }
 
-      <h2>Textes des Panneaux</h2>
-      <fieldset>
-        <legend>Identité</legend>
-        <div class="input-group">
-          <label>Nom du Produit</label>
-          <input type="text" id="txtProduct" value="Paracétamol">
-        </div>
-        <div class="input-group">
-          <label>DCI / Dosage</label>
-          <input type="text" id="txtDosage" value="paracétamol 500 mg">
-        </div>
-        <div class="input-group">
-          <label>Contenance</label>
-          <input type="text" id="txtQty" value="20 comprimés">
-        </div>
-      </fieldset>
+      .orange-flap-left .rot-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-90deg);
+        transform-origin: center center;
+        white-space: nowrap;
+        text-align: center;
+        font-weight: 800;
+        font-size: calc(14px * var(--fs-scale-flap, 1));
+        letter-spacing: 0.05em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        width: max-content;
+      }
 
-      <fieldset>
-        <legend>Laboratoire</legend>
-        <div class="input-group">
-          <label>Nom</label>
-          <input type="text" id="txtLabName" value="COMPANY NAME">
-        </div>
-        <div class="input-group">
-          <label>Slogan</label>
-          <input type="text" id="txtSlogan" value="YOUR SLOGAN HERE">
-        </div>
-      </fieldset>
+      .orange-flap-left .rot-text span {
+        font-size: calc(8px * var(--fs-scale-flap, 1));
+        font-weight: 400;
+        opacity: 0.9;
+        text-align: center;
+      }
 
-      <fieldset>
-        <legend>Informations Techniques</legend>
-        <div class="input-group">
-          <label>Composition (Recto / Face 1)</label>
-          <textarea id="txtComposition1" rows="3">Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea>
-        </div>
-        <div class="input-group">
-          <label>Composition (Verso / Face 2)</label>
-          <textarea id="txtComposition2" rows="3">Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea>
-        </div>
-        <div class="input-group">
-          <label>Indications & Posologie</label>
-          <textarea id="txtIndications" rows="3">Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 comprimés toutes les 4 à 6 heures.&#10;Ne pas dépasser 3 g par jour.</textarea>
-        </div>
-        <div class="input-group">
-          <label>Code-barres (10 chiffres)</label>
-          <input type="text" id="txtBarcode" value="1234567890">
-        </div>
-        <div class="input-group">
-          <label>Réglementaire</label>
-          <input type="text" id="txtRegInfo" value="Mfg.Lic.No : 123456 / MA No : 9876543">
-        </div>
-      </fieldset>
-    </div>
+      /* Orange Tuck Flap Right (Row 3 / Horizontal style) */
+      .orange-flap-right {
+        background: var(--accent);
+        color: #ffffff;
+        clip-path: polygon(0 0, 0 100%, 100% 85%, 100% 15%);
+        border: none;
+        position: absolute;
+      }
 
-    <!-- Workspace Preview -->
-    <div class="workspace">
-      <div class="patron-sheet" id="patronSheet">
-        <!-- SVG Overlays for precise technical die cut paths -->
-        <svg class="die-lines" id="dieLinesSvg" xmlns="http://www.w3.org/2000/svg">
-          <!-- Rendered via JS -->
+      .orange-flap-right .rot-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+        white-space: nowrap;
+        text-align: center;
+        font-weight: 800;
+        font-size: calc(14px * var(--fs-scale-flap, 1));
+        letter-spacing: 0.05em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        width: max-content;
+      }
+
+      .orange-flap-right .rot-text span {
+        font-size: calc(8px * var(--fs-scale-flap, 1));
+        font-weight: 400;
+        opacity: 0.9;
+        text-align: center;
+      }
+
+      /* Vertical Top/Bottom flaps (Fidelity matching liquid model) */
+      .vertical-tuck-top {
+        clip-path: polygon(5% 100%, 95% 100%, 80% 25%, 70% 0, 30% 0, 20% 25%);
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding-bottom: 12px;
+      }
+
+      .vertical-tuck-top .flap-stripe-blue {
+        width: 100%;
+        height: 18px;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: calc(9px * var(--fs-scale-flap, 1));
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .vertical-tuck-top .flap-stripe-orange {
+        width: 100%;
+        height: 10px;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: calc(6px * var(--fs-scale-flap, 1));
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      .vertical-tuck-bottom {
+        clip-path: polygon(5% 0, 95% 0, 80% 75%, 70% 100%, 30% 100%, 20% 75%);
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 12px;
+      }
+
+      .vertical-tuck-bottom .flap-stripe-blue {
+        width: 100%;
+        height: 18px;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: calc(9px * var(--fs-scale-flap, 1));
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        transform: rotate(180deg);
+      }
+
+      .vertical-tuck-bottom .flap-stripe-orange {
+        width: 100%;
+        height: 10px;
+        background: var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: calc(6px * var(--fs-scale-flap, 1));
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        transform: rotate(180deg);
+      }
+
+      /* White Tuck Flaps */
+      .white-tuck-left {
+        clip-path: polygon(100% 0, 100% 100%, 25% 85%, 25% 15%);
+      }
+
+      .white-tuck-right {
+        clip-path: polygon(0 0, 0 100%, 75% 85%, 75% 15%);
+      }
+
+      /* Dust Flaps (Tapered side flaps) */
+      .dust-left-top {
+        clip-path: polygon(100% 0, 100% 100%, 20% 80%, 20% 0);
+      }
+      .dust-right-top {
+        clip-path: polygon(0 0, 0 100%, 80% 80%, 80% 0);
+      }
+      .dust-left-bottom {
+        clip-path: polygon(100% 0, 100% 100%, 20% 100%, 20% 20%);
+      }
+      .dust-right-bottom {
+        clip-path: polygon(0 0, 0 100%, 80% 100%, 80% 20%);
+      }
+
+      /* Liquid Dust Flaps (more centered carton closing tabs) */
+      .liquid-dust-top-left {
+        clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+        z-index: 2;
+      }
+
+      .liquid-dust-top-right {
+        clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%);
+        z-index: 2;
+      }
+
+      .liquid-dust-bottom-left {
+        clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+        z-index: 2;
+      }
+
+      .liquid-dust-bottom-right {
+        clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+        z-index: 2;
+      }
+
+      /* Glue Flap */
+      .glue-flap {
+        clip-path: polygon(5% 0, 95% 0, 85% 100%, 15% 100%);
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        color: #94a3b8;
+        font-weight: 700;
+      }
+
+      .glue-flap-vertical {
+        clip-path: polygon(0 5%, 0 95%, 100% 85%, 100% 15%);
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        color: #94a3b8;
+        font-weight: 700;
+      }
+
+      .glue-flap-vertical span {
+        transform: rotate(-90deg);
+        white-space: nowrap;
+      }
+
+      /* Main Front / Back Panels Content Layout */
+      .main-panel-content {
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+      }
+
+      /* Brand dots pattern */
+      .dots-grid {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 60px;
+        height: 30px;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 4px;
+        opacity: 0.25;
+      }
+
+      .dot {
+        width: 3px;
+        height: 3px;
+        background: #000000;
+        border-radius: 50%;
+      }
+
+      .main-panel-content .brand-title {
+        font-size: calc(var(--box-w) * 0.11 * var(--fs-scale-title, 1));
+        font-weight: 800;
+        color: var(--primary);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        word-wrap: break-word;
+      }
+
+      .main-panel-content .brand-title sup {
+        font-size: 10px;
+        font-weight: 600;
+        top: -8px;
+        left: 1px;
+      }
+
+      .main-panel-content .brand-subtitle {
+        font-size: calc(var(--box-w) * 0.045 * var(--fs-scale-body, 1));
+        color: #1e293b;
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      /* Liquid Mode Brand Header Layout (High Fidelity Vecteezy match) */
+      .liquid-brand-header {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        margin-top: 6px;
+      }
+
+      .liquid-logo-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .liquid-logo-widget {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .liquid-logo-widget svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .liquid-logo-widget span {
+        font-size: 9px;
+        font-weight: 800;
+        color: #475569;
+        letter-spacing: 0.04em;
+      }
+
+      .liquid-qty-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #475569;
+      }
+
+      .liquid-bar-blue {
+        background: var(--primary);
+        color: #ffffff;
+        padding: 8px 12px;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-align: left;
+        line-height: 1.1;
+      }
+
+      .liquid-bar-orange {
+        background: var(--accent);
+        color: #ffffff;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-align: right;
+        line-height: 1.1;
+      }
+
+      .liquid-decor-leaves {
+        position: absolute;
+        bottom: -32px;
+        left: 12px;
+        width: 46px;
+        height: 46px;
+        opacity: 0.15;
+        pointer-events: none;
+      }
+
+      .liquid-desc-text {
+        font-size: 8px;
+        line-height: 1.3;
+        color: #475569;
+        margin-top: 36px;
+        text-align: justify;
+      }
+
+      .liquid-bottom-footer {
+        font-size: 10px;
+        font-weight: 800;
+        color: #0f172a;
+        text-transform: uppercase;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 8px;
+        margin-top: auto;
+        text-align: center;
+        letter-spacing: 0.03em;
+      }
+
+      .liquid-bottom-footer span {
+        display: block;
+        font-size: 6.5px;
+        font-weight: 600;
+        color: #64748b;
+      }
+
+      /* Logo Brand Widget */
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: auto;
+      }
+
+      .logo-icon {
+        width: 22px;
+        height: 22px;
+        background: var(--accent);
+        clip-path: polygon(
+          50% 0%,
+          65% 35%,
+          100% 35%,
+          72% 57%,
+          85% 91%,
+          50% 70%,
+          15% 91%,
+          28% 57%,
+          0% 35%,
+          35% 35%
+        );
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .logo-icon::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        background: #ffffff;
+        border-radius: 50%;
+        border: 1px solid var(--primary);
+      }
+
+      .logo-text {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .logo-name {
+        font-size: calc(10px * var(--fs-scale-small, 1));
+        font-weight: 800;
+        color: var(--primary);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .logo-slogan {
+        font-size: calc(7px * var(--fs-scale-small, 1));
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      /* Side Panels Content */
+      .side-panel-content {
+        width: 100%;
+        height: 100%;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .qty-badge {
+        font-size: calc(11px * var(--fs-scale-small, 1));
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .side-panel-content--left .qty-badge,
+      .side-panel-content--right .qty-badge {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        letter-spacing: 0.06em;
+      }
+
+      .side-panel-content--left .qty-badge {
+        transform: rotate(180deg);
+      }
+
+      .side-panel-content--right .qty-badge {
+        transform: none;
+      }
+
+      .side-panel-content .dots-grid {
+        position: static;
+        margin: auto 0;
+      }
+
+      /* Bottom Side Panel - Composition, Barcode, Mfg */
+      .bottom-panel-content {
+        width: 100%;
+        height: 100%;
+        padding: 8px 16px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 12px;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      /* Vertical Syrup side panels details */
+      .liquid-side-1 {
+        width: 100%;
+        height: 100%;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .liquid-composition-table {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .liquid-table-title {
+        font-size: 9px;
+        font-weight: 800;
+        color: var(--primary);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #cbd5e1;
+        padding-bottom: 2px;
+      }
+
+      .liquid-table-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 7.5px;
+        color: #334155;
+        margin-bottom: 3px;
+      }
+
+      .liquid-table-row span:first-child {
+        position: relative;
+        flex-grow: 1;
+      }
+
+      .liquid-table-row span:first-child::after {
+        content: " ...................................................................";
+        color: #94a3b8;
+        position: absolute;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 85%;
+        padding-left: 4px;
+      }
+
+      .liquid-table-row span:last-child {
+        flex-shrink: 0;
+        font-weight: 700;
+        background: #ffffff;
+        padding-left: 4px;
+        z-index: 2;
+      }
+
+      .panel-section {
+        font-size: calc(var(--box-h) * 0.045 * var(--fs-scale-body, 1));
+        line-height: 1.3;
+        color: #334155;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .panel-section-title {
+        font-weight: 800;
+        font-size: calc(var(--box-h) * 0.055 * var(--fs-scale-body, 1));
+        color: #0f172a;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .barcode-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .barcode-graphic {
+        width: 100%;
+        height: 24px;
+        background: repeating-linear-gradient(
+          90deg,
+          #000 0px,
+          #000 2px,
+          transparent 2px,
+          transparent 4px,
+          #000 4px,
+          #000 5px,
+          transparent 5px,
+          transparent 8px
+        );
+      }
+
+      .barcode-number {
+        font-family: "Space Mono", monospace;
+        font-size: calc(8px * var(--fs-scale-small, 1));
+        letter-spacing: 1px;
+        margin-top: 2px;
+      }
+
+      /* Top Side Panel - Composition, Dosage */
+      .top-panel-content {
+        width: 100%;
+        height: 100%;
+        padding: 8px 16px;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 12px;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .bullets-list {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      .bullets-list li {
+        position: relative;
+        padding-left: 10px;
+        font-size: calc(var(--box-h) * 0.042 * var(--fs-scale-body, 1));
+        margin-bottom: 2px;
+        line-height: 1.2;
+      }
+
+      .bullets-list li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: bold;
+      }
+
+      .legend-panel {
+        margin-top: 20px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .legend-panel h3 {
+        font-size: 12px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+      }
+
+      .legend-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        color: #cbd5e1;
+      }
+
+      .legend-color {
+        width: 24px;
+        height: 12px;
+        border-radius: 2px;
+      }
+
+      /* Print settings overrides */
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+        body {
+          background: white !important;
+          color: black !important;
+        }
+        .sidebar,
+        header,
+        .legend-panel {
+          display: none !important;
+        }
+        .main-layout {
+          display: block !important;
+          height: auto !important;
+        }
+        .workspace {
+          background: white !important;
+          padding: 0 !important;
+        }
+        .patron-sheet {
+          padding: 0 !important;
+        }
+        .panel {
+          border-color: #333 !important;
+        }
+        .panel-label {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-logo">
+        <svg
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="20" fill="#1e293b" />
+          <path
+            d="M30 50H70M50 30V70"
+            stroke="#f5a623"
+            stroke-width="8"
+            stroke-linecap="round" />
+          <circle cx="50" cy="50" r="10" fill="#3b82f6" />
         </svg>
+        <div>
+          <h1>Concepteur de Packaging Pro</h1>
+          <p style="font-size: 10px; color: #94a3b8">
+            Gabarit technique haute fidélité
+          </p>
+        </div>
+      </div>
 
-        <div class="box-grid" id="boxGrid">
-          
-          <!-- ================= COMPONENT PANELS ================= -->
-          <div class="panel" id="p1">
-            <span class="panel-label" id="lbl-p1">Rabat 1</span>
-            <div id="cnt-p1" style="width:100%; height:100%; display: flex; flex-direction: column;"></div>
+      <div style="display: flex; gap: 10px">
+        <button
+          class="action-btn secondary-btn"
+          id="toggleLabelsBtn"
+          style="padding: 8px 16px; font-size: 12px">
+          Masquer Zones
+        </button>
+        <button
+          class="action-btn secondary-btn"
+          id="toggleMarginsBtn"
+          style="padding: 8px 16px; font-size: 12px">
+          Marges Perdues
+        </button>
+        <button
+          class="action-btn"
+          id="printBtn"
+          style="padding: 8px 16px; font-size: 12px">
+          Imprimer / PDF
+        </button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar Panel -->
+      <div class="sidebar">
+        <h2>Modèle de gabarit</h2>
+        <fieldset>
+          <legend>Sélection</legend>
+          <div class="input-group">
+            <label>Type de boîte</label>
+            <select id="boxType">
+              <option value="tablet">Comprimés (Horizontal)</option>
+              <option value="liquid">Sirop / Flacon liquide (Vertical)</option>
+            </select>
           </div>
+        </fieldset>
 
-          <div class="panel" id="p2">
-            <span class="panel-label" id="lbl-p2">Rabat 2</span>
-            <div id="cnt-p2" style="width:100%; height:100%;"></div>
+        <h2>Dimensions & Echelle</h2>
+        <fieldset>
+          <legend>Géométrie de l'étui (mm)</legend>
+          <div class="input-group">
+            <label>Largeur (W)</label>
+            <input type="number" id="dimW" value="90" min="40" max="250" />
           </div>
-
-          <div class="panel" id="p3">
-            <span class="panel-label" id="lbl-p3">Rabat 3</span>
-            <div id="cnt-p3" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>Hauteur (H)</label>
+            <input type="number" id="dimH" value="60" min="40" max="250" />
           </div>
-
-          <div class="panel" id="p4">
-            <span class="panel-label" id="lbl-p4">Rabat 4</span>
-            <div id="cnt-p4" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>Profondeur / Épaisseur (D)</label>
+            <input type="number" id="dimD" value="24" min="15" max="150" />
           </div>
+        </fieldset>
 
-          <!-- Main panels -->
-          <div class="panel" id="p5">
-            <span class="panel-label" id="lbl-p5">Panneau 5</span>
-            <div class="safe-margin"></div>
-            <div id="cnt-p5" style="width:100%; height:100%;"></div>
+        <h2>Couleurs & Thème</h2>
+        <fieldset>
+          <legend>Palette</legend>
+          <div class="color-row">
+            <div class="input-group">
+              <label>Primaire</label>
+              <div class="color-input-wrapper">
+                <input type="color" id="colPrimary" value="#12233f" />
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Accent</label>
+              <div class="color-input-wrapper">
+                <input type="color" id="colAccent" value="#f5a623" />
+              </div>
+            </div>
           </div>
+        </fieldset>
 
-          <div class="panel" id="p6">
-            <span class="panel-label" id="lbl-p6">Panneau 6</span>
-            <div class="safe-margin"></div>
-            <div id="cnt-p6" style="width:100%; height:100%;"></div>
+        <h2>Textes des Panneaux</h2>
+        <fieldset>
+          <legend>Identité</legend>
+          <div class="input-group">
+            <label>Nom du Produit</label>
+            <input type="text" id="txtProduct" value="Paracétamol" />
           </div>
-
-          <div class="panel" id="p7">
-            <span class="panel-label" id="lbl-p7">Panneau 7</span>
-            <div class="safe-margin"></div>
-            <div id="cnt-p7" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>DCI / Dosage</label>
+            <input type="text" id="txtDosage" value="paracétamol 500 mg" />
           </div>
-
-          <div class="panel" id="p8">
-            <span class="panel-label" id="lbl-p8">Panneau 8</span>
-            <div class="safe-margin"></div>
-            <div id="cnt-p8" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>Contenance</label>
+            <input type="text" id="txtQty" value="20 comprimés" />
           </div>
+        </fieldset>
 
-          <!-- Extra flaps -->
-          <div class="panel" id="p9">
-            <span class="panel-label" id="lbl-p9">Rabat 9</span>
-            <div id="cnt-p9" style="width:100%; height:100%;"></div>
+        <fieldset>
+          <legend>Laboratoire</legend>
+          <div class="input-group">
+            <label>Nom</label>
+            <input type="text" id="txtLabName" value="COMPANY NAME" />
           </div>
-
-          <div class="panel" id="p10">
-            <span class="panel-label" id="lbl-p10">Rabat 10</span>
-            <div id="cnt-p10" style="width:100%; height:100%; display: flex; flex-direction: column;"></div>
+          <div class="input-group">
+            <label>Slogan</label>
+            <input type="text" id="txtSlogan" value="YOUR SLOGAN HERE" />
           </div>
+        </fieldset>
 
-          <div class="panel" id="p11">
-            <span class="panel-label" id="lbl-p11">Rabat 11</span>
-            <div id="cnt-p11" style="width:100%; height:100%;"></div>
+        <fieldset>
+          <legend>Informations Techniques</legend>
+          <div class="input-group">
+            <label>Composition (Recto / Face 1)</label>
+            <textarea id="txtComposition1" rows="3">
+Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
+            >
           </div>
-
-          <div class="panel" id="p12">
-            <span class="panel-label" id="lbl-p12">Rabat 12</span>
-            <div id="cnt-p12" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>Composition (Verso / Face 2)</label>
+            <textarea id="txtComposition2" rows="3">
+Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
+            >
           </div>
-
-          <div class="panel" id="p13">
-            <span class="panel-label" id="lbl-p13">Rabat 13</span>
-            <div id="cnt-p13" style="width:100%; height:100%;"></div>
+          <div class="input-group">
+            <label>Indications & Posologie</label>
+            <textarea id="txtIndications" rows="3">
+Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 comprimés toutes les 4 à 6 heures.&#10;Ne pas dépasser 3 g par jour.</textarea
+            >
           </div>
+          <div class="input-group">
+            <label>Code-barres (10 chiffres)</label>
+            <input type="text" id="txtBarcode" value="1234567890" />
+          </div>
+          <div class="input-group">
+            <label>Réglementaire</label>
+            <input
+              type="text"
+              id="txtRegInfo"
+              value="Mfg.Lic.No : 123456 / MA No : 9876543" />
+          </div>
+          <div class="input-group">
+            <label>Date de fabrication</label>
+            <input type="text" id="txtMfgDate" value="MM/AAAA" />
+          </div>
+          <div class="input-group">
+            <label>Date d'expiration</label>
+            <input type="text" id="txtExpDate" value="MM/AAAA" />
+          </div>
+        </fieldset>
 
+        <h2>Typographie</h2>
+        <fieldset>
+          <legend>Taille de police (par zone)</legend>
+          <div class="input-group">
+            <label>Titres / Marque</label>
+            <input
+              type="range"
+              id="fsScaleTitle"
+              min="0.6"
+              max="1.6"
+              step="0.05"
+              value="1" />
+          </div>
+          <div class="input-group">
+            <label>Texte courant</label>
+            <input
+              type="range"
+              id="fsScaleBody"
+              min="0.6"
+              max="1.6"
+              step="0.05"
+              value="1" />
+          </div>
+          <div class="input-group">
+            <label>Rabats</label>
+            <input
+              type="range"
+              id="fsScaleFlap"
+              min="0.6"
+              max="1.6"
+              step="0.05"
+              value="1" />
+          </div>
+          <div class="input-group">
+            <label>Petits textes (code-barres, logo)</label>
+            <input
+              type="range"
+              id="fsScaleSmall"
+              min="0.6"
+              max="1.6"
+              step="0.05"
+              value="1" />
+          </div>
+        </fieldset>
+      </div>
+
+      <!-- Workspace Preview -->
+      <div class="workspace">
+        <div class="patron-sheet" id="patronSheet">
+          <!-- SVG Overlays for precise technical die cut paths -->
+          <svg
+            class="die-lines"
+            id="dieLinesSvg"
+            xmlns="http://www.w3.org/2000/svg">
+            <!-- Rendered via JS -->
+          </svg>
+
+          <div class="box-grid" id="boxGrid">
+            <!-- ================= COMPONENT PANELS ================= -->
+            <div class="panel" id="p1">
+              <span class="panel-label" id="lbl-p1">Rabat 1</span>
+              <div
+                id="cnt-p1"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                "></div>
+            </div>
+
+            <div class="panel" id="p2">
+              <span class="panel-label" id="lbl-p2">Rabat 2</span>
+              <div id="cnt-p2" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p3">
+              <span class="panel-label" id="lbl-p3">Rabat 3</span>
+              <div id="cnt-p3" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p4">
+              <span class="panel-label" id="lbl-p4">Rabat 4</span>
+              <div id="cnt-p4" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <!-- Main panels -->
+            <div class="panel" id="p5">
+              <span class="panel-label" id="lbl-p5">Panneau 5</span>
+              <div class="safe-margin"></div>
+              <div id="cnt-p5" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p6">
+              <span class="panel-label" id="lbl-p6">Panneau 6</span>
+              <div class="safe-margin"></div>
+              <div id="cnt-p6" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p7">
+              <span class="panel-label" id="lbl-p7">Panneau 7</span>
+              <div class="safe-margin"></div>
+              <div id="cnt-p7" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p8">
+              <span class="panel-label" id="lbl-p8">Panneau 8</span>
+              <div class="safe-margin"></div>
+              <div id="cnt-p8" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <!-- Extra flaps -->
+            <div class="panel" id="p9">
+              <span class="panel-label" id="lbl-p9">Rabat 9</span>
+              <div id="cnt-p9" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p10">
+              <span class="panel-label" id="lbl-p10">Rabat 10</span>
+              <div
+                id="cnt-p10"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                "></div>
+            </div>
+
+            <div class="panel" id="p11">
+              <span class="panel-label" id="lbl-p11">Rabat 11</span>
+              <div id="cnt-p11" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p12">
+              <span class="panel-label" id="lbl-p12">Rabat 12</span>
+              <div id="cnt-p12" style="width: 100%; height: 100%"></div>
+            </div>
+
+            <div class="panel" id="p13">
+              <span class="panel-label" id="lbl-p13">Rabat 13</span>
+              <div id="cnt-p13" style="width: 100%; height: 100%"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Legend Overlay Info -->
-  <div style="padding: 0 40px 40px 40px; background: #0f172a;">
-    <div class="legend-panel">
-      <h3>Repères Techniques & Légendes de Production</h3>
-      <div class="legend-list">
-        <div class="legend-item">
-          <div class="legend-color" style="border: 2px dashed rgba(148, 163, 184, 0.7); background: #fff;"></div>
-          <span>Ligne de Pliage (Ril-line)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background: #f1f5f9; border: 1px solid #cbd5e1;"></div>
-          <span>Pattes de collage & Rabats (Non imprimés)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="border: 1.5px solid #ef4444; background: transparent;"></div>
-          <span>Ligne de Coupe / Emporte-pièce (Die-cut)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="border: 1px dotted #22c55e; background: transparent;"></div>
-          <span>Zone tranquille / Safe margin (10mm)</span>
+    <!-- Legend Overlay Info -->
+    <div style="padding: 0 40px 40px 40px; background: #0f172a">
+      <div class="legend-panel">
+        <h3>Repères Techniques & Légendes de Production</h3>
+        <div class="legend-list">
+          <div class="legend-item">
+            <div
+              class="legend-color"
+              style="
+                border: 2px dashed rgba(148, 163, 184, 0.7);
+                background: #fff;
+              "></div>
+            <span>Ligne de Pliage (Ril-line)</span>
+          </div>
+          <div class="legend-item">
+            <div
+              class="legend-color"
+              style="background: #f1f5f9; border: 1px solid #cbd5e1"></div>
+            <span>Pattes de collage & Rabats (Non imprimés)</span>
+          </div>
+          <div class="legend-item">
+            <div
+              class="legend-color"
+              style="
+                border: 1.5px solid #ef4444;
+                background: transparent;
+              "></div>
+            <span>Ligne de Coupe / Emporte-pièce (Die-cut)</span>
+          </div>
+          <div class="legend-item">
+            <div
+              class="legend-color"
+              style="border: 1px dotted #22c55e; background: transparent"></div>
+            <span>Zone tranquille / Safe margin (10mm)</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    // Controls Selection
-    const controls = {
-      boxType: document.getElementById('boxType'),
-      dimW: document.getElementById('dimW'),
-      dimH: document.getElementById('dimH'),
-      dimD: document.getElementById('dimD'),
-      colPrimary: document.getElementById('colPrimary'),
-      colAccent: document.getElementById('colAccent'),
-      txtProduct: document.getElementById('txtProduct'),
-      txtDosage: document.getElementById('txtDosage'),
-      txtQty: document.getElementById('txtQty'),
-      txtLabName: document.getElementById('txtLabName'),
-      txtSlogan: document.getElementById('txtSlogan'),
-      txtComposition1: document.getElementById('txtComposition1'),
-      txtComposition2: document.getElementById('txtComposition2'),
-      txtIndications: document.getElementById('txtIndications'),
-      txtBarcode: document.getElementById('txtBarcode'),
-      txtRegInfo: document.getElementById('txtRegInfo')
-    };
+    <script>
+      // Controls Selection
+      const controls = {
+        boxType: document.getElementById("boxType"),
+        dimW: document.getElementById("dimW"),
+        dimH: document.getElementById("dimH"),
+        dimD: document.getElementById("dimD"),
+        colPrimary: document.getElementById("colPrimary"),
+        colAccent: document.getElementById("colAccent"),
+        txtProduct: document.getElementById("txtProduct"),
+        txtDosage: document.getElementById("txtDosage"),
+        txtQty: document.getElementById("txtQty"),
+        txtLabName: document.getElementById("txtLabName"),
+        txtSlogan: document.getElementById("txtSlogan"),
+        txtComposition1: document.getElementById("txtComposition1"),
+        txtComposition2: document.getElementById("txtComposition2"),
+        txtIndications: document.getElementById("txtIndications"),
+        txtBarcode: document.getElementById("txtBarcode"),
+        txtRegInfo: document.getElementById("txtRegInfo"),
+        txtMfgDate: document.getElementById("txtMfgDate"),
+        txtExpDate: document.getElementById("txtExpDate"),
+        fsScaleTitle: document.getElementById("fsScaleTitle"),
+        fsScaleBody: document.getElementById("fsScaleBody"),
+        fsScaleFlap: document.getElementById("fsScaleFlap"),
+        fsScaleSmall: document.getElementById("fsScaleSmall"),
+      };
 
-    const toggleLabelsBtn = document.getElementById('toggleLabelsBtn');
-    const toggleMarginsBtn = document.getElementById('toggleMarginsBtn');
-    const printBtn = document.getElementById('printBtn');
-    const boxGrid = document.getElementById('boxGrid');
-    const dieLinesSvg = document.getElementById('dieLinesSvg');
-    const patronSheet = document.getElementById('patronSheet');
+      const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
+      const toggleMarginsBtn = document.getElementById("toggleMarginsBtn");
+      const printBtn = document.getElementById("printBtn");
+      const boxGrid = document.getElementById("boxGrid");
+      const dieLinesSvg = document.getElementById("dieLinesSvg");
+      const patronSheet = document.getElementById("patronSheet");
 
-    // Default template presets
-    const presets = {
-      tablet: {
-        dimW: 90, dimH: 60, dimD: 24,
-        colPrimary: "#12233f", colAccent: "#f5a623",
-        txtProduct: "Paracétamol",
-        txtDosage: "paracétamol 500 mg",
-        txtQty: "20 comprimés",
-        txtComposition1: "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
-        txtComposition2: "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
-        txtIndications: "Traitement symptomatique de la douleur et/ou de la fièvre.\nAdulte : 1 à 2 comprimés toutes les 4 à 6 heures.\nNe pas dépasser 3 g par jour."
-      },
-      liquid: {
-        dimW: 80, dimH: 160, dimD: 60,
-        colPrimary: "#1e3a8a", colAccent: "#f97316",
-        txtProduct: "Sirop de Paracétamol",
-        txtDosage: "paracétamol 2.4% (120mg / 5ml)",
-        txtQty: "200 ML",
-        txtComposition1: "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
-        txtComposition2: "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
-        txtIndications: "Traitement symptomatique des douleurs légères à modérées.\nEnfants : 15 mg/kg toutes les 6 heures.\nUtiliser exclusivement la pipette doseuse fournie."
-      }
-    };
+      // Default template presets
+      const presets = {
+        tablet: {
+          dimW: 90,
+          dimH: 60,
+          dimD: 24,
+          colPrimary: "#12233f",
+          colAccent: "#f5a623",
+          txtProduct: "Paracétamol",
+          txtDosage: "paracétamol 500 mg",
+          txtQty: "20 comprimés",
+          txtComposition1:
+            "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
+          txtComposition2:
+            "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
+          txtIndications:
+            "Traitement symptomatique de la douleur et/ou de la fièvre.\nAdulte : 1 à 2 comprimés toutes les 4 à 6 heures.\nNe pas dépasser 3 g par jour.",
+        },
+        liquid: {
+          dimW: 80,
+          dimH: 160,
+          dimD: 60,
+          colPrimary: "#1e3a8a",
+          colAccent: "#f97316",
+          txtProduct: "Sirop de Paracétamol",
+          txtDosage: "paracétamol 2.4% (120mg / 5ml)",
+          txtQty: "200 ML",
+          txtComposition1:
+            "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
+          txtComposition2:
+            "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
+          txtIndications:
+            "Traitement symptomatique des douleurs légères à modérées.\nEnfants : 15 mg/kg toutes les 6 heures.\nUtiliser exclusivement la pipette doseuse fournie.",
+        },
+      };
 
-    // Apply template properties
-    controls.boxType.addEventListener('change', () => {
-      const type = controls.boxType.value;
-      const preset = presets[type];
-      
-      controls.dimW.value = preset.dimW;
-      controls.dimH.value = preset.dimH;
-      controls.dimD.value = preset.dimD;
-      controls.colPrimary.value = preset.colPrimary;
-      controls.colAccent.value = preset.colAccent;
-      controls.txtProduct.value = preset.txtProduct;
-      controls.txtDosage.value = preset.txtDosage;
-      controls.txtQty.value = preset.txtQty;
-      controls.txtComposition1.value = preset.txtComposition1;
-      controls.txtComposition2.value = preset.txtComposition2;
-      controls.txtIndications.value = preset.txtIndications;
+      // Apply template properties
+      controls.boxType.addEventListener("change", () => {
+        const type = controls.boxType.value;
+        const preset = presets[type];
 
-      updateTextBinders();
-      updateGeometry();
-    });
+        controls.dimW.value = preset.dimW;
+        controls.dimH.value = preset.dimH;
+        controls.dimD.value = preset.dimD;
+        controls.colPrimary.value = preset.colPrimary;
+        controls.colAccent.value = preset.colAccent;
+        controls.txtProduct.value = preset.txtProduct;
+        controls.txtDosage.value = preset.txtDosage;
+        controls.txtQty.value = preset.txtQty;
+        controls.txtComposition1.value = preset.txtComposition1;
+        controls.txtComposition2.value = preset.txtComposition2;
+        controls.txtIndications.value = preset.txtIndications;
 
-    // Content Generators for Tablet (Horizontal) Mode
-    function getFrontContent() {
-      return `
+        updateTextBinders();
+        updateGeometry();
+      });
+
+      // Content Generators for Tablet (Horizontal) Mode
+      function getFrontContent() {
+        return `
         <div class="main-panel-content">
           <div class="dots-grid">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -1283,11 +1500,15 @@
           </div>
         </div>
       `;
-    }
+      }
 
-    function getSideContent() {
-      return `
-        <div class="side-panel-content">
+      function getSideContent(side) {
+        const sideClass =
+          side === "left"
+            ? "side-panel-content--left"
+            : "side-panel-content--right";
+        return `
+        <div class="side-panel-content ${sideClass}">
           <span class="qty-badge">${controls.txtQty.value}</span>
           <div class="dots-grid">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -1297,15 +1518,16 @@
           <div class="logo-icon"></div>
         </div>
       `;
-    }
+      }
 
-    function getTechnicalContent() {
-      const reg = controls.txtRegInfo.value.replace(/\//g, '<br/>');
-      return `
+      function getTechnicalContent() {
+        const reg = controls.txtRegInfo.value.replace(/\//g, "<br/>");
+        return `
         <div class="bottom-panel-content">
           <div class="panel-section">
-            <div class="panel-section-title">Composition</div>
-            <div>${controls.txtComposition1.value}</div>
+            <div class="panel-section-title">Dates</div>
+            <div><strong>Fab. :</strong> ${controls.txtMfgDate.value}</div>
+            <div><strong>Exp. :</strong> ${controls.txtExpDate.value}</div>
             <div style="margin-top: 4px; font-weight: bold;">${reg}</div>
           </div>
           <div class="barcode-area">
@@ -1319,11 +1541,15 @@
           </div>
         </div>
       `;
-    }
+      }
 
-    function getCompositionDosageContent() {
-      const listItems = controls.txtIndications.value.split('\n').filter(l => l.trim()).map(l => `<li>${l}</li>`).join('');
-      return `
+      function getCompositionDosageContent() {
+        const listItems = controls.txtIndications.value
+          .split("\n")
+          .filter((l) => l.trim())
+          .map((l) => `<li>${l}</li>`)
+          .join("");
+        return `
         <div class="top-panel-content">
           <div class="panel-section">
             <div class="panel-section-title">Composition</div>
@@ -1337,11 +1563,11 @@
           </div>
         </div>
       `;
-    }
+      }
 
-    // Content Generators for Liquid (Vertical) Mode
-    function getLiquidFrontBackContent() {
-      return `
+      // Content Generators for Liquid (Vertical) Mode
+      function getLiquidFrontBackContent() {
+        return `
         <div class="main-panel-content" style="padding: 20px;">
           <div class="liquid-brand-header">
             <div class="liquid-logo-row">
@@ -1376,11 +1602,11 @@
           </div>
         </div>
       `;
-    }
+      }
 
-    function getLiquidSide1Content() {
-      // Composition Ingredients table matching the Vecteezy model
-      return `
+      function getLiquidSide1Content() {
+        // Composition Ingredients table matching the Vecteezy model
+        return `
         <div class="liquid-side-1">
           <div class="liquid-composition-table">
             <div class="liquid-table-title">Composition / Dose</div>
@@ -1398,17 +1624,21 @@
           </div>
 
           <div style="font-size: 8.5px; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: auto;">
-            <strong>Code AMM:</strong> ${controls.txtRegInfo.value.split('/')[1] || 'En cours'}<br/>
+            <strong>Code AMM:</strong> ${controls.txtRegInfo.value.split("/")[1] || "En cours"}<br/>
             <strong>N° de Lot:</strong> ${controls.txtBarcode.value}
           </div>
         </div>
       `;
-    }
+      }
 
-    function getLiquidSide2Content() {
-      // Posology details and barcode layout matching the second side panel in the model
-      const listItems = controls.txtIndications.value.split('\n').filter(l => l.trim()).map(l => `<li>${l}</li>`).join('');
-      return `
+      function getLiquidSide2Content() {
+        // Posology details and barcode layout matching the second side panel in the model
+        const listItems = controls.txtIndications.value
+          .split("\n")
+          .filter((l) => l.trim())
+          .map((l) => `<li>${l}</li>`)
+          .join("");
+        return `
         <div class="liquid-side-1">
           <div style="font-size: 8px; line-height: 1.3; color: #475569;">
             <strong style="text-transform:uppercase; font-size:8.5px; display:block; margin-bottom:3px; color:#0f172a;">Indications & Dosage :</strong>
@@ -1423,386 +1653,510 @@
               <div class="barcode-number">${controls.txtBarcode.value}</div>
             </div>
             <div style="font-size: 7px; color: #64748b; text-align: center; margin-top: 4px;">
-              ${controls.txtRegInfo.value.split('/')[0] || ''}
+              ${controls.txtRegInfo.value.split("/")[0] || ""}
             </div>
           </div>
         </div>
       `;
-    }
+      }
 
-    function updateTextBinders() {
-      const type = controls.boxType.value;
-      
-      // Update panels text content based on the selected mode
-      if (type === 'tablet') {
-        // P1: Left Orange Tuck Flap
-        document.getElementById('cnt-p1').innerHTML = `
+      function updateTextBinders() {
+        const type = controls.boxType.value;
+
+        // Update panels text content based on the selected mode
+        if (type === "tablet") {
+          // P1: Left Orange Tuck Flap
+          document.getElementById("cnt-p1").innerHTML = `
           <div class="rot-text">
             <span>${controls.txtProduct.value}</span>
             <span style="font-size:8px; font-weight:400; opacity:0.9;">${controls.txtDosage.value}</span>
           </div>
         `;
-        // P5: Front
-        document.getElementById('cnt-p5').innerHTML = getFrontContent();
-        // P6: Side 1
-        document.getElementById('cnt-p6').innerHTML = getSideContent();
-        // P7: Bottom (Technical)
-        document.getElementById('cnt-p7').innerHTML = getTechnicalContent();
-        // P8: Side 2
-        document.getElementById('cnt-p8').innerHTML = getSideContent();
-        // P9: Back
-        document.getElementById('cnt-p9').innerHTML = getFrontContent();
-        // P10: Right Orange Tuck Flap
-        document.getElementById('cnt-p10').innerHTML = `
+          // P5: Front
+          document.getElementById("cnt-p5").innerHTML = getFrontContent();
+          // P6: Side 1
+          document.getElementById("cnt-p6").innerHTML = getSideContent("left");
+          // P7: Bottom (Technical)
+          document.getElementById("cnt-p7").innerHTML = getTechnicalContent();
+          // P8: Side 2
+          document.getElementById("cnt-p8").innerHTML = getSideContent("right");
+          // P9: Back
+          document.getElementById("cnt-p9").innerHTML = getFrontContent();
+          // P10: Right Orange Tuck Flap
+          document.getElementById("cnt-p10").innerHTML = `
           <div class="rot-text">
             <span>${controls.txtProduct.value}</span>
             <span style="font-size:8px; font-weight:400; opacity:0.9;">${controls.txtDosage.value}</span>
           </div>
         `;
-        // P12: Top (Composition / Posology)
-        document.getElementById('cnt-p12').innerHTML = getCompositionDosageContent();
-      } else {
-        // Liquid format (Vertical)
-        // P1: Top Tuck Flap (Fidelity style)
-        document.getElementById('cnt-p1').innerHTML = `
+          // P12: Top (Composition / Posology)
+          document.getElementById("cnt-p12").innerHTML =
+            getCompositionDosageContent();
+        } else {
+          // Liquid format (Vertical)
+          // P1: Top Tuck Flap (Fidelity style)
+          document.getElementById("cnt-p1").innerHTML = `
           <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
           <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
         `;
-        
-        // Front & Back panels (High Fidelity Liquid template)
-        document.getElementById('cnt-p5').innerHTML = getLiquidFrontBackContent();
-        document.getElementById('cnt-p7').innerHTML = getLiquidFrontBackContent();
 
-        // Left Side Panel 1 (Ingredients table)
-        document.getElementById('cnt-p6').innerHTML = getLiquidSide1Content();
-        
-        // Right Side Panel 2 (Dosage and Barcode)
-        document.getElementById('cnt-p8').innerHTML = getLiquidSide2Content();
-        
-        // P10: Bottom Tuck Flap
-        document.getElementById('cnt-p10').innerHTML = `
+          // Front & Back panels (High Fidelity Liquid template)
+          document.getElementById("cnt-p5").innerHTML =
+            getLiquidFrontBackContent();
+          document.getElementById("cnt-p7").innerHTML =
+            getLiquidFrontBackContent();
+
+          // Left Side Panel 1 (Ingredients table)
+          document.getElementById("cnt-p6").innerHTML = getLiquidSide1Content();
+
+          // Right Side Panel 2 (Dosage and Barcode)
+          document.getElementById("cnt-p8").innerHTML = getLiquidSide2Content();
+
+          // P10: Bottom Tuck Flap
+          document.getElementById("cnt-p10").innerHTML = `
           <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
           <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
         `;
-        
-        // P9: Glue flap (Vertical tab)
-        document.getElementById('cnt-p9').innerHTML = `<span>ZONE ENCOLLAGE</span>`;
+
+          // P9: Glue flap (Vertical tab)
+          document.getElementById("cnt-p9").innerHTML =
+            `<span>ZONE ENCOLLAGE</span>`;
+        }
       }
-    }
 
-    function setPosition(id, left, top, width, height) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.style.left = `${left}px`;
-        el.style.top = `${top}px`;
-        el.style.width = `${width}px`;
-        el.style.height = `${height}px`;
-        el.style.display = 'flex';
+      function setPosition(id, left, top, width, height) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.left = `${left}px`;
+          el.style.top = `${top}px`;
+          el.style.width = `${width}px`;
+          el.style.height = `${height}px`;
+          el.style.display = "flex";
+        }
       }
-    }
 
-    function hidePanel(id) {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    }
+      function hidePanel(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      }
 
-    function updateGeometry() {
-      const type = controls.boxType.value;
-      const scale = 2.8; 
-      
-      const w = controls.dimW.value * scale;
-      const h = controls.dimH.value * scale;
-      const d = controls.dimD.value * scale;
-      const flap = 45 * scale;
-      const glue = 12 * scale;
+      function updateGeometry() {
+        const type = controls.boxType.value;
+        const scale = 2.8;
 
-      // Update Theme Colors
-      document.documentElement.style.setProperty('--primary', controls.colPrimary.value);
-      document.documentElement.style.setProperty('--accent', controls.colAccent.value);
+        const w = controls.dimW.value * scale;
+        const h = controls.dimH.value * scale;
+        const d = controls.dimD.value * scale;
+        const flap = 45 * scale;
+        const glue = 12 * scale;
 
-      // Define CSS dynamic properties for typography scaling
-      document.documentElement.style.setProperty('--box-w', `${w}px`);
-      document.documentElement.style.setProperty('--box-h', `${h}px`);
+        // Update Theme Colors
+        document.documentElement.style.setProperty(
+          "--primary",
+          controls.colPrimary.value,
+        );
+        document.documentElement.style.setProperty(
+          "--accent",
+          controls.colAccent.value,
+        );
 
-      if (type === 'tablet') {
+        // Update modulable typography scales
+        document.documentElement.style.setProperty(
+          "--fs-scale-title",
+          controls.fsScaleTitle.value,
+        );
+        document.documentElement.style.setProperty(
+          "--fs-scale-body",
+          controls.fsScaleBody.value,
+        );
+        document.documentElement.style.setProperty(
+          "--fs-scale-flap",
+          controls.fsScaleFlap.value,
+        );
+        document.documentElement.style.setProperty(
+          "--fs-scale-small",
+          controls.fsScaleSmall.value,
+        );
+
+        // Define CSS dynamic properties for typography scaling
+        document.documentElement.style.setProperty("--box-w", `${w}px`);
+        document.documentElement.style.setProperty("--box-h", `${h}px`);
+
+        if (type === "tablet") {
+          // Corrected coherent net: totalW no longer has a phantom extra
+          // column, and each row's cells are contiguous (no overlap, no gap).
+          const totalW = flap + w + d + flap;
+          const totalH = h + d + h + d + glue;
+
+          patronSheet.style.width = `${totalW}px`;
+          patronSheet.style.height = `${totalH}px`;
+
+          // Labels
+          document.getElementById("lbl-p1").textContent = "Rabat Orange Gauche";
+          document.getElementById("lbl-p2").textContent = "Patte de Collage";
+          document.getElementById("lbl-p3").textContent =
+            "Rabat Poussière Gauche";
+          document.getElementById("lbl-p4").textContent =
+            "Rabat Poussière Droite";
+          document.getElementById("lbl-p5").textContent = "Face Avant (Recto)";
+          document.getElementById("lbl-p6").textContent = "Côté Latéral 1";
+          document.getElementById("lbl-p7").textContent = "Flanc Inférieur";
+          document.getElementById("lbl-p8").textContent = "Côté Latéral 2";
+          document.getElementById("lbl-p9").textContent =
+            "Face Arrière (Verso)";
+          document.getElementById("lbl-p10").textContent =
+            "Rabat Orange Droite";
+          document.getElementById("lbl-p11").textContent =
+            "Rabat Poussière Gauche";
+          document.getElementById("lbl-p12").textContent = "Flanc Supérieur";
+          document.getElementById("lbl-p13").textContent =
+            "Rabat Poussière Droite";
+
+          // Panel classes & positioning
+          document.getElementById("p1").className = "panel orange-flap-left";
+          document.getElementById("p2").className = "panel glue-flap";
+          document.getElementById("p3").className = "panel dust-left-top";
+          document.getElementById("p4").className = "panel dust-right-top";
+          document.getElementById("p5").className = "panel";
+          document.getElementById("p6").className = "panel";
+          document.getElementById("p7").className = "panel";
+          document.getElementById("p8").className = "panel";
+          document.getElementById("p9").className = "panel";
+          document.getElementById("p10").className = "panel orange-flap-right";
+          document.getElementById("p11").className = "panel dust-left-bottom";
+          document.getElementById("p12").className = "panel";
+          document.getElementById("p13").className = "panel dust-right-bottom";
+
+          // Row 1 — Rabat gauche + Avant + Côté 1 (Y = 0)
+          setPosition("p1", 0, 0, flap, h);
+          setPosition("p5", flap, 0, w, h);
+          setPosition("p6", flap + w, 0, d, h);
+
+          // Row 2 — Rabats poussière + Flanc inférieur (Y = H)
+          setPosition("p3", flap - d, h, d, d);
+          setPosition("p7", flap, h, w, d);
+          setPosition("p4", flap + w, h, d, d);
+
+          // Row 3 — Côté 2 + Arrière + Rabat droit (Y = H + D)
+          // Bloc translaté vers la gauche de -d : Face arrière s'aligne
+          // désormais verticalement avec Face avant (x = flap).
+          setPosition("p8", flap - d, h + d, d, h);
+          setPosition("p9", flap, h + d, w, h);
+          setPosition("p10", flap + w, h + d, flap, h);
+
+          // Row 4 — Rabats poussière + Flanc supérieur (Y = H + D + H)
+          // (translatées de -d pour suivre le même déplacement)
+          setPosition("p11", flap - d, h + d + h, d, d);
+          setPosition("p12", flap, h + d + h, w, d);
+          setPosition("p13", flap + w, h + d + h, d, d);
+
+          // Row 5 — Patte de collage (Y = H + D + H + D)
+          // (translatée de -d, reste attachée sous le Flanc Supérieur)
+          setPosition("p2", flap, h + d + h + d, w, glue);
+
+          // SVG Outline
+          drawTabletDieLines(w, h, d, flap, glue);
+        } else {
+          // LIQUID MODE (Vertical packaging carton flat layout)
+          const totalW = w + d + w + d + glue;
+          const totalH = flap + h + flap;
+          const dust = Math.min(d, flap);
+
+          patronSheet.style.width = `${totalW}px`;
+          patronSheet.style.height = `${totalH}px`;
+
+          // Labels mapping for liquid format template
+          document.getElementById("lbl-p1").textContent =
+            "Rabat Haut (Tuck Lid)";
+          document.getElementById("lbl-p2").textContent =
+            "Rabat Poussière Haut 1";
+          document.getElementById("lbl-p3").textContent =
+            "Rabat Poussière Haut 2";
+          document.getElementById("lbl-p4").textContent =
+            "Rabat Poussière Bas 1";
+          document.getElementById("lbl-p5").textContent = "Face Avant (Recto)";
+          document.getElementById("lbl-p6").textContent =
+            "Côté Gauche (Ingrédients)";
+          document.getElementById("lbl-p7").textContent =
+            "Face Arrière (Verso)";
+          document.getElementById("lbl-p8").textContent =
+            "Côté Droite (Notice & Code)";
+          document.getElementById("lbl-p9").textContent = "Patte encollage";
+          document.getElementById("lbl-p10").textContent =
+            "Rabat Bas (Tuck Lid)";
+          document.getElementById("lbl-p11").textContent =
+            "Rabat Poussière Bas 2";
+          hidePanel("p12");
+          hidePanel("p13");
+
+          // Classes
+          document.getElementById("p1").className = "panel vertical-tuck-top";
+          document.getElementById("p2").className =
+            "panel liquid-dust-top-left";
+          document.getElementById("p3").className =
+            "panel liquid-dust-top-right";
+          document.getElementById("p4").className =
+            "panel liquid-dust-bottom-left";
+          document.getElementById("p5").className = "panel";
+          document.getElementById("p6").className = "panel";
+          document.getElementById("p7").className = "panel";
+          document.getElementById("p8").className = "panel";
+          document.getElementById("p9").className = "panel glue-flap-vertical";
+          document.getElementById("p10").className =
+            "panel vertical-tuck-bottom";
+          document.getElementById("p11").className =
+            "panel liquid-dust-bottom-right";
+
+          // Main panels row (Y = flap)
+          setPosition("p5", 0, flap, w, h);
+          setPosition("p6", w, flap, d, h);
+          setPosition("p7", w + d, flap, w, h);
+          setPosition("p8", w + d + w, flap, d, h);
+          setPosition("p9", w + d + w + d, flap, glue, h);
+
+          // Flaps Top (Y = flap - dust / 0)
+          setPosition("p1", 0, 0, w, flap); // Top tuck flap on Front Panel (P5)
+          setPosition("p2", w, 0, d, dust); // Left dust flap top (P6)
+          setPosition("p3", w + d + w, 0, d, dust); // Right dust flap top (P8)
+
+          // Flaps Bottom (Y = flap + h)
+          setPosition("p10", w + d, flap + h, w, flap); // Bottom tuck flap on Back Panel (P7)
+          setPosition("p4", w, flap + h, d, dust); // Left dust flap bottom (P6)
+          setPosition("p11", w + d + w, flap + h, d, dust); // Right dust flap bottom (P8)
+
+          // SVG Outline for Liquid vertical carton
+          drawLiquidDieLines(w, h, d, flap, glue, dust);
+        }
+      }
+
+      function drawTabletDieLines(w, h, d, flap, glue) {
+        dieLinesSvg.innerHTML = "";
         const totalW = flap + w + d + flap;
         const totalH = h + d + h + d + glue;
 
-        patronSheet.style.width = `${totalW}px`;
-        patronSheet.style.height = `${totalH}px`;
+        dieLinesSvg.setAttribute("width", totalW);
+        dieLinesSvg.setAttribute("height", totalH);
+        dieLinesSvg.style.width = `${totalW}px`;
+        dieLinesSvg.style.height = `${totalH}px`;
 
-        // Labels
-        document.getElementById('lbl-p1').textContent = "Rabat Orange Gauche";
-        document.getElementById('lbl-p2').textContent = "Rabat Blanc Droite";
-        document.getElementById('lbl-p3').textContent = "Rabat Poussière Gauche";
-        document.getElementById('lbl-p4').textContent = "Rabat Poussière Droite";
-        document.getElementById('lbl-p5').textContent = "Face Avant (Recto)";
-        document.getElementById('lbl-p6').textContent = "Côté Latéral 1";
-        document.getElementById('lbl-p7').textContent = "Flanc Inférieur";
-        document.getElementById('lbl-p8').textContent = "Côté Latéral 2";
-        document.getElementById('lbl-p9').textContent = "Face Arrière (Verso)";
-        document.getElementById('lbl-p10').textContent = "Rabat Orange Droite";
-        document.getElementById('lbl-p11').textContent = "Rabat Poussière Gauche";
-        document.getElementById('lbl-p12').textContent = "Flanc Supérieur";
-        document.getElementById('lbl-p13').textContent = "Rabat Poussière Droite";
+        const addPath = (dAttr) => {
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          path.setAttribute("d", dAttr);
+          path.setAttribute("stroke", "#ef4444");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(path);
+        };
 
-        // Panel classes & positioning
-        document.getElementById('p1').className = "panel orange-flap-left";
-        document.getElementById('p2').className = "panel white-tuck-right";
-        document.getElementById('p3').className = "panel dust-left-top";
-        document.getElementById('p4').className = "panel dust-right-top";
-        document.getElementById('p5').className = "panel";
-        document.getElementById('p6').className = "panel";
-        document.getElementById('p7').className = "panel";
-        document.getElementById('p8').className = "panel";
-        document.getElementById('p9').className = "panel";
-        document.getElementById('p10').className = "panel orange-flap-right";
-        document.getElementById('p11').className = "panel dust-left-bottom";
-        document.getElementById('p12').className = "panel";
-        document.getElementById('p13').className = "panel dust-right-bottom";
+        const addRect = (x, y, rw, rh) =>
+          addPath(`M ${x} ${y} L ${x + rw} ${y} L ${x + rw} ${y + rh} L ${x} ${y + rh} Z`);
 
-        // Row 1 (Y = 0)
-        setPosition('p1', 0, 0, flap, h);
-        setPosition('p5', flap, 0, w, h);
-        setPosition('p6', flap + w, 0, d, h);
-        setPosition('p2', flap + w + d, 0, flap, h);
+        // Every shape below mirrors exactly the panel it outlines — plain
+        // rectangles for flat panels, and the same trapezoid / notch
+        // geometry as the matching clip-path for tuck flaps, dust flaps,
+        // and the glue flap — so the red cut line always matches the
+        // current printed content.
 
-        // Row 2 (Y = H)
-        setPosition('p3', flap - d, h, d, d);
-        setPosition('p7', flap, h, w, d);
-        setPosition('p4', flap + w, h, d, d);
+        // Row 1 — Rabat gauche (trapèze) + Avant + Côté 1 (Y = 0)
+        addPath(
+          `M ${flap} 0 L ${flap} ${h} L 0 ${h * 0.85} L 0 ${h * 0.15} Z`,
+        ); // Rabat orange gauche
+        addRect(flap, 0, w, h); // Face avant
+        addRect(flap + w, 0, d, h); // Côté latéral 1
 
-        // Row 3 (Y = H + D)
-        setPosition('p11', 0, h + d, flap, h); // White tuck flap left
-        document.getElementById('p11').className = "panel white-tuck-left";
-        setPosition('p8', flap, h + d, d, h);
-        setPosition('p9', flap + d, h + d, w, h);
-        setPosition('p10', flap + d + w, h + d, flap, h);
+        // Row 2 — Rabats poussière (encoches) + Flanc inférieur (Y = H)
+        addPath(
+          `M ${flap} ${h} L ${flap} ${h + d} L ${flap - d + d * 0.2} ${h + d * 0.8} L ${flap - d + d * 0.2} ${h} Z`,
+        ); // Rabat poussière gauche haut
+        addRect(flap, h, w, d); // Flanc inférieur
+        addPath(
+          `M ${flap + w} ${h} L ${flap + w} ${h + d} L ${flap + w + d * 0.8} ${h + d * 0.8} L ${flap + w + d * 0.8} ${h} Z`,
+        ); // Rabat poussière droite haut
 
-        // Row 4 (Y = H + D + H)
-        setPosition('p11', flap - d, h + d + h, d, d); // Left dust flap bottom
-        document.getElementById('p11').className = "panel dust-left-bottom";
-        setPosition('p12', flap, h + d + h, w, d);
-        setPosition('p13', flap + w, h + d + h, d, d);
+        // Row 3 — Côté 2 + Arrière + Rabat droit (trapèze) (Y = H + D)
+        addRect(flap - d, h + d, d, h); // Côté latéral 2
+        addRect(flap, h + d, w, h); // Face arrière
+        addPath(
+          `M ${flap + w} ${h + d} L ${flap + w} ${h + d + h} L ${flap + w + flap} ${h + d + h * 0.85} L ${flap + w + flap} ${h + d + h * 0.15} Z`,
+        ); // Rabat orange droite
 
-        // Row 5 (Y = H + D + H + D)
-        setPosition('p2', flap, h + d + h + d, w, glue); // Glue flap bottom
-        document.getElementById('p2').className = "panel glue-flap";
-        document.getElementById('lbl-p2').textContent = "Patte de collage";
+        // Row 4 — Rabats poussière (encoches) + Flanc supérieur (Y = H + D + H)
+        addPath(
+          `M ${flap} ${h + d + h} L ${flap} ${h + d + h + d} L ${flap - d + d * 0.2} ${h + d + h + d} L ${flap - d + d * 0.2} ${h + d + h + d * 0.2} Z`,
+        ); // Rabat poussière gauche bas
+        addRect(flap, h + d + h, w, d); // Flanc supérieur
+        addPath(
+          `M ${flap + w} ${h + d + h} L ${flap + w} ${h + d + h + d} L ${flap + w + d * 0.8} ${h + d + h + d} L ${flap + w + d * 0.8} ${h + d + h + d * 0.2} Z`,
+        ); // Rabat poussière droite bas
 
-        // SVG Outline
-        drawTabletDieLines(w, h, d, flap, glue);
-      } else {
-        // LIQUID MODE (Vertical packaging carton flat layout)
+        // Row 5 — Patte de collage (trapèze) (Y = H + D + H + D)
+        addPath(
+          `M ${flap + w * 0.05} ${h + d + h + d} L ${flap + w * 0.95} ${h + d + h + d} L ${flap + w * 0.85} ${h + d + h + d + glue} L ${flap + w * 0.15} ${h + d + h + d + glue} Z`,
+        );
+
+        // --- Lignes de PLI internes ---
+        // Les rectangles de découpe ci-dessus se superposent exactement aux
+        // bordures pointillées des panneaux (.panel), ce qui masque les plis
+        // réels aux jonctions entre panneaux qui ne sont PAS séparés physique-
+        // ment (ils restent solidaires, seulement pliés). On redessine donc
+        // ces jonctions par-dessus, en bleu pointillé, pour qu'elles restent
+        // visibles et clairement distinctes des vraies lignes de coupe rouges.
+        const addFold = (x1, y1, x2, y2) => {
+          const fold = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+          fold.setAttribute("stroke", "#3b82f6");
+          fold.setAttribute("stroke-width", "1");
+          fold.setAttribute("stroke-dasharray", "4 3");
+          fold.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(fold);
+        };
+
+        // Rabat gauche <-> Face avant
+        addFold(flap, 0, flap, h);
+        // Face avant <-> Côté latéral 1
+        addFold(flap + w, 0, flap + w, h);
+        // Face avant <-> Flanc inférieur
+        addFold(flap, h, flap + w, h);
+        // Flanc inférieur <-> Côté latéral 2 (bord gauche)
+        addFold(flap - d, h + d, flap - d, h + d + h);
+        // Côté latéral 2 <-> Face arrière
+        addFold(flap, h + d, flap, h + d + h);
+        // Face arrière <-> Flanc supérieur
+        addFold(flap, h + d + h, flap + w, h + d + h);
+        // Flanc supérieur <-> Patte de collage
+        addFold(flap, h + d + h + d, flap + w, h + d + h + d);
+      }
+
+      function drawLiquidDieLines(w, h, d, flap, glue, dust) {
+        dieLinesSvg.innerHTML = "";
         const totalW = w + d + w + d + glue;
         const totalH = flap + h + flap;
 
-        patronSheet.style.width = `${totalW}px`;
-        patronSheet.style.height = `${totalH}px`;
+        dieLinesSvg.setAttribute("width", totalW);
+        dieLinesSvg.setAttribute("height", totalH);
+        dieLinesSvg.style.width = `${totalW}px`;
+        dieLinesSvg.style.height = `${totalH}px`;
 
-        // Labels mapping for liquid format template
-        document.getElementById('lbl-p1').textContent = "Rabat Haut (Tuck Lid)";
-        document.getElementById('lbl-p2').textContent = "Rabat Poussière Haut 1";
-        document.getElementById('lbl-p3').textContent = "Rabat Poussière Haut 2";
-        document.getElementById('lbl-p4').textContent = "Rabat Poussière Bas 1";
-        document.getElementById('lbl-p5').textContent = "Face Avant (Recto)";
-        document.getElementById('lbl-p6').textContent = "Côté Gauche (Ingrédients)";
-        document.getElementById('lbl-p7').textContent = "Face Arrière (Verso)";
-        document.getElementById('lbl-p8').textContent = "Côté Droite (Notice & Code)";
-        document.getElementById('lbl-p9').textContent = "Patte encollage";
-        document.getElementById('lbl-p10').textContent = "Rabat Bas (Tuck Lid)";
-        document.getElementById('lbl-p11').textContent = "Rabat Poussière Bas 2";
-        hidePanel('p12');
-        hidePanel('p13');
+        const addPath = (dAttr) => {
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          path.setAttribute("d", dAttr);
+          path.setAttribute("stroke", "#ef4444");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(path);
+        };
 
-        // Classes
-        document.getElementById('p1').className = "panel vertical-tuck-top";
-        document.getElementById('p2').className = "panel dust-left-top";
-        document.getElementById('p3').className = "panel dust-right-top";
-        document.getElementById('p4').className = "panel dust-left-bottom";
-        document.getElementById('p5').className = "panel";
-        document.getElementById('p6').className = "panel";
-        document.getElementById('p7').className = "panel";
-        document.getElementById('p8').className = "panel";
-        document.getElementById('p9').className = "panel glue-flap-vertical";
-        document.getElementById('p10').className = "panel vertical-tuck-bottom";
-        document.getElementById('p11').className = "panel dust-right-bottom";
+        // Tuck flaps
+        addPath(`
+          M ${w * 0.05} ${flap}
+          L ${w * 0.95} ${flap}
+          L ${w * 0.8} ${flap * 0.25}
+          L ${w * 0.7} 0
+          L ${w * 0.3} 0
+          L ${w * 0.2} ${flap * 0.25}
+          Z
+        `);
 
-        // Main panels row (Y = flap)
-        setPosition('p5', 0, flap, w, h);
-        setPosition('p6', w, flap, d, h);
-        setPosition('p7', w + d, flap, w, h);
-        setPosition('p8', w + d + w, flap, d, h);
-        setPosition('p9', w + d + w + d, flap, glue, h);
+        addPath(`
+          M ${w + d + w + w * 0.05} ${flap + h + flap}
+          L ${w + d + w + w * 0.95} ${flap + h + flap}
+          L ${w + d + w + w * 0.8} ${flap + h + flap * 0.75}
+          L ${w + d + w + w * 0.7} ${flap + h + flap}
+          L ${w + d + w + w * 0.3} ${flap + h + flap}
+          L ${w + d + w + w * 0.2} ${flap + h + flap * 0.75}
+          Z
+        `);
 
-        // Flaps Top (Y = flap - dust / 0)
-        setPosition('p1', 0, 0, w, flap); // Top tuck flap on Front Panel (P5)
-        setPosition('p2', w, flap - d, d, d); // Left dust flap top (P6)
-        setPosition('p3', w + d + w, flap - d, d, d); // Right dust flap top (P8)
+        // Dust flaps - top row
+        addPath(`
+          M ${w + d * 0.2} 0
+          L ${w + d * 0.8} 0
+          L ${w + d} ${dust}
+          L ${w} ${dust}
+          Z
+        `);
 
-        // Flaps Bottom (Y = flap + h)
-        setPosition('p10', w + d, flap + h, w, flap); // Bottom tuck flap on Back Panel (P7)
-        setPosition('p4', w, flap + h, d, d); // Left dust flap bottom (P6)
-        setPosition('p11', w + d + w, flap + h, d, d); // Right dust flap bottom (P8)
+        addPath(`
+          M ${w + d + w + d * 0.2} 0
+          L ${w + d + w + d * 0.8} 0
+          L ${w + d + w + d} ${dust}
+          L ${w + d + w} ${dust}
+          Z
+        `);
 
-        // SVG Outline for Liquid vertical carton
-        drawLiquidDieLines(w, h, d, flap, glue);
+        // Main rectangular panels
+        addPath(
+          `M 0 ${flap} L ${w} ${flap} L ${w} ${flap + h} L 0 ${flap + h} Z`,
+        );
+        addPath(
+          `M ${w} ${flap} L ${w + d} ${flap} L ${w + d} ${flap + h} L ${w} ${flap + h} Z`,
+        );
+        addPath(
+          `M ${w + d} ${flap} L ${w + d + w} ${flap} L ${w + d + w} ${flap + h} L ${w + d} ${flap + h} Z`,
+        );
+        addPath(
+          `M ${w + d + w} ${flap} L ${w + d + w + d} ${flap} L ${w + d + w + d} ${flap + h} L ${w + d + w} ${flap + h} Z`,
+        );
+        addPath(
+          `M ${w + d + w + d} ${flap} L ${w + d + w + d + glue} ${flap} L ${w + d + w + d + glue} ${flap + h} L ${w + d + w + d} ${flap + h} Z`,
+        );
+
+        // Dust flaps - bottom row
+        addPath(`
+          M ${w + d * 0.0} ${flap + h}
+          L ${w + d} ${flap + h}
+          L ${w + d * 0.8} ${flap + h + dust}
+          L ${w + d * 0.2} ${flap + h + dust}
+          Z
+        `);
+
+        addPath(`
+          M ${w + d + w + d * 0.0} ${flap + h}
+          L ${w + d + w + d} ${flap + h}
+          L ${w + d + w + d * 0.8} ${flap + h + dust}
+          L ${w + d + w + d * 0.2} ${flap + h + dust}
+          Z
+        `);
       }
-    }
 
-    function drawTabletDieLines(w, h, d, flap, glue) {
-      dieLinesSvg.innerHTML = '';
-      const totalW = flap + w + d + flap;
-      const totalH = h + d + h + d + glue;
-
-      dieLinesSvg.setAttribute('width', totalW);
-      dieLinesSvg.setAttribute('height', totalH);
-      dieLinesSvg.style.width = `${totalW}px`;
-      dieLinesSvg.style.height = `${totalH}px`;
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      
-      let dAttr = `
-        M ${flap} 0
-        L ${flap + w} 0
-        L ${flap + w + d} 0
-        L ${flap + w + d + flap * 0.85} ${h * 0.15}
-        L ${flap + w + d + flap} ${h * 0.15}
-        L ${flap + w + d + flap} ${h * 0.85}
-        L ${flap + w + d + flap * 0.85} ${h * 0.85}
-        L ${flap + w + d} ${h}
-        
-        L ${flap + w + d * 0.8} ${h + d * 0.2}
-        L ${flap + w + d * 0.8} ${h + d * 0.8}
-        L ${flap + w + d} ${h + d}
-
-        L ${flap + w + d + flap * 0.85} ${h + d + h * 0.15}
-        L ${flap + w + d + flap} ${h + d + h * 0.15}
-        L ${flap + w + d + flap} ${h + d + h * 0.85}
-        L ${flap + w + d + flap * 0.85} ${h + d + h * 0.85}
-        L ${flap + w + d} ${h + d + h}
-
-        L ${flap + w + d * 0.8} ${h + d + h + d * 1.0}
-        L ${flap + w + d * 0.8} ${h + d + h + d * 0.8}
-        L ${flap + w} ${h + d + h + d}
-
-        L ${flap + w * 0.85} ${h + d + h + d + glue}
-        L ${flap + w * 0.15} ${h + d + h + d + glue}
-        L ${flap} ${h + d + h + d}
-
-        L ${flap - d * 0.8} ${h + d + h + d * 1.0}
-        L ${flap - d * 0.8} ${h + d + h + d * 0.8}
-        L ${flap} ${h + d + h}
-
-        L ${flap - flap * 0.85} ${h + d + h * 0.85}
-        L ${flap - flap} ${h + d + h * 0.85}
-        L ${flap - flap} ${h + d + h * 0.15}
-        L ${flap - flap * 0.85} ${h + d + h * 0.15}
-        L ${flap} ${h + d}
-
-        L ${flap - d * 0.8} ${h + d * 0.8}
-        L ${flap - d * 0.8} ${h + d * 0.2}
-        L ${flap} ${h}
-
-        L ${flap - flap * 0.85} ${h * 0.85}
-        L ${flap - flap} ${h * 0.85}
-        L ${flap - flap} ${h * 0.15}
-        L ${flap - flap * 0.85} ${h * 0.15}
-        Z
-      `;
-
-      path.setAttribute('d', dAttr);
-      path.setAttribute('stroke', '#ef4444');
-      path.setAttribute('stroke-width', '1.5');
-      path.setAttribute('fill', 'none');
-      dieLinesSvg.appendChild(path);
-    }
-
-    function drawLiquidDieLines(w, h, d, flap, glue) {
-      dieLinesSvg.innerHTML = '';
-      const totalW = w + d + w + d + glue;
-      const totalH = flap + h + flap;
-
-      dieLinesSvg.setAttribute('width', totalW);
-      dieLinesSvg.setAttribute('height', totalH);
-      dieLinesSvg.style.width = `${totalW}px`;
-      dieLinesSvg.style.height = `${totalH}px`;
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      
-      let dAttr = `
-        M 0 ${flap}
-        L ${w * 0.15} ${flap * 0.3}
-        L ${w * 0.3} 0
-        L ${w * 0.7} 0
-        L ${w * 0.85} ${flap * 0.3}
-        L ${w} ${flap}
-        
-        L ${w + d * 0.2} ${flap - d * 0.8}
-        L ${w + d * 0.8} ${flap - d * 0.8}
-        L ${w + d} ${flap}
-
-        L ${w + d + w} ${flap}
-
-        L ${w + d + w + d * 0.2} ${flap - d * 0.8}
-        L ${w + d + w + d * 0.8} ${flap - d * 0.8}
-        L ${w + d + w + d} ${flap}
-
-        L ${w + d + w + d + glue * 0.8} ${flap + glue * 0.4}
-        L ${w + d + w + d + glue * 0.8} ${flap + h - glue * 0.4}
-        L ${w + d + w + d} ${flap + h}
-
-        L ${w + d + w} ${flap + h}
-
-        L ${w + d + w - d * 0.2} ${flap + h + d * 0.8}
-        L ${w + d + w - d * 0.8} ${flap + h + d * 0.8}
-        L ${w + d} ${flap + h}
-
-        L ${w + d - w * 0.15} ${flap + h + flap * 0.7}
-        L ${w + d - w * 0.3} ${flap + h + flap}
-        L ${w + d - w * 0.7} ${flap + h + flap}
-        L ${w + d - w * 0.85} ${flap + h + flap * 0.7}
-        L d ${flap + h}
-
-        L ${d - d * 0.2} ${flap + h + d * 0.8}
-        L ${d - d * 0.8} ${flap + h + d * 0.8}
-        L 0 ${flap + h}
-        Z
-      `;
-
-      path.setAttribute('d', dAttr);
-      path.setAttribute('stroke', '#ef4444');
-      path.setAttribute('stroke-width', '1.5');
-      path.setAttribute('fill', 'none');
-      dieLinesSvg.appendChild(path);
-    }
-
-    // Event Listeners setup
-    Object.values(controls).forEach(input => {
-      input.addEventListener('input', () => {
-        updateTextBinders();
-        updateGeometry();
+      // Event Listeners setup
+      Object.values(controls).forEach((input) => {
+        input.addEventListener("input", () => {
+          updateTextBinders();
+          updateGeometry();
+        });
       });
-    });
 
-    toggleLabelsBtn.addEventListener('click', () => {
-      const isHidden = boxGrid.classList.toggle('hide-labels');
-      toggleLabelsBtn.textContent = isHidden ? "Afficher Zones" : "Masquer Zones";
-      toggleLabelsBtn.classList.toggle('secondary-btn');
-    });
+      toggleLabelsBtn.addEventListener("click", () => {
+        const isHidden = boxGrid.classList.toggle("hide-labels");
+        toggleLabelsBtn.textContent = isHidden
+          ? "Afficher Zones"
+          : "Masquer Zones";
+        toggleLabelsBtn.classList.toggle("secondary-btn");
+      });
 
-    toggleMarginsBtn.addEventListener('click', () => {
-      const show = boxGrid.classList.toggle('show-margins');
-      toggleMarginsBtn.textContent = show ? "Masquer Marges" : "Marges Perdues";
-      toggleMarginsBtn.classList.toggle('secondary-btn');
-    });
+      toggleMarginsBtn.addEventListener("click", () => {
+        const show = boxGrid.classList.toggle("show-margins");
+        toggleMarginsBtn.textContent = show
+          ? "Masquer Marges"
+          : "Marges Perdues";
+        toggleMarginsBtn.classList.toggle("secondary-btn");
+      });
 
-    printBtn.addEventListener('click', () => window.print());
+      printBtn.addEventListener("click", () => window.print());
 
-    // Initial triggers
-    updateTextBinders();
-    updateGeometry();
-
-  </script>
-</body>
+      // Initial triggers
+      updateTextBinders();
+      updateGeometry();
+    </script>
+  </body>
 </html>
