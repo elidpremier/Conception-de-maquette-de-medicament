@@ -1028,9 +1028,97 @@
           display: none !important;
         }
       }
+      /* --- Gate d'accès (identification) --- */
+      #accessGateOverlay {
+        position: fixed;
+        inset: 0;
+        background: #0f172a;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      #accessGateOverlay.hidden {
+        display: none;
+      }
+      .gate-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 32px;
+        width: 100%;
+        max-width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .gate-card h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #f8fafc;
+        text-transform: none;
+        letter-spacing: normal;
+        border: none;
+        padding: 0;
+        margin: 0;
+      }
+      .gate-card p.gate-sub {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: -8px;
+      }
+      .gate-error {
+        font-size: 12px;
+        color: #f87171;
+        display: none;
+      }
+      .gate-error.visible {
+        display: block;
+      }
+      .gate-status {
+        font-size: 12px;
+        color: #94a3b8;
+        display: none;
+      }
+      .gate-status.visible {
+        display: block;
+      }
     </style>
   </head>
   <body>
+    <div id="accessGateOverlay">
+      <form class="gate-card" id="accessGateForm" autocomplete="off">
+        <h2>Accès à l'outil</h2>
+        <p class="gate-sub">
+          Merci de renseigner votre adresse mail pour continuer (première
+          utilisation uniquement).
+        </p>
+        <div class="input-group">
+          <label for="gateEmail">Adresse mail *</label>
+          <input
+            type="email"
+            id="gateEmail"
+            required
+            placeholder="vous@exemple.com" />
+        </div>
+        <div class="input-group">
+          <label for="gatePrenom">Prénom (facultatif)</label>
+          <input type="text" id="gatePrenom" placeholder="Prénom" />
+        </div>
+        <div class="input-group">
+          <label for="gateNom">Nom (facultatif)</label>
+          <input type="text" id="gateNom" placeholder="Nom" />
+        </div>
+        <p class="gate-error" id="gateError">
+          Merci de saisir une adresse mail valide.
+        </p>
+        <p class="gate-status" id="gateStatus">Envoi en cours...</p>
+        <button type="submit" class="action-btn" id="gateSubmitBtn">
+          Accéder à l'outil
+        </button>
+      </form>
+    </div>
     <header>
       <div class="header-logo">
         <svg
@@ -1952,7 +2040,9 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         };
 
         const addRect = (x, y, rw, rh) =>
-          addPath(`M ${x} ${y} L ${x + rw} ${y} L ${x + rw} ${y + rh} L ${x} ${y + rh} Z`);
+          addPath(
+            `M ${x} ${y} L ${x + rw} ${y} L ${x + rw} ${y + rh} L ${x} ${y + rh} Z`,
+          );
 
         // Every shape below mirrors exactly the panel it outlines — plain
         // rectangles for flat panels, and the same trapezoid / notch
@@ -1961,9 +2051,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         // current printed content.
 
         // Row 1 — Rabat gauche (trapèze) + Avant + Côté 1 (Y = 0)
-        addPath(
-          `M ${flap} 0 L ${flap} ${h} L 0 ${h * 0.85} L 0 ${h * 0.15} Z`,
-        ); // Rabat orange gauche
+        addPath(`M ${flap} 0 L ${flap} ${h} L 0 ${h * 0.85} L 0 ${h * 0.15} Z`); // Rabat orange gauche
         addRect(flap, 0, w, h); // Face avant
         addRect(flap + w, 0, d, h); // Côté latéral 1
 
@@ -2157,6 +2245,94 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
       // Initial triggers
       updateTextBinders();
       updateGeometry();
+    </script>
+
+    <!-- === Gate d'accès (identification obligatoire) === -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+      (function () {
+        // ==========================================================
+        // CONFIGURATION EMAILJS — à remplacer par tes propres valeurs
+        // (voir https://www.emailjs.com/ — compte gratuit)
+        // ==========================================================
+        const EMAILJS_PUBLIC_KEY = "KDD6-WtUH7j_2-0ON";
+        const EMAILJS_SERVICE_ID = "service_9webef9";
+        const EMAILJS_TEMPLATE_ID = "template_1befonc";
+        const NOTIFY_EMAIL = "elidopremier@gmail.com";
+        const STORAGE_KEY = "packaging_tool_access_granted";
+        // ==========================================================
+
+        const overlay = document.getElementById("accessGateOverlay");
+        const form = document.getElementById("accessGateForm");
+        const emailInput = document.getElementById("gateEmail");
+        const prenomInput = document.getElementById("gatePrenom");
+        const nomInput = document.getElementById("gateNom");
+        const errorEl = document.getElementById("gateError");
+        const statusEl = document.getElementById("gateStatus");
+        const submitBtn = document.getElementById("gateSubmitBtn");
+
+        // Si déjà validé sur ce navigateur, on masque directement le gate
+        if (localStorage.getItem(STORAGE_KEY) === "1") {
+          overlay.classList.add("hidden");
+          return;
+        }
+
+        if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
+          emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+        }
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorEl.classList.remove("visible");
+
+          const email = emailInput.value.trim();
+          const prenom = prenomInput.value.trim();
+          const nom = nomInput.value.trim();
+
+          const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+          if (!emailOk) {
+            errorEl.classList.add("visible");
+            return;
+          }
+
+          submitBtn.disabled = true;
+          statusEl.textContent = "Envoi en cours...";
+          statusEl.classList.add("visible");
+
+          const fullName = [prenom, nom].filter(Boolean).join(" ") || email;
+          const payload = {
+            to_email: NOTIFY_EMAIL,
+            name: fullName,
+            time: new Date().toLocaleString("fr-FR"),
+            message:
+              `Nouvel accès à l'outil Packaging.\n` +
+              `Email : ${email}\n` +
+              `Prénom : ${prenom || "(non renseigné)"}\n` +
+              `Nom : ${nom || "(non renseigné)"}`,
+          };
+
+          try {
+            if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
+              await emailjs.send(
+                EMAILJS_SERVICE_ID,
+                EMAILJS_TEMPLATE_ID,
+                payload,
+              );
+            } else {
+              console.warn(
+                "EmailJS non configuré : identifiants non envoyés par mail. " +
+                  "Voir les constantes EMAILJS_* en haut de ce script.",
+              );
+            }
+          } catch (err) {
+            console.error("Erreur d'envoi EmailJS :", err);
+            // On ne bloque pas l'accès à l'outil même si l'envoi échoue
+          }
+
+          localStorage.setItem(STORAGE_KEY, "1");
+          overlay.classList.add("hidden");
+        });
+      })();
     </script>
   </body>
 </html>
