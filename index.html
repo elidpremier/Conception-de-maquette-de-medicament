@@ -45,10 +45,15 @@
         font-family: "Plus Jakarta Sans", sans-serif;
       }
 
+      html {
+        height: 100%;
+      }
+
       body {
         background: #0f172a;
         color: #f8fafc;
-        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
       }
@@ -61,6 +66,9 @@
         justify-content: space-between;
         align-items: center;
         z-index: 10;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: 10px;
       }
 
       .header-logo {
@@ -95,15 +103,36 @@
         display: grid;
         grid-template-columns: 360px 1fr;
         flex: 1;
+        min-height: 0;
         overflow: hidden;
-        height: calc(100vh - 65px);
       }
 
       @media (max-width: 1100px) {
+        body {
+          height: auto;
+          min-height: 100vh;
+          overflow: visible;
+        }
+
         .main-layout {
           grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
           height: auto;
-          overflow: auto;
+          overflow: visible;
+        }
+
+        /* Le rendu reste visible et fixe en haut de l'écran pendant
+           que le formulaire (sidebar) défile en dessous. */
+        .workspace {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          max-height: 55vh;
+        }
+
+        .sidebar {
+          overflow-y: visible;
+          max-height: none;
         }
       }
 
@@ -394,57 +423,46 @@
         text-align: center;
       }
 
-      /* Vertical Top/Bottom flaps (Fidelity matching liquid model) */
-      .vertical-tuck-top {
-        clip-path: polygon(5% 100%, 95% 100%, 80% 25%, 70% 0, 30% 0, 20% 25%);
-        background: #ffffff;
-        border: 1px solid rgba(148, 163, 184, 0.5);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        padding-bottom: 12px;
-      }
-
-      .vertical-tuck-top .flap-stripe-blue {
-        width: 100%;
-        height: 18px;
-        background: var(--primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: calc(9px * var(--fs-scale-flap, 1));
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .vertical-tuck-top .flap-stripe-orange {
-        width: 100%;
-        height: 10px;
-        background: var(--accent);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: calc(6px * var(--fs-scale-flap, 1));
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-      }
-
+      /* Vertical Top/Bottom flaps — structure alignée sur les rabats
+         Comprimé : une partie rectangulaire visible (proportionnelle à
+         la profondeur/hauteur de la boîte) qui porte le contenu, et une
+         partie trapézoïdale de verrouillage (repliée à l'intérieur),
+         laissée vide. Le clip-path exact est calculé dynamiquement en
+         JS (voir updateLayout) selon la hauteur de la zone rectangle. */
+      .vertical-tuck-top,
       .vertical-tuck-bottom {
-        clip-path: polygon(5% 0, 95% 0, 80% 75%, 70% 100%, 30% 100%, 20% 75%);
         background: #ffffff;
         border: 1px solid rgba(148, 163, 184, 0.5);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding-top: 12px;
       }
 
+      /* Conteneur du contenu, cantonné à la zone rectangulaire visible
+         (jamais dans la zone trapèze qui se replie/verrouille). */
+      .vertical-tuck-top .flap-rect-content,
+      .vertical-tuck-bottom .flap-rect-content {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: var(--flap-rect-h, 30px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Rabat Haut : pli avec Face Avant est en BAS du panneau tuck-top */
+      .vertical-tuck-top .flap-rect-content {
+        bottom: 0;
+        justify-content: flex-end; /* Bandes collées au pli (bas) */
+      }
+
+      /* Rabat Bas : pli avec Face Arrière est en HAUT du panneau tuck-bottom */
+      .vertical-tuck-bottom .flap-rect-content {
+        top: 0;
+        display: flex;
+        flex-direction: column-reverse; /* Inverser l'ordre pour coller au pli en haut après rotation */
+        justify-content: flex-end; 
+      }
+
+      .vertical-tuck-top .flap-stripe-blue,
       .vertical-tuck-bottom .flap-stripe-blue {
         width: 100%;
         height: 18px;
@@ -457,9 +475,9 @@
         font-weight: 800;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        transform: rotate(180deg);
       }
 
+      .vertical-tuck-top .flap-stripe-orange,
       .vertical-tuck-bottom .flap-stripe-orange {
         width: 100%;
         height: 10px;
@@ -472,7 +490,10 @@
         font-weight: 700;
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        transform: rotate(180deg);
+      }
+
+      .vertical-tuck-bottom .flap-stripe-blue,
+      .vertical-tuck-bottom .flap-stripe-orange {
       }
 
       /* White Tuck Flaps */
@@ -526,7 +547,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 8px;
+        font-size: calc(8px * var(--fs-scale-small, 1));
         color: #94a3b8;
         font-weight: 700;
       }
@@ -537,7 +558,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 8px;
+        font-size: calc(8px * var(--fs-scale-small, 1));
         color: #94a3b8;
         font-weight: 700;
       }
@@ -589,7 +610,7 @@
       }
 
       .main-panel-content .brand-title sup {
-        font-size: 10px;
+        font-size: calc(10px * var(--fs-scale-title, 1));
         font-weight: 600;
         top: -8px;
         left: 1px;
@@ -630,14 +651,14 @@
       }
 
       .liquid-logo-widget span {
-        font-size: 9px;
+        font-size: calc(9px * var(--fs-scale-small, 1));
         font-weight: 800;
         color: #475569;
         letter-spacing: 0.04em;
       }
 
       .liquid-qty-label {
-        font-size: 10px;
+        font-size: calc(10px * var(--fs-scale-small, 1));
         font-weight: 700;
         color: #475569;
       }
@@ -646,7 +667,7 @@
         background: var(--primary);
         color: #ffffff;
         padding: 8px 12px;
-        font-size: 18px;
+        font-size: calc(18px * var(--fs-scale-title, 1));
         font-weight: 800;
         letter-spacing: 0.05em;
         text-transform: uppercase;
@@ -658,7 +679,7 @@
         background: var(--accent);
         color: #ffffff;
         padding: 4px 12px;
-        font-size: 12px;
+        font-size: calc(12px * var(--fs-scale-body, 1));
         font-weight: 800;
         letter-spacing: 0.05em;
         text-transform: uppercase;
@@ -677,7 +698,7 @@
       }
 
       .liquid-desc-text {
-        font-size: 8px;
+        font-size: calc(8px * var(--fs-scale-body, 1));
         line-height: 1.3;
         color: #475569;
         margin-top: 36px;
@@ -685,7 +706,7 @@
       }
 
       .liquid-bottom-footer {
-        font-size: 10px;
+        font-size: calc(10px * var(--fs-scale-small, 1));
         font-weight: 800;
         color: #0f172a;
         text-transform: uppercase;
@@ -698,7 +719,7 @@
 
       .liquid-bottom-footer span {
         display: block;
-        font-size: 6.5px;
+        font-size: calc(6.5px * var(--fs-scale-small, 1));
         font-weight: 600;
         color: #64748b;
       }
@@ -835,7 +856,7 @@
       }
 
       .liquid-table-title {
-        font-size: 9px;
+        font-size: calc(9px * var(--fs-scale-small, 1));
         font-weight: 800;
         color: var(--primary);
         text-transform: uppercase;
@@ -847,7 +868,7 @@
       .liquid-table-row {
         display: flex;
         justify-content: space-between;
-        font-size: 7.5px;
+        font-size: calc(7.5px * var(--fs-scale-small, 1));
         color: #334155;
         margin-bottom: 3px;
       }
@@ -957,41 +978,101 @@
         font-weight: bold;
       }
 
+      /* Côtés du format Sirop : liste non proportionnelle à la hauteur
+         totale de la boîte (sinon texte disproportionné sur les formats
+         hauts) — taille fixe pilotée par le curseur "Petits textes". */
+      .liquid-side-list.bullets-list li {
+        font-size: calc(7px * var(--fs-scale-small, 1));
+      }
+
       .legend-panel {
-        margin-top: 20px;
+        margin-top: 12px;
         background: #1e293b;
         border: 1px solid #334155;
         border-radius: 8px;
-        padding: 16px;
+        padding: 10px 12px;
       }
 
       .legend-panel h3 {
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 700;
         color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
 
       .legend-list {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
       }
 
       .legend-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 11px;
+        gap: 6px;
+        font-size: 10px;
         color: #cbd5e1;
       }
 
       .legend-color {
-        width: 24px;
-        height: 12px;
+        width: 18px;
+        height: 9px;
         border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      /* Contrôle de zoom du graphique */
+      .zoom-controls {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 999px;
+        padding: 6px 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        z-index: 50;
+      }
+
+      .zoom-controls button {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: none;
+        background: #334155;
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+      }
+
+      .zoom-controls button:hover {
+        background: #475569;
+      }
+
+      .zoom-controls #zoomResetBtn {
+        font-size: 12px;
+        width: auto;
+        padding: 0 10px;
+        border-radius: 999px;
+      }
+
+      #zoomLevelLabel {
+        font-size: 11px;
+        font-weight: 700;
+        color: #cbd5e1;
+        min-width: 36px;
+        text-align: center;
       }
 
       /* Print settings overrides */
@@ -1007,7 +1088,8 @@
         }
         .sidebar,
         header,
-        .legend-panel {
+        .legend-panel,
+        .zoom-controls {
           display: none !important;
         }
         .main-layout {
@@ -1178,20 +1260,89 @@
           </div>
         </fieldset>
 
+        <h2>Modularité du patron</h2>
+        <fieldset>
+          <legend>Rabats (Tuck Flaps)</legend>
+          <div class="input-group">
+            <label>Longueur du rabat (mm)</label>
+            <input
+              type="range"
+              id="flapLength"
+              min="8"
+              max="50"
+              step="1"
+              value="28" />
+          </div>
+          <div class="input-group">
+            <label
+              style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" id="dustFlapsEnabled" checked />
+              Rabats poussière (dust flaps)
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset data-mode-only="tablet">
+          <legend>Contenu par panneau</legend>
+          <div class="input-group">
+            <label>Flanc Inférieur</label>
+            <select id="contentP7">
+              <option value="technical" selected>Infos techniques</option>
+              <option value="composition">Composition / Posologie</option>
+              <option value="barcode">Code-barres seul</option>
+              <option value="none">Vide</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Flanc Supérieur</label>
+            <select id="contentP12">
+              <option value="composition" selected>
+                Composition / Posologie
+              </option>
+              <option value="technical">Infos techniques</option>
+              <option value="barcode">Code-barres seul</option>
+              <option value="none">Vide</option>
+            </select>
+          </div>
+        </fieldset>
+
         <h2>Dimensions & Echelle</h2>
         <fieldset>
           <legend>Géométrie de l'étui (mm)</legend>
           <div class="input-group">
             <label>Largeur (W)</label>
-            <input type="number" id="dimW" value="90" min="40" max="250" />
+            <input type="number" id="dimW" value="90" min="15" max="250" />
           </div>
           <div class="input-group">
             <label>Hauteur (H)</label>
-            <input type="number" id="dimH" value="60" min="40" max="250" />
+            <input type="number" id="dimH" value="60" min="20" max="250" />
           </div>
           <div class="input-group">
             <label>Profondeur / Épaisseur (D)</label>
-            <input type="number" id="dimD" value="24" min="15" max="150" />
+            <input type="number" id="dimD" value="24" min="10" max="150" />
+          </div>
+          <div
+            style="font-size: 10px; color: #64748b; line-height: 1.4;">
+            Descendez ces valeurs (ex. 18 × 45 × 15 mm) pour obtenir un
+            format collyre / petit flacon.
+          </div>
+        </fieldset>
+
+        <h2>Logo</h2>
+        <fieldset>
+          <legend>Logo personnalisé</legend>
+          <div class="input-group">
+            <label>Importer une image (PNG/SVG/JPG)</label>
+            <input type="file" id="logoUpload" accept="image/*" />
+          </div>
+          <div class="input-group">
+            <button
+              type="button"
+              id="logoResetBtn"
+              class="secondary-btn"
+              style="padding: 6px 12px; font-size: 12px;">
+              Réinitialiser le logo par défaut
+            </button>
           </div>
         </fieldset>
 
@@ -1243,26 +1394,28 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Informations Techniques</legend>
+        <fieldset data-mode-only="tablet">
+          <legend>Comprimé — Composition (Flanc)</legend>
           <div class="input-group">
-            <label>Composition (Recto / Face 1)</label>
-            <textarea id="txtComposition1" rows="3">
-Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
-            >
-          </div>
-          <div class="input-group">
-            <label>Composition (Verso / Face 2)</label>
+            <label>Texte de composition (option "Composition / Posologie")</label>
             <textarea id="txtComposition2" rows="3">
 Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
             >
           </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Indications & Posologie</legend>
           <div class="input-group">
-            <label>Indications & Posologie</label>
+            <label>Texte (une ligne = un point de la liste)</label>
             <textarea id="txtIndications" rows="3">
 Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 comprimés toutes les 4 à 6 heures.&#10;Ne pas dépasser 3 g par jour.</textarea
             >
           </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Codes, Dates & Réglementaire</legend>
           <div class="input-group">
             <label>Code-barres (10 chiffres)</label>
             <input type="text" id="txtBarcode" value="1234567890" />
@@ -1281,6 +1434,33 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           <div class="input-group">
             <label>Date d'expiration</label>
             <input type="text" id="txtExpDate" value="MM/AAAA" />
+          </div>
+        </fieldset>
+
+        <fieldset data-mode-only="liquid">
+          <legend>Sirop — Côté Gauche (P6)</legend>
+          <div class="input-group">
+            <label>Texte descriptif (Face avant / arrière)</label>
+            <textarea id="txtLiquidDescription" rows="3">
+Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.</textarea
+            >
+          </div>
+          <div class="input-group">
+            <label>Table de composition (une ligne = "Nom: valeur")</label>
+            <textarea id="txtLiquidComposition" rows="6">
+Paracétamol: 24 mg
+Saccharose: 0.3 g
+Propylène Glycol: 0.1 ml
+Sorbitol: 0.15 g
+Arôme fraise: Q.S.
+Eau purifiée: Q.S.P 1 ml</textarea
+            >
+          </div>
+          <div class="input-group">
+            <label>Précautions</label>
+            <textarea id="txtLiquidPrecautions" rows="2">
+Tenir hors de la portée et de la vue des enfants. Conserver à une température ne dépassant pas 30°C.</textarea
+            >
           </div>
         </fieldset>
 
@@ -1332,6 +1512,14 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
 
       <!-- Workspace Preview -->
       <div class="workspace">
+        <div class="zoom-controls" id="zoomControls">
+          <button type="button" id="zoomOutBtn" title="Zoom arrière">−</button>
+          <span id="zoomLevelLabel">100%</span>
+          <button type="button" id="zoomInBtn" title="Zoom avant">+</button>
+          <button type="button" id="zoomResetBtn" title="Réinitialiser le zoom">
+            100%
+          </button>
+        </div>
         <div class="patron-sheet" id="patronSheet">
           <!-- SVG Overlays for precise technical die cut paths -->
           <svg
@@ -1489,17 +1677,23 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         txtQty: document.getElementById("txtQty"),
         txtLabName: document.getElementById("txtLabName"),
         txtSlogan: document.getElementById("txtSlogan"),
-        txtComposition1: document.getElementById("txtComposition1"),
         txtComposition2: document.getElementById("txtComposition2"),
         txtIndications: document.getElementById("txtIndications"),
         txtBarcode: document.getElementById("txtBarcode"),
         txtRegInfo: document.getElementById("txtRegInfo"),
         txtMfgDate: document.getElementById("txtMfgDate"),
         txtExpDate: document.getElementById("txtExpDate"),
+        txtLiquidDescription: document.getElementById("txtLiquidDescription"),
+        txtLiquidComposition: document.getElementById("txtLiquidComposition"),
+        txtLiquidPrecautions: document.getElementById("txtLiquidPrecautions"),
         fsScaleTitle: document.getElementById("fsScaleTitle"),
         fsScaleBody: document.getElementById("fsScaleBody"),
         fsScaleFlap: document.getElementById("fsScaleFlap"),
         fsScaleSmall: document.getElementById("fsScaleSmall"),
+        flapLength: document.getElementById("flapLength"),
+        dustFlapsEnabled: document.getElementById("dustFlapsEnabled"),
+        contentP7: document.getElementById("contentP7"),
+        contentP12: document.getElementById("contentP12"),
       };
 
       const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
@@ -1508,6 +1702,75 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
       const boxGrid = document.getElementById("boxGrid");
       const dieLinesSvg = document.getElementById("dieLinesSvg");
       const patronSheet = document.getElementById("patronSheet");
+
+      // --- Zoom du graphique (rendu du patron) ---
+      const zoomOutBtn = document.getElementById("zoomOutBtn");
+      const zoomInBtn = document.getElementById("zoomInBtn");
+      const zoomResetBtn = document.getElementById("zoomResetBtn");
+      const zoomLevelLabel = document.getElementById("zoomLevelLabel");
+      const workspaceEl = document.querySelector(".workspace");
+      const ZOOM_MIN = 0.25;
+      const ZOOM_MAX = 3;
+      const ZOOM_STEP = 0.1;
+      let zoomLevel = 1;
+
+      function applyZoom() {
+        patronSheet.style.transform = `scale(${zoomLevel})`;
+        zoomLevelLabel.textContent = `${Math.round(zoomLevel * 100)}%`;
+      }
+
+      function setZoom(value) {
+        zoomLevel = Math.min(
+          ZOOM_MAX,
+          Math.max(ZOOM_MIN, Math.round(value * 100) / 100),
+        );
+        applyZoom();
+      }
+
+      zoomInBtn.addEventListener("click", () => setZoom(zoomLevel + ZOOM_STEP));
+      zoomOutBtn.addEventListener("click", () => setZoom(zoomLevel - ZOOM_STEP));
+      zoomResetBtn.addEventListener("click", () => setZoom(1));
+
+      // Zoom à la molette (Ctrl/Cmd + molette) directement sur le rendu
+      workspaceEl.addEventListener(
+        "wheel",
+        (e) => {
+          if (!e.ctrlKey && !e.metaKey) return;
+          e.preventDefault();
+          setZoom(zoomLevel + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+        },
+        { passive: false },
+      );
+      const logoUpload = document.getElementById("logoUpload");
+      const logoResetBtn = document.getElementById("logoResetBtn");
+
+      // Logo personnalisé — stocké en mémoire (data URL), utilisé par
+      // getLogoMarkup() partout où un logo est affiché (Comprimé & Sirop).
+      let customLogoUrl = null;
+
+      function getLogoMarkup(sizePx) {
+        if (customLogoUrl) {
+          return `<img src="${customLogoUrl}" alt="Logo" style="width:${sizePx}px; height:${sizePx}px; object-fit:contain; flex-shrink:0;" />`;
+        }
+        return `<div class="logo-icon" style="width:${sizePx}px; height:${sizePx}px;"></div>`;
+      }
+
+      logoUpload.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          customLogoUrl = reader.result;
+          updateTextBinders();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      logoResetBtn.addEventListener("click", () => {
+        customLogoUrl = null;
+        logoUpload.value = "";
+        updateTextBinders();
+      });
 
       // Default template presets
       const presets = {
@@ -1520,12 +1783,13 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           txtProduct: "Paracétamol",
           txtDosage: "paracétamol 500 mg",
           txtQty: "20 comprimés",
-          txtComposition1:
-            "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
           txtComposition2:
             "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
           txtIndications:
             "Traitement symptomatique de la douleur et/ou de la fièvre.\nAdulte : 1 à 2 comprimés toutes les 4 à 6 heures.\nNe pas dépasser 3 g par jour.",
+          txtLiquidDescription: "",
+          txtLiquidComposition: "",
+          txtLiquidPrecautions: "",
         },
         liquid: {
           dimW: 80,
@@ -1536,19 +1800,32 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           txtProduct: "Sirop de Paracétamol",
           txtDosage: "paracétamol 2.4% (120mg / 5ml)",
           txtQty: "200 ML",
-          txtComposition1:
-            "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
           txtComposition2:
             "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
           txtIndications:
             "Traitement symptomatique des douleurs légères à modérées.\nEnfants : 15 mg/kg toutes les 6 heures.\nUtiliser exclusivement la pipette doseuse fournie.",
+          txtLiquidDescription:
+            "Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.",
+          txtLiquidComposition:
+            "Paracétamol: 24 mg\nSaccharose: 0.3 g\nPropylène Glycol: 0.1 ml\nSorbitol: 0.15 g\nArôme fraise: Q.S.\nEau purifiée: Q.S.P 1 ml",
+          txtLiquidPrecautions:
+            "Tenir hors de la portée et de la vue des enfants. Conserver à une température ne dépassant pas 30°C.",
         },
       };
+
+      // Affiche uniquement les champs pertinents pour le type de boîte
+      // sélectionné (évite les zones dupliquées / sans effet visible).
+      function applyModeVisibility(type) {
+        document.querySelectorAll("[data-mode-only]").forEach((el) => {
+          el.style.display = el.dataset.modeOnly === type ? "" : "none";
+        });
+      }
 
       // Apply template properties
       controls.boxType.addEventListener("change", () => {
         const type = controls.boxType.value;
         const preset = presets[type];
+        applyModeVisibility(type);
 
         controls.dimW.value = preset.dimW;
         controls.dimH.value = preset.dimH;
@@ -1558,9 +1835,11 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         controls.txtProduct.value = preset.txtProduct;
         controls.txtDosage.value = preset.txtDosage;
         controls.txtQty.value = preset.txtQty;
-        controls.txtComposition1.value = preset.txtComposition1;
         controls.txtComposition2.value = preset.txtComposition2;
         controls.txtIndications.value = preset.txtIndications;
+        controls.txtLiquidDescription.value = preset.txtLiquidDescription;
+        controls.txtLiquidComposition.value = preset.txtLiquidComposition;
+        controls.txtLiquidPrecautions.value = preset.txtLiquidPrecautions;
 
         updateTextBinders();
         updateGeometry();
@@ -1580,7 +1859,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
             <p class="brand-subtitle">${controls.txtDosage.value}</p>
           </div>
           <div class="logo-container">
-            <div class="logo-icon"></div>
+            ${getLogoMarkup(22)}
             <div class="logo-text">
               <span class="logo-name">${controls.txtLabName.value}</span>
               <span class="logo-slogan">${controls.txtSlogan.value}</span>
@@ -1603,7 +1882,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
           </div>
-          <div class="logo-icon"></div>
+          ${getLogoMarkup(22)}
         </div>
       `;
       }
@@ -1653,6 +1932,33 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
       `;
       }
 
+      function getBarcodeOnlyContent() {
+        return `
+        <div class="barcode-area" style="display:flex; align-items:center; justify-content:center; height:100%;">
+          <div>
+            <div class="barcode-graphic"></div>
+            <div class="barcode-number">${controls.txtBarcode.value}</div>
+          </div>
+        </div>
+      `;
+      }
+
+      // Générateur générique de contenu par panneau — utilisé par les
+      // sélecteurs "Contenu par panneau" (modularité de l'interface).
+      function getPanelContent(mode) {
+        switch (mode) {
+          case "technical":
+            return getTechnicalContent();
+          case "composition":
+            return getCompositionDosageContent();
+          case "barcode":
+            return getBarcodeOnlyContent();
+          case "none":
+          default:
+            return "";
+        }
+      }
+
       // Content Generators for Liquid (Vertical) Mode
       function getLiquidFrontBackContent() {
         return `
@@ -1660,11 +1966,15 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           <div class="liquid-brand-header">
             <div class="liquid-logo-row">
               <div class="liquid-logo-widget">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                ${
+                  customLogoUrl
+                    ? `<img src="${customLogoUrl}" alt="Logo" style="width:24px; height:24px; object-fit:contain; flex-shrink:0;" />`
+                    : `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2C8 6 4 10 4 14C4 18.4 7.6 22 12 22C16.4 22 20 18.4 20 14C20 10 16 6 12 2ZM12 20C8.7 20 6 17.3 6 14C6 11.5 8.6 8.3 12 4.6C15.4 8.3 18 11.5 18 14C18 17.3 15.3 20 12 20Z" fill="var(--primary)"/>
                   <circle cx="12" cy="14" r="3" fill="var(--accent)"/>
-                </svg>
-                <span>LOGO HERE</span>
+                </svg>`
+                }
+                <span>${controls.txtLabName.value}</span>
               </div>
               <div class="liquid-qty-label">${controls.txtQty.value}</div>
             </div>
@@ -1680,8 +1990,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           </div>
           
           <div class="liquid-desc-text">
-            Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. 
-            Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.
+            ${controls.txtLiquidDescription.value}
           </div>
           
           <div class="liquid-bottom-footer">
@@ -1693,25 +2002,35 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
       }
 
       function getLiquidSide1Content() {
-        // Composition Ingredients table matching the Vecteezy model
+        // Composition Ingredients table — construite depuis le champ
+        // éditable "Table de composition" (une ligne = "Nom: valeur").
+        const rows = controls.txtLiquidComposition.value
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const idx = line.indexOf(":");
+            const name = idx >= 0 ? line.slice(0, idx).trim() : line;
+            const value = idx >= 0 ? line.slice(idx + 1).trim() : "";
+            return `<div class="liquid-table-row"><span>${name}</span><span>${value}</span></div>`;
+          })
+          .join("");
+
         return `
         <div class="liquid-side-1">
           <div class="liquid-composition-table">
             <div class="liquid-table-title">Composition / Dose</div>
-            <div class="liquid-table-row"><span>Paracétamol</span><span>24 mg</span></div>
-            <div class="liquid-table-row"><span>Saccharose</span><span>0.3 g</span></div>
-            <div class="liquid-table-row"><span>Propylène Glycol</span><span>0.1 ml</span></div>
-            <div class="liquid-table-row"><span>Sorbitol</span><span>0.15 g</span></div>
-            <div class="liquid-table-row"><span>Arôme fraise</span><span>Q.S.</span></div>
-            <div class="liquid-table-row"><span>Eau purifiée</span><span>Q.S.P 1 ml</span></div>
+            ${rows}
           </div>
           
-          <div style="font-size: 8px; line-height: 1.3; color: #475569; margin: 12px 0;">
-            <strong style="text-transform:uppercase; font-size:8.5px; display:block; margin-bottom:3px; color:#0f172a;">Précautions :</strong>
-            Tenir hors de la portée et de la vue des enfants. Conserver à une température ne dépassant pas 30°C. 
+          <div style="font-size: calc(7px * var(--fs-scale-small, 1)); line-height: 1.3; color: #475569; margin: 12px 0;">
+            <strong style="text-transform:uppercase; font-size: calc(7.5px * var(--fs-scale-small, 1)); display:block; margin-bottom:3px; color:#0f172a;">Précautions :</strong>
+            ${controls.txtLiquidPrecautions.value}
           </div>
 
-          <div style="font-size: 8.5px; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: auto;">
+          <div style="font-size: calc(7.5px * var(--fs-scale-small, 1)); border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: auto;">
+            <strong>Fab. :</strong> ${controls.txtMfgDate.value} &nbsp;
+            <strong>Exp. :</strong> ${controls.txtExpDate.value}<br/>
             <strong>Code AMM:</strong> ${controls.txtRegInfo.value.split("/")[1] || "En cours"}<br/>
             <strong>N° de Lot:</strong> ${controls.txtBarcode.value}
           </div>
@@ -1728,9 +2047,9 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           .join("");
         return `
         <div class="liquid-side-1">
-          <div style="font-size: 8px; line-height: 1.3; color: #475569;">
-            <strong style="text-transform:uppercase; font-size:8.5px; display:block; margin-bottom:3px; color:#0f172a;">Indications & Dosage :</strong>
-            <ul class="bullets-list" style="margin-top: 4px;">
+          <div style="font-size: calc(7px * var(--fs-scale-small, 1)); line-height: 1.3; color: #475569;">
+            <strong style="text-transform:uppercase; font-size: calc(7.5px * var(--fs-scale-small, 1)); display:block; margin-bottom:3px; color:#0f172a;">Indications & Dosage :</strong>
+            <ul class="bullets-list liquid-side-list" style="margin-top: 4px;">
               ${listItems}
             </ul>
           </div>
@@ -1740,7 +2059,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
               <div class="barcode-graphic"></div>
               <div class="barcode-number">${controls.txtBarcode.value}</div>
             </div>
-            <div style="font-size: 7px; color: #64748b; text-align: center; margin-top: 4px;">
+            <div style="font-size: calc(7px * var(--fs-scale-small, 1)); color: #64748b; text-align: center; margin-top: 4px;">
               ${controls.txtRegInfo.value.split("/")[0] || ""}
             </div>
           </div>
@@ -1753,39 +2072,51 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
 
         // Update panels text content based on the selected mode
         if (type === "tablet") {
-          // P1: Left Orange Tuck Flap
+          const flapPx = Number(controls.flapLength.value) * 2.8;
+          // P1: Rabat Gauche — la zone rabat (largeur réglable, repliée/
+          // collée à l'intérieur) reste vide ; le contenu du Côté
+          // Latéral 1 est confiné à la zone visible, entièrement avant
+          // le pli qui l'attache à la Face avant, pour rester lisible
+          // une fois la boîte reconstituée.
           document.getElementById("cnt-p1").innerHTML = `
-          <div class="rot-text">
-            <span>${controls.txtProduct.value}</span>
-            <span style="font-size:8px; font-weight:400; opacity:0.9;">${controls.txtDosage.value}</span>
+          <div style="display:flex; width:100%; height:100%;">
+            <div style="flex: 0 0 ${flapPx}px;"></div>
+            <div style="flex: 1 1 auto; height:100%;">${getSideContent("left")}</div>
           </div>
         `;
           // P5: Front
           document.getElementById("cnt-p5").innerHTML = getFrontContent();
-          // P6: Side 1
-          document.getElementById("cnt-p6").innerHTML = getSideContent("left");
-          // P7: Bottom (Technical)
-          document.getElementById("cnt-p7").innerHTML = getTechnicalContent();
-          // P8: Side 2
-          document.getElementById("cnt-p8").innerHTML = getSideContent("right");
+          // P7: Bottom — contenu configurable
+          document.getElementById("cnt-p7").innerHTML = getPanelContent(
+            controls.contentP7.value,
+          );
           // P9: Back
           document.getElementById("cnt-p9").innerHTML = getFrontContent();
-          // P10: Right Orange Tuck Flap
+          // P10: Rabat Droit — même logique en miroir : le contenu du
+          // Côté Latéral 2 reste dans la zone visible, avant le pli qui
+          // l'attache à la Face arrière ; la zone rabat (largeur
+          // réglable) reste vide.
           document.getElementById("cnt-p10").innerHTML = `
-          <div class="rot-text">
-            <span>${controls.txtProduct.value}</span>
-            <span style="font-size:8px; font-weight:400; opacity:0.9;">${controls.txtDosage.value}</span>
+          <div style="display:flex; width:100%; height:100%;">
+            <div style="flex: 1 1 auto; height:100%;">${getSideContent("right")}</div>
+            <div style="flex: 0 0 ${flapPx}px;"></div>
           </div>
         `;
-          // P12: Top (Composition / Posology)
-          document.getElementById("cnt-p12").innerHTML =
-            getCompositionDosageContent();
+          // P12: Top — contenu configurable
+          document.getElementById("cnt-p12").innerHTML = getPanelContent(
+            controls.contentP12.value,
+          );
         } else {
           // Liquid format (Vertical)
-          // P1: Top Tuck Flap (Fidelity style)
+          // P1: Rabat Haut (Tuck Lid) — le contenu reste confiné à la
+          // zone rectangulaire visible (côté pli avec la Face Avant) ;
+          // la zone trapèze de verrouillage (pointe) reste vide.
+          // L'ordre est : orange puis bleu (le bleu est collé au pli en bas).
           document.getElementById("cnt-p1").innerHTML = `
-          <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
-          <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
+          <div class="flap-rect-content">
+            <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
+            <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
+          </div>
         `;
 
           // Front & Back panels (High Fidelity Liquid template)
@@ -1800,10 +2131,15 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           // Right Side Panel 2 (Dosage and Barcode)
           document.getElementById("cnt-p8").innerHTML = getLiquidSide2Content();
 
-          // P10: Bottom Tuck Flap
+          // P10: Rabat Bas (Tuck Lid) — même logique, contenu confiné
+          // à la zone rectangulaire côté pli avec la Face Arrière ; la
+          // zone trapèze de verrouillage (pointe) reste vide.
+          // Inversion 180°. Les bandes doivent être collées au pli (en haut).
           document.getElementById("cnt-p10").innerHTML = `
-          <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
-          <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
+          <div class="flap-rect-content" style="transform: rotate(180deg); transform-origin: center center; justify-content: flex-end;">
+            <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
+            <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
+          </div>
         `;
 
           // P9: Glue flap (Vertical tab)
@@ -1835,7 +2171,8 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         const w = controls.dimW.value * scale;
         const h = controls.dimH.value * scale;
         const d = controls.dimD.value * scale;
-        const flap = 45 * scale;
+        const flap = Number(controls.flapLength.value) * scale;
+        const dustEnabled = controls.dustFlapsEnabled.checked;
         const glue = 12 * scale;
 
         // Update Theme Colors
@@ -1871,29 +2208,32 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         document.documentElement.style.setProperty("--box-h", `${h}px`);
 
         if (type === "tablet") {
-          // Corrected coherent net: totalW no longer has a phantom extra
-          // column, and each row's cells are contiguous (no overlap, no gap).
-          const totalW = flap + w + d + flap;
+          // Panneau "rabat" fusionné avec le "côté latéral" : la partie
+          // rabat (trapèze, largeur flap) se replie/colle à l'intérieur,
+          // et la partie côté (largeur d) reste solidaire du même panneau
+          // pour constituer la face latérale visible une fois la boîte
+          // fermée. newFlap = largeur totale de ce panneau combiné.
+          const newFlap = flap + d;
+          const totalW = newFlap + w + newFlap;
           const totalH = h + d + h + d + glue;
 
           patronSheet.style.width = `${totalW}px`;
           patronSheet.style.height = `${totalH}px`;
 
           // Labels
-          document.getElementById("lbl-p1").textContent = "Rabat Orange Gauche";
+          document.getElementById("lbl-p1").textContent =
+            "Rabat + Côté Gauche";
           document.getElementById("lbl-p2").textContent = "Patte de Collage";
           document.getElementById("lbl-p3").textContent =
             "Rabat Poussière Gauche";
           document.getElementById("lbl-p4").textContent =
             "Rabat Poussière Droite";
           document.getElementById("lbl-p5").textContent = "Face Avant (Recto)";
-          document.getElementById("lbl-p6").textContent = "Côté Latéral 1";
           document.getElementById("lbl-p7").textContent = "Flanc Inférieur";
-          document.getElementById("lbl-p8").textContent = "Côté Latéral 2";
           document.getElementById("lbl-p9").textContent =
             "Face Arrière (Verso)";
           document.getElementById("lbl-p10").textContent =
-            "Rabat Orange Droite";
+            "Rabat + Côté Droite";
           document.getElementById("lbl-p11").textContent =
             "Rabat Poussière Gauche";
           document.getElementById("lbl-p12").textContent = "Flanc Supérieur";
@@ -1906,48 +2246,72 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           document.getElementById("p3").className = "panel dust-left-top";
           document.getElementById("p4").className = "panel dust-right-top";
           document.getElementById("p5").className = "panel";
-          document.getElementById("p6").className = "panel";
           document.getElementById("p7").className = "panel";
-          document.getElementById("p8").className = "panel";
           document.getElementById("p9").className = "panel";
           document.getElementById("p10").className = "panel orange-flap-right";
           document.getElementById("p11").className = "panel dust-left-bottom";
           document.getElementById("p12").className = "panel";
           document.getElementById("p13").className = "panel dust-right-bottom";
 
-          // Row 1 — Rabat gauche + Avant + Côté 1 (Y = 0)
-          setPosition("p1", 0, 0, flap, h);
-          setPosition("p5", flap, 0, w, h);
-          setPosition("p6", flap + w, 0, d, h);
+          // Clip-path dynamique : la zone Côté (visible après pliage) est
+          // rectangulaire, seule la zone Rabat (verrouillage/insertion)
+          // est trapézoïdale. Calculé en % car la largeur du panneau
+          // (newFlap) varie avec le curseur de longueur de rabat et D.
+          const pctRabat = (flap / newFlap) * 100;
+          const pctCote = (d / newFlap) * 100;
+          document.getElementById("p1").style.clipPath =
+            `polygon(100% 0%, 100% 100%, ${pctRabat}% 100%, 0% 85%, 0% 15%, ${pctRabat}% 0%)`;
+          document.getElementById("p10").style.clipPath =
+            `polygon(0% 0%, 0% 100%, ${pctCote}% 100%, 100% 85%, 100% 15%, ${pctCote}% 0%)`;
+
+          // Panneaux "Côté Latéral" désormais fusionnés dans p1 / p10
+          hidePanel("p6");
+          hidePanel("p8");
+
+          if (!dustEnabled) {
+            hidePanel("p3");
+            hidePanel("p4");
+            hidePanel("p11");
+            hidePanel("p13");
+          }
+
+          // Row 1 — Rabat+Côté gauche + Avant (Y = 0)
+          setPosition("p1", 0, 0, newFlap, h);
+          setPosition("p5", newFlap, 0, w, h);
 
           // Row 2 — Rabats poussière + Flanc inférieur (Y = H)
-          setPosition("p3", flap - d, h, d, d);
-          setPosition("p7", flap, h, w, d);
-          setPosition("p4", flap + w, h, d, d);
+          if (dustEnabled) {
+            setPosition("p3", newFlap - d, h, d, d);
+            setPosition("p4", newFlap + w, h, d, d);
+          }
+          setPosition("p7", newFlap, h, w, d);
 
-          // Row 3 — Côté 2 + Arrière + Rabat droit (Y = H + D)
-          // Bloc translaté vers la gauche de -d : Face arrière s'aligne
-          // désormais verticalement avec Face avant (x = flap).
-          setPosition("p8", flap - d, h + d, d, h);
-          setPosition("p9", flap, h + d, w, h);
-          setPosition("p10", flap + w, h + d, flap, h);
+          // Row 3 — Arrière + Rabat+Côté droit (Y = H + D)
+          setPosition("p9", newFlap, h + d, w, h);
+          setPosition("p10", newFlap + w, h + d, newFlap, h);
 
           // Row 4 — Rabats poussière + Flanc supérieur (Y = H + D + H)
-          // (translatées de -d pour suivre le même déplacement)
-          setPosition("p11", flap - d, h + d + h, d, d);
-          setPosition("p12", flap, h + d + h, w, d);
-          setPosition("p13", flap + w, h + d + h, d, d);
+          if (dustEnabled) {
+            setPosition("p11", newFlap - d, h + d + h, d, d);
+            setPosition("p13", newFlap + w, h + d + h, d, d);
+          }
+          setPosition("p12", newFlap, h + d + h, w, d);
 
           // Row 5 — Patte de collage (Y = H + D + H + D)
-          // (translatée de -d, reste attachée sous le Flanc Supérieur)
-          setPosition("p2", flap, h + d + h + d, w, glue);
+          setPosition("p2", newFlap, h + d + h + d, w, glue);
 
           // SVG Outline
-          drawTabletDieLines(w, h, d, flap, glue);
+          drawTabletDieLines(w, h, d, flap, glue, dustEnabled);
         } else {
           // LIQUID MODE (Vertical packaging carton flat layout)
+          // "flap" (curseur "Longueur du rabat") = longueur de la seule
+          // partie trapézoïdale de verrouillage. La partie rectangulaire
+          // visible (contenu) a une hauteur égale à la profondeur "d"
+          // de la boîte, pour rester cohérente avec ses dimensions.
+          const flapRectH = d;
+          const flapTotal = flap + flapRectH;
           const totalW = w + d + w + d + glue;
-          const totalH = flap + h + flap;
+          const totalH = flapTotal + h + flapTotal;
           const dust = Math.min(d, flap);
 
           patronSheet.style.width = `${totalW}px`;
@@ -1976,6 +2340,12 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
             "Rabat Poussière Bas 2";
           hidePanel("p12");
           hidePanel("p13");
+          if (!dustEnabled) {
+            hidePanel("p2");
+            hidePanel("p3");
+            hidePanel("p4");
+            hidePanel("p11");
+          }
 
           // Classes
           document.getElementById("p1").className = "panel vertical-tuck-top";
@@ -1995,31 +2365,63 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           document.getElementById("p11").className =
             "panel liquid-dust-bottom-right";
 
-          // Main panels row (Y = flap)
-          setPosition("p5", 0, flap, w, h);
-          setPosition("p6", w, flap, d, h);
-          setPosition("p7", w + d, flap, w, h);
-          setPosition("p8", w + d + w, flap, d, h);
-          setPosition("p9", w + d + w + d, flap, glue, h);
+          // Main panels row (Y = flapTotal)
+          setPosition("p5", 0, flapTotal, w, h);
+          setPosition("p6", w, flapTotal, d, h);
+          setPosition("p7", w + d, flapTotal, w, h);
+          setPosition("p8", w + d + w, flapTotal, d, h);
+          setPosition("p9", w + d + w + d, flapTotal, glue, h);
 
-          // Flaps Top (Y = flap - dust / 0)
-          setPosition("p1", 0, 0, w, flap); // Top tuck flap on Front Panel (P5)
-          setPosition("p2", w, 0, d, dust); // Left dust flap top (P6)
-          setPosition("p3", w + d + w, 0, d, dust); // Right dust flap top (P8)
+          // Flaps Top (Y = 0 to flapTotal)
+          setPosition("p1", 0, 0, w, flapTotal); // Top tuck flap on Front Panel (P5)
+          if (dustEnabled) {
+            // Positionner les rabats poussière haut juste au-dessus des panneaux latéraux
+            setPosition("p2", w, flapTotal - dust, d, dust); // Left dust flap top (P6)
+            setPosition("p3", w + d + w, flapTotal - dust, d, dust); // Right dust flap top (P8)
+          }
 
-          // Flaps Bottom (Y = flap + h)
-          setPosition("p10", w + d, flap + h, w, flap); // Bottom tuck flap on Back Panel (P7)
-          setPosition("p4", w, flap + h, d, dust); // Left dust flap bottom (P6)
-          setPosition("p11", w + d + w, flap + h, d, dust); // Right dust flap bottom (P8)
+          // Flaps Bottom (Y = flapTotal + h)
+          // On s'assure que P10 est exactement aligné sur X = w + d (Face Arrière P7)
+          setPosition("p10", w + d, flapTotal + h, w, flapTotal); 
+          
+          // On force le z-index pour être sûr qu'il est visible et bien placé
+          document.getElementById("p10").style.zIndex = "10";
+          if (dustEnabled) {
+            // Positionner les rabats poussière bas juste en-dessous des panneaux latéraux
+            setPosition("p4", w, flapTotal + h, d, dust); // Left dust flap bottom (P6)
+            setPosition("p11", w + d + w, flapTotal + h, d, dust); // Right dust flap bottom (P8)
+          }
+
+          // Rabats Haut/Bas : structure "Côté Comprimé" — zone
+          // rectangulaire visible (contenu), hauteur = profondeur (d)
+          // de la boîte ; zone trapèze (verrouillage, vide), hauteur =
+          // longueur du rabat réglée par le curseur.
+          const pctRect = (flapRectH / flapTotal) * 100;
+          const yTrap = 100 - pctRect; // % depuis le haut où débute le rectangle (rabat haut)
+
+          document.getElementById("p1").style.clipPath =
+            `polygon(0% 100%, 100% 100%, 100% ${yTrap}%, 85% 0%, 15% 0%, 0% ${yTrap}%)`;
+          document.getElementById("p1").style.setProperty(
+            "--flap-rect-h",
+            `${flapRectH}px`,
+          );
+
+          document.getElementById("p10").style.clipPath =
+            `polygon(0% 0%, 100% 0%, 100% ${pctRect}%, 85% 100%, 15% 100%, 0% ${pctRect}%)`;
+          document.getElementById("p10").style.setProperty(
+            "--flap-rect-h",
+            `${flapRectH}px`,
+          );
 
           // SVG Outline for Liquid vertical carton
-          drawLiquidDieLines(w, h, d, flap, glue, dust);
+          drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled);
         }
       }
 
-      function drawTabletDieLines(w, h, d, flap, glue) {
+      function drawTabletDieLines(w, h, d, flap, glue, dustEnabled = true) {
         dieLinesSvg.innerHTML = "";
-        const totalW = flap + w + d + flap;
+        const newFlap = flap + d;
+        const totalW = newFlap + w + newFlap;
         const totalH = h + d + h + d + glue;
 
         dieLinesSvg.setAttribute("width", totalW);
@@ -2050,40 +2452,54 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         // and the glue flap — so the red cut line always matches the
         // current printed content.
 
-        // Row 1 — Rabat gauche (trapèze) + Avant + Côté 1 (Y = 0)
-        addPath(`M ${flap} 0 L ${flap} ${h} L 0 ${h * 0.85} L 0 ${h * 0.15} Z`); // Rabat orange gauche
-        addRect(flap, 0, w, h); // Face avant
-        addRect(flap + w, 0, d, h); // Côté latéral 1
-
-        // Row 2 — Rabats poussière (encoches) + Flanc inférieur (Y = H)
-        addPath(
-          `M ${flap} ${h} L ${flap} ${h + d} L ${flap - d + d * 0.2} ${h + d * 0.8} L ${flap - d + d * 0.2} ${h} Z`,
-        ); // Rabat poussière gauche haut
-        addRect(flap, h, w, d); // Flanc inférieur
-        addPath(
-          `M ${flap + w} ${h} L ${flap + w} ${h + d} L ${flap + w + d * 0.8} ${h + d * 0.8} L ${flap + w + d * 0.8} ${h} Z`,
-        ); // Rabat poussière droite haut
-
-        // Row 3 — Côté 2 + Arrière + Rabat droit (trapèze) (Y = H + D)
-        addRect(flap - d, h + d, d, h); // Côté latéral 2
-        addRect(flap, h + d, w, h); // Face arrière
-        addPath(
-          `M ${flap + w} ${h + d} L ${flap + w} ${h + d + h} L ${flap + w + flap} ${h + d + h * 0.85} L ${flap + w + flap} ${h + d + h * 0.15} Z`,
-        ); // Rabat orange droite
-
-        // Row 4 — Rabats poussière (encoches) + Flanc supérieur (Y = H + D + H)
-        addPath(
-          `M ${flap} ${h + d + h} L ${flap} ${h + d + h + d} L ${flap - d + d * 0.2} ${h + d + h + d} L ${flap - d + d * 0.2} ${h + d + h + d * 0.2} Z`,
-        ); // Rabat poussière gauche bas
-        addRect(flap, h + d + h, w, d); // Flanc supérieur
-        addPath(
-          `M ${flap + w} ${h + d + h} L ${flap + w} ${h + d + h + d} L ${flap + w + d * 0.8} ${h + d + h + d} L ${flap + w + d * 0.8} ${h + d + h + d * 0.2} Z`,
-        ); // Rabat poussière droite bas
-
-        // Row 5 — Patte de collage (trapèze) (Y = H + D + H + D)
-        addPath(
-          `M ${flap + w * 0.05} ${h + d + h + d} L ${flap + w * 0.95} ${h + d + h + d} L ${flap + w * 0.85} ${h + d + h + d + glue} L ${flap + w * 0.15} ${h + d + h + d + glue} Z`,
-        );
+        // --- CONTOUR EXTÉRIEUR ROUGE GLOBAL (Comprimés) ---
+        // On trace le contour extérieur sans les lignes internes de séparation
+        let contour = "";
+        
+        // Haut du patron (Row 1)
+        contour += `M 0 ${h * 0.15} L ${flap} 0 L ${newFlap + w} 0 L ${newFlap + w} ${h}`;
+        
+        // Côté droit - Dust flaps & Flancs
+        if (dustEnabled) {
+          contour += ` L ${newFlap + w + d * 0.8} ${h} L ${newFlap + w + d * 0.8} ${h + d * 0.8} L ${newFlap + w} ${h + d}`;
+        } else {
+          contour += ` L ${newFlap + w} ${h + d}`;
+        }
+        
+        // Row 3 - Rabat droit
+        contour += ` L ${newFlap + w + d} ${h + d} L ${newFlap + w + newFlap} ${h + d + h * 0.15} L ${newFlap + w + newFlap} ${h + d + h * 0.85} L ${newFlap + w + d} ${h + d + h} L ${newFlap + w} ${h + d + h}`;
+        
+        // Bas droit - Dust flaps & Patte collage
+        if (dustEnabled) {
+          contour += ` L ${newFlap + w + d * 0.8} ${h + d + h + d * 0.2} L ${newFlap + w + d * 0.8} ${h + d + h + d} L ${newFlap + w} ${h + d + h + d}`;
+        } else {
+          contour += ` L ${newFlap + w} ${h + d + h + d}`;
+        }
+        
+        // Patte de collage (Row 5)
+        contour += ` L ${newFlap + w * 0.85} ${h + d + h + d + glue} L ${newFlap + w * 0.15} ${h + d + h + d + glue} L ${newFlap + w * 0.05} ${h + d + h + d} L ${newFlap} ${h + d + h + d}`;
+        
+        // Bas gauche - Dust flaps & Flancs
+        if (dustEnabled) {
+          contour += ` L ${newFlap - d + d * 0.2} ${h + d + h + d} L ${newFlap - d + d * 0.2} ${h + d + h + d * 0.2} L ${newFlap} ${h + d + h}`;
+        } else {
+          contour += ` L ${newFlap} ${h + d + h}`;
+        }
+        
+        // Row 3 gauche
+        contour += ` L ${newFlap} ${h + d}`;
+        
+        // Haut gauche - Dust flaps
+        if (dustEnabled) {
+          contour += ` L ${newFlap - d + d * 0.2} ${h + d * 0.8} L ${newFlap - d + d * 0.2} ${h} L ${newFlap} ${h}`;
+        } else {
+          contour += ` L ${newFlap} ${h}`;
+        }
+        
+        // Retour au point de départ (Row 1 gauche)
+        contour += ` L ${flap} ${h} L 0 ${h * 0.85} Z`;
+        
+        addPath(contour);
 
         // --- Lignes de PLI internes ---
         // Les rectangles de découpe ci-dessus se superposent exactement aux
@@ -2098,33 +2514,39 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
             "path",
           );
           fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
-          fold.setAttribute("stroke", "#3b82f6");
+          fold.setAttribute("stroke", "#94a3b8");
           fold.setAttribute("stroke-width", "1");
-          fold.setAttribute("stroke-dasharray", "4 3");
+          fold.setAttribute("stroke-dasharray", "4 2");
           fold.setAttribute("fill", "none");
           dieLinesSvg.appendChild(fold);
         };
 
-        // Rabat gauche <-> Face avant
-        addFold(flap, 0, flap, h);
-        // Face avant <-> Côté latéral 1
-        addFold(flap + w, 0, flap + w, h);
-        // Face avant <-> Flanc inférieur
-        addFold(flap, h, flap + w, h);
-        // Flanc inférieur <-> Côté latéral 2 (bord gauche)
-        addFold(flap - d, h + d, flap - d, h + d + h);
-        // Côté latéral 2 <-> Face arrière
-        addFold(flap, h + d, flap, h + d + h);
-        // Face arrière <-> Flanc supérieur
-        addFold(flap, h + d + h, flap + w, h + d + h);
-        // Flanc supérieur <-> Patte de collage
-        addFold(flap, h + d + h + d, flap + w, h + d + h + d);
+        // --- Lignes de PLI internes (Comprimés) ---
+        // Plis verticaux
+        addFold(flap, 0, flap, h); // Pli interne rabat gauche
+        addFold(newFlap, 0, newFlap, h + d + h + d); // Côté gauche / Corps
+        addFold(newFlap + w, 0, newFlap + w, h + d + h + d); // Corps / Côté droit
+        addFold(newFlap + w + d, h + d, newFlap + w + d, h + d + h); // Pli interne rabat droit
+        
+        // Plis horizontaux
+        addFold(newFlap, h, newFlap + w, h); // Front / Bottom
+        addFold(newFlap, h + d, newFlap + w, h + d); // Bottom / Back
+        addFold(newFlap, h + d + h, newFlap + w, h + d + h); // Back / Top
+        addFold(newFlap, h + d + h + d, newFlap + w, h + d + h + d); // Top / Glue flap
       }
 
-      function drawLiquidDieLines(w, h, d, flap, glue, dust) {
+      function drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled = true) {
         dieLinesSvg.innerHTML = "";
         const totalW = w + d + w + d + glue;
-        const totalH = flap + h + flap;
+
+        // "flap" = longueur du rabat réglée par le curseur = longueur
+        // de la seule partie trapézoïdale (verrouillage). La partie
+        // rectangulaire (visible, contenu) a une hauteur égale à la
+        // profondeur "d" de la boîte, pour rester cohérente avec elle.
+        // flapTotal = hauteur totale de la zone rabat (rectangle + trapèze).
+        const flapRectH = d;
+        const flapTotal = flap + flapRectH;
+        const totalH = flapTotal + h + flapTotal;
 
         dieLinesSvg.setAttribute("width", totalW);
         dieLinesSvg.setAttribute("height", totalH);
@@ -2143,77 +2565,108 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           dieLinesSvg.appendChild(path);
         };
 
-        // Tuck flaps
+        // Tuck flaps — même structure que le panneau HTML :
+        // rectangle visible (côté pli, hauteur = d) + pointe trapèze
+        // (verrouillage, hauteur = flap, réglée par le curseur).
+        // Rabat Haut : pli en bas (y = flapTotal), pointe en haut (y = 0)
+        // Structure : Rectangle (flapRectH) + Trapèze (flap)
+        // Contour extérieur seulement
         addPath(`
-          M ${w * 0.05} ${flap}
-          L ${w * 0.95} ${flap}
-          L ${w * 0.8} ${flap * 0.25}
-          L ${w * 0.7} 0
-          L ${w * 0.3} 0
-          L ${w * 0.2} ${flap * 0.25}
+          M 0 ${flapTotal}
+          L ${w} ${flapTotal}
+          L ${w} ${flapTotal - flapRectH}
+          L ${w * 0.85} 0
+          L ${w * 0.15} 0
+          L 0 ${flapTotal - flapRectH}
           Z
         `);
 
+        // Rabat Bas : pli en haut (y = flapTotal + h), pointe en bas
+        // Structure : Rectangle (flapRectH) + Trapèze (flap)
+        // Positionné sous P7 (x = w + d)
+        // Contour extérieur seulement (le pli à flapTotal + h est géré par addFold)
         addPath(`
-          M ${w + d + w + w * 0.05} ${flap + h + flap}
-          L ${w + d + w + w * 0.95} ${flap + h + flap}
-          L ${w + d + w + w * 0.8} ${flap + h + flap * 0.75}
-          L ${w + d + w + w * 0.7} ${flap + h + flap}
-          L ${w + d + w + w * 0.3} ${flap + h + flap}
-          L ${w + d + w + w * 0.2} ${flap + h + flap * 0.75}
+          M ${w + d} ${flapTotal + h}
+          L ${w + d + w} ${flapTotal + h}
+          L ${w + d + w} ${flapTotal + h + flapRectH}
+          L ${w + d + w * 0.85} ${totalH}
+          L ${w + d + w * 0.15} ${totalH}
+          L ${w + d} ${flapTotal + h + flapRectH}
           Z
         `);
 
-        // Dust flaps - top row
-        addPath(`
-          M ${w + d * 0.2} 0
-          L ${w + d * 0.8} 0
-          L ${w + d} ${dust}
-          L ${w} ${dust}
-          Z
-        `);
+        // Dust flaps - top row (attachés au pli supérieur des panneaux latéraux)
+        if (dustEnabled) {
+          addPath(`
+            M ${w} ${flapTotal}
+            L ${w + d} ${flapTotal}
+            L ${w + d * 0.8} ${flapTotal - dust}
+            L ${w + d * 0.2} ${flapTotal - dust}
+            Z
+          `);
 
-        addPath(`
-          M ${w + d + w + d * 0.2} 0
-          L ${w + d + w + d * 0.8} 0
-          L ${w + d + w + d} ${dust}
-          L ${w + d + w} ${dust}
-          Z
-        `);
+          addPath(`
+            M ${w + d + w} ${flapTotal}
+            L ${w + d + w + d} ${flapTotal}
+            L ${w + d + w + d * 0.8} ${flapTotal - dust}
+            L ${w + d + w + d * 0.2} ${flapTotal - dust}
+            Z
+          `);
+        }
 
-        // Main rectangular panels
-        addPath(
-          `M 0 ${flap} L ${w} ${flap} L ${w} ${flap + h} L 0 ${flap + h} Z`,
-        );
-        addPath(
-          `M ${w} ${flap} L ${w + d} ${flap} L ${w + d} ${flap + h} L ${w} ${flap + h} Z`,
-        );
-        addPath(
-          `M ${w + d} ${flap} L ${w + d + w} ${flap} L ${w + d + w} ${flap + h} L ${w + d} ${flap + h} Z`,
-        );
-        addPath(
-          `M ${w + d + w} ${flap} L ${w + d + w + d} ${flap} L ${w + d + w + d} ${flap + h} L ${w + d + w} ${flap + h} Z`,
-        );
-        addPath(
-          `M ${w + d + w + d} ${flap} L ${w + d + w + d + glue} ${flap} L ${w + d + w + d + glue} ${flap + h} L ${w + d + w + d} ${flap + h} Z`,
-        );
+        // Main rectangular panels (Outer boundary only, internal folds are added later)
+        addPath(`M 0 ${flapTotal} L 0 ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal} L 0 ${flapTotal} Z`);
 
-        // Dust flaps - bottom row
-        addPath(`
-          M ${w + d * 0.0} ${flap + h}
-          L ${w + d} ${flap + h}
-          L ${w + d * 0.8} ${flap + h + dust}
-          L ${w + d * 0.2} ${flap + h + dust}
-          Z
-        `);
+        // Dust flaps - bottom row (attachés au pli inférieur des panneaux latéraux)
+        if (dustEnabled) {
+          addPath(`
+            M ${w} ${flapTotal + h}
+            L ${w + d} ${flapTotal + h}
+            L ${w + d * 0.8} ${flapTotal + h + dust}
+            L ${w + d * 0.2} ${flapTotal + h + dust}
+            Z
+          `);
 
-        addPath(`
-          M ${w + d + w + d * 0.0} ${flap + h}
-          L ${w + d + w + d} ${flap + h}
-          L ${w + d + w + d * 0.8} ${flap + h + dust}
-          L ${w + d + w + d * 0.2} ${flap + h + dust}
-          Z
-        `);
+          addPath(`
+            M ${w + d + w} ${flapTotal + h}
+            L ${w + d + w + d} ${flapTotal + h}
+            L ${w + d + w + d * 0.8} ${flapTotal + h + dust}
+            L ${w + d + w + d * 0.2} ${flapTotal + h + dust}
+            Z
+          `);
+        }
+
+        // --- Lignes de PLI internes pour le mode LIQUID ---
+        const addFold = (x1, y1, x2, y2) => {
+          const fold = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+          fold.setAttribute("stroke", "#94a3b8");
+          fold.setAttribute("stroke-width", "1");
+          fold.setAttribute("stroke-dasharray", "4 2");
+          fold.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(fold);
+        };
+
+        // Plis verticaux entre les faces
+        addFold(w, flapTotal, w, flapTotal + h);
+        addFold(w + d, flapTotal, w + d, flapTotal + h);
+        addFold(w + d + w, flapTotal, w + d + w, flapTotal + h);
+        addFold(w + d + w + d, flapTotal, w + d + w + d, flapTotal + h);
+
+        // Plis horizontaux (jonction corps / rabats)
+        addFold(0, flapTotal, w, flapTotal); // P5 / P1
+        addFold(w, flapTotal, w + d, flapTotal); // P6 / Dust
+        addFold(w + d, flapTotal, w + d + w, flapTotal); // P7 / Dust (vide ici car rabat bas est sur P7)
+        addFold(w + d + w, flapTotal, w + d + w + d, flapTotal); // P8 / Dust
+
+        addFold(0, flapTotal + h, w, flapTotal + h);
+        addFold(w, flapTotal + h, w + d, flapTotal + h);
+        addFold(w + d, flapTotal + h, w + d + w, flapTotal + h);
+        addFold(w + d + w, flapTotal + h, w + d + w + d, flapTotal + h);
+
+        // Plis de la patte de fermeture (entre rectangle et pointe)
+        addFold(0, flap, w, flap); // Haut
+        addFold(w + d, flapTotal + h + flapRectH, w + d + w, flapTotal + h + flapRectH); // Bas (P10 sous P7)
       }
 
       // Event Listeners setup
@@ -2240,9 +2693,72 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         toggleMarginsBtn.classList.toggle("secondary-btn");
       });
 
-      printBtn.addEventListener("click", () => window.print());
+      // Gestion de l'authentification avant impression
+      const STORAGE_KEY = "packaging_tool_access_granted";
+      const EMAILJS_PUBLIC_KEY = "KDD6-WtUH7j_2-0ON";
+      const EMAILJS_SERVICE_ID = "service_9webef9";
+      const EMAILJS_TEMPLATE_ID = "template_1befonc";
+      const NOTIFY_EMAIL = "elidopremier@gmail.com";
+
+      let pendingPrint = false;
+
+      function checkAccess() {
+        return localStorage.getItem(STORAGE_KEY) === "1";
+      }
+
+      function showAccessGate() {
+        if (typeof globalShowAccessGate === "function") {
+          globalShowAccessGate();
+        } else {
+          document.getElementById("accessGateOverlay").classList.remove("hidden");
+        }
+      }
+
+      printBtn.addEventListener("click", () => {
+        if (checkAccess()) {
+          sendDesignData().then(() => {
+            window.print();
+          });
+        } else {
+          pendingPrint = true;
+          showAccessGate();
+        }
+      });
+
+      async function sendDesignData() {
+        if (!window.emailjs || EMAILJS_PUBLIC_KEY === "TON_PUBLIC_KEY") return;
+        
+        const designInfo = {
+          type: controls.boxType.value,
+          produit: controls.txtProduct.value,
+          dosage: controls.txtDosage.value,
+          dimensions: `${controls.dimW.value}x${controls.dimH.value}x${controls.dimD.value}`,
+          labo: controls.txtLabName.value,
+          timestamp: new Date().toLocaleString("fr-FR")
+        };
+
+        const payload = {
+          to_email: NOTIFY_EMAIL,
+          name: localStorage.getItem("user_fullname") || "Utilisateur authentifié",
+          time: designInfo.timestamp,
+          message: `Impression demandée.\n` +
+                   `Produit : ${designInfo.produit}\n` +
+                   `Type : ${designInfo.type}\n` +
+                   `Dimensions : ${designInfo.dimensions}\n` +
+                   `Laboratoire : ${designInfo.labo}\n` +
+                   `Copie des paramètres envoyée.`
+        };
+
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload);
+        } catch (err) {
+          console.error("Erreur d'envoi des données de design :", err);
+        }
+      }
 
       // Initial triggers
+      applyZoom();
+      applyModeVisibility(controls.boxType.value);
       updateTextBinders();
       updateGeometry();
     </script>
@@ -2250,19 +2766,13 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
     <!-- === Gate d'accès (identification obligatoire) === -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
-      (function () {
-        // ==========================================================
-        // CONFIGURATION EMAILJS — à remplacer par tes propres valeurs
-        // (voir https://www.emailjs.com/ — compte gratuit)
-        // ==========================================================
-        const EMAILJS_PUBLIC_KEY = "KDD6-WtUH7j_2-0ON";
-        const EMAILJS_SERVICE_ID = "service_9webef9";
-        const EMAILJS_TEMPLATE_ID = "template_1befonc";
-        const NOTIFY_EMAIL = "elidopremier@gmail.com";
-        const STORAGE_KEY = "packaging_tool_access_granted";
-        // ==========================================================
+      // Rendre les fonctions globales pour être appelées depuis le script principal
+      let globalShowAccessGate;
+      let globalSendDesignData;
 
+      (function () {
         const overlay = document.getElementById("accessGateOverlay");
+        globalShowAccessGate = () => overlay.classList.remove("hidden");
         const form = document.getElementById("accessGateForm");
         const emailInput = document.getElementById("gateEmail");
         const prenomInput = document.getElementById("gatePrenom");
@@ -2271,11 +2781,11 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
         const statusEl = document.getElementById("gateStatus");
         const submitBtn = document.getElementById("gateSubmitBtn");
 
-        // Si déjà validé sur ce navigateur, on masque directement le gate
-        if (localStorage.getItem(STORAGE_KEY) === "1") {
-          overlay.classList.add("hidden");
-          return;
-        }
+        // On ne masque plus l'overlay au chargement si non authentifié
+        // car il est masqué par défaut dans le HTML ou on laisse le flux gérer.
+        // Mais ici, l'overlay est visible par défaut dans le style.
+        // On va le masquer par défaut et l'afficher au besoin.
+        overlay.classList.add("hidden");
 
         if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
           emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
@@ -2300,6 +2810,8 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           statusEl.classList.add("visible");
 
           const fullName = [prenom, nom].filter(Boolean).join(" ") || email;
+          localStorage.setItem("user_fullname", fullName);
+          
           const payload = {
             to_email: NOTIFY_EMAIL,
             name: fullName,
@@ -2318,19 +2830,23 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
                 EMAILJS_TEMPLATE_ID,
                 payload,
               );
-            } else {
-              console.warn(
-                "EmailJS non configuré : identifiants non envoyés par mail. " +
-                  "Voir les constantes EMAILJS_* en haut de ce script.",
-              );
             }
           } catch (err) {
             console.error("Erreur d'envoi EmailJS :", err);
-            // On ne bloque pas l'accès à l'outil même si l'envoi échoue
           }
 
           localStorage.setItem(STORAGE_KEY, "1");
           overlay.classList.add("hidden");
+          
+          if (pendingPrint) {
+            pendingPrint = false;
+            // Utiliser la fonction globale définie dans le script principal
+            if (typeof sendDesignData === "function") {
+              sendDesignData().then(() => {
+                window.print();
+              });
+            }
+          }
         });
       })();
     </script>
