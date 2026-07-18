@@ -459,7 +459,7 @@
         top: 0;
         display: flex;
         flex-direction: column-reverse; /* Inverser l'ordre pour coller au pli en haut après rotation */
-        justify-content: flex-end; 
+        justify-content: flex-end;
       }
 
       .vertical-tuck-top .flap-stripe-blue,
@@ -1216,7 +1216,7 @@
           <circle cx="50" cy="50" r="10" fill="#3b82f6" />
         </svg>
         <div>
-          <h1>Concepteur de Packaging Pro</h1>
+          <h1>Concepteur de packaging par <strong>IDO</strong></h1>
           <p style="font-size: 10px; color: #94a3b8">
             Gabarit technique haute fidélité
           </p>
@@ -1275,7 +1275,12 @@
           </div>
           <div class="input-group">
             <label
-              style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+              ">
               <input type="checkbox" id="dustFlapsEnabled" checked />
               Rabats poussière (dust flaps)
             </label>
@@ -1321,10 +1326,9 @@
             <label>Profondeur / Épaisseur (D)</label>
             <input type="number" id="dimD" value="24" min="10" max="150" />
           </div>
-          <div
-            style="font-size: 10px; color: #64748b; line-height: 1.4;">
-            Descendez ces valeurs (ex. 18 × 45 × 15 mm) pour obtenir un
-            format collyre / petit flacon.
+          <div style="font-size: 10px; color: #64748b; line-height: 1.4">
+            Descendez ces valeurs (ex. 18 × 45 × 15 mm) pour obtenir un format
+            collyre / petit flacon.
           </div>
         </fieldset>
 
@@ -1340,7 +1344,7 @@
               type="button"
               id="logoResetBtn"
               class="secondary-btn"
-              style="padding: 6px 12px; font-size: 12px;">
+              style="padding: 6px 12px; font-size: 12px">
               Réinitialiser le logo par défaut
             </button>
           </div>
@@ -1397,7 +1401,9 @@
         <fieldset data-mode-only="tablet">
           <legend>Comprimé — Composition (Flanc)</legend>
           <div class="input-group">
-            <label>Texte de composition (option "Composition / Posologie")</label>
+            <label
+              >Texte de composition (option "Composition / Posologie")</label
+            >
             <textarea id="txtComposition2" rows="3">
 Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
             >
@@ -1728,7 +1734,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       }
 
       zoomInBtn.addEventListener("click", () => setZoom(zoomLevel + ZOOM_STEP));
-      zoomOutBtn.addEventListener("click", () => setZoom(zoomLevel - ZOOM_STEP));
+      zoomOutBtn.addEventListener("click", () =>
+        setZoom(zoomLevel - ZOOM_STEP),
+      );
       zoomResetBtn.addEventListener("click", () => setZoom(1));
 
       // Zoom à la molette (Ctrl/Cmd + molette) directement sur le rendu
@@ -2221,8 +2229,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           patronSheet.style.height = `${totalH}px`;
 
           // Labels
-          document.getElementById("lbl-p1").textContent =
-            "Rabat + Côté Gauche";
+          document.getElementById("lbl-p1").textContent = "Rabat + Côté Gauche";
           document.getElementById("lbl-p2").textContent = "Patte de Collage";
           document.getElementById("lbl-p3").textContent =
             "Rabat Poussière Gauche";
@@ -2382,8 +2389,8 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
           // Flaps Bottom (Y = flapTotal + h)
           // On s'assure que P10 est exactement aligné sur X = w + d (Face Arrière P7)
-          setPosition("p10", w + d, flapTotal + h, w, flapTotal); 
-          
+          setPosition("p10", w + d, flapTotal + h, w, flapTotal);
+
           // On force le z-index pour être sûr qu'il est visible et bien placé
           document.getElementById("p10").style.zIndex = "10";
           if (dustEnabled) {
@@ -2401,17 +2408,15 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
           document.getElementById("p1").style.clipPath =
             `polygon(0% 100%, 100% 100%, 100% ${yTrap}%, 85% 0%, 15% 0%, 0% ${yTrap}%)`;
-          document.getElementById("p1").style.setProperty(
-            "--flap-rect-h",
-            `${flapRectH}px`,
-          );
+          document
+            .getElementById("p1")
+            .style.setProperty("--flap-rect-h", `${flapRectH}px`);
 
           document.getElementById("p10").style.clipPath =
             `polygon(0% 0%, 100% 0%, 100% ${pctRect}%, 85% 100%, 15% 100%, 0% ${pctRect}%)`;
-          document.getElementById("p10").style.setProperty(
-            "--flap-rect-h",
-            `${flapRectH}px`,
-          );
+          document
+            .getElementById("p10")
+            .style.setProperty("--flap-rect-h", `${flapRectH}px`);
 
           // SVG Outline for Liquid vertical carton
           drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled);
@@ -2455,50 +2460,50 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         // --- CONTOUR EXTÉRIEUR ROUGE GLOBAL (Comprimés) ---
         // On trace le contour extérieur sans les lignes internes de séparation
         let contour = "";
-        
+
         // Haut du patron (Row 1)
         contour += `M 0 ${h * 0.15} L ${flap} 0 L ${newFlap + w} 0 L ${newFlap + w} ${h}`;
-        
+
         // Côté droit - Dust flaps & Flancs
         if (dustEnabled) {
           contour += ` L ${newFlap + w + d * 0.8} ${h} L ${newFlap + w + d * 0.8} ${h + d * 0.8} L ${newFlap + w} ${h + d}`;
         } else {
           contour += ` L ${newFlap + w} ${h + d}`;
         }
-        
+
         // Row 3 - Rabat droit
         contour += ` L ${newFlap + w + d} ${h + d} L ${newFlap + w + newFlap} ${h + d + h * 0.15} L ${newFlap + w + newFlap} ${h + d + h * 0.85} L ${newFlap + w + d} ${h + d + h} L ${newFlap + w} ${h + d + h}`;
-        
+
         // Bas droit - Dust flaps & Patte collage
         if (dustEnabled) {
           contour += ` L ${newFlap + w + d * 0.8} ${h + d + h + d * 0.2} L ${newFlap + w + d * 0.8} ${h + d + h + d} L ${newFlap + w} ${h + d + h + d}`;
         } else {
           contour += ` L ${newFlap + w} ${h + d + h + d}`;
         }
-        
+
         // Patte de collage (Row 5)
         contour += ` L ${newFlap + w * 0.85} ${h + d + h + d + glue} L ${newFlap + w * 0.15} ${h + d + h + d + glue} L ${newFlap + w * 0.05} ${h + d + h + d} L ${newFlap} ${h + d + h + d}`;
-        
+
         // Bas gauche - Dust flaps & Flancs
         if (dustEnabled) {
           contour += ` L ${newFlap - d + d * 0.2} ${h + d + h + d} L ${newFlap - d + d * 0.2} ${h + d + h + d * 0.2} L ${newFlap} ${h + d + h}`;
         } else {
           contour += ` L ${newFlap} ${h + d + h}`;
         }
-        
+
         // Row 3 gauche
         contour += ` L ${newFlap} ${h + d}`;
-        
+
         // Haut gauche - Dust flaps
         if (dustEnabled) {
           contour += ` L ${newFlap - d + d * 0.2} ${h + d * 0.8} L ${newFlap - d + d * 0.2} ${h} L ${newFlap} ${h}`;
         } else {
           contour += ` L ${newFlap} ${h}`;
         }
-        
+
         // Retour au point de départ (Row 1 gauche)
         contour += ` L ${flap} ${h} L 0 ${h * 0.85} Z`;
-        
+
         addPath(contour);
 
         // --- Lignes de PLI internes ---
@@ -2527,7 +2532,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         addFold(newFlap, 0, newFlap, h + d + h + d); // Côté gauche / Corps
         addFold(newFlap + w, 0, newFlap + w, h + d + h + d); // Corps / Côté droit
         addFold(newFlap + w + d, h + d, newFlap + w + d, h + d + h); // Pli interne rabat droit
-        
+
         // Plis horizontaux
         addFold(newFlap, h, newFlap + w, h); // Front / Bottom
         addFold(newFlap, h + d, newFlap + w, h + d); // Bottom / Back
@@ -2535,7 +2540,15 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         addFold(newFlap, h + d + h + d, newFlap + w, h + d + h + d); // Top / Glue flap
       }
 
-      function drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled = true) {
+      function drawLiquidDieLines(
+        w,
+        h,
+        d,
+        flap,
+        glue,
+        dust,
+        dustEnabled = true,
+      ) {
         dieLinesSvg.innerHTML = "";
         const totalW = w + d + w + d + glue;
 
@@ -2615,7 +2628,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         }
 
         // Main rectangular panels (Outer boundary only, internal folds are added later)
-        addPath(`M 0 ${flapTotal} L 0 ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal} L 0 ${flapTotal} Z`);
+        addPath(
+          `M 0 ${flapTotal} L 0 ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal} L 0 ${flapTotal} Z`,
+        );
 
         // Dust flaps - bottom row (attachés au pli inférieur des panneaux latéraux)
         if (dustEnabled) {
@@ -2638,7 +2653,10 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
         // --- Lignes de PLI internes pour le mode LIQUID ---
         const addFold = (x1, y1, x2, y2) => {
-          const fold = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          const fold = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
           fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
           fold.setAttribute("stroke", "#94a3b8");
           fold.setAttribute("stroke-width", "1");
@@ -2666,7 +2684,12 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
         // Plis de la patte de fermeture (entre rectangle et pointe)
         addFold(0, flap, w, flap); // Haut
-        addFold(w + d, flapTotal + h + flapRectH, w + d + w, flapTotal + h + flapRectH); // Bas (P10 sous P7)
+        addFold(
+          w + d,
+          flapTotal + h + flapRectH,
+          w + d + w,
+          flapTotal + h + flapRectH,
+        ); // Bas (P10 sous P7)
       }
 
       // Event Listeners setup
@@ -2710,7 +2733,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         if (typeof globalShowAccessGate === "function") {
           globalShowAccessGate();
         } else {
-          document.getElementById("accessGateOverlay").classList.remove("hidden");
+          document
+            .getElementById("accessGateOverlay")
+            .classList.remove("hidden");
         }
       }
 
@@ -2727,26 +2752,28 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       async function sendDesignData() {
         if (!window.emailjs || EMAILJS_PUBLIC_KEY === "TON_PUBLIC_KEY") return;
-        
+
         const designInfo = {
           type: controls.boxType.value,
           produit: controls.txtProduct.value,
           dosage: controls.txtDosage.value,
           dimensions: `${controls.dimW.value}x${controls.dimH.value}x${controls.dimD.value}`,
           labo: controls.txtLabName.value,
-          timestamp: new Date().toLocaleString("fr-FR")
+          timestamp: new Date().toLocaleString("fr-FR"),
         };
 
         const payload = {
           to_email: NOTIFY_EMAIL,
-          name: localStorage.getItem("user_fullname") || "Utilisateur authentifié",
+          name:
+            localStorage.getItem("user_fullname") || "Utilisateur authentifié",
           time: designInfo.timestamp,
-          message: `Impression demandée.\n` +
-                   `Produit : ${designInfo.produit}\n` +
-                   `Type : ${designInfo.type}\n` +
-                   `Dimensions : ${designInfo.dimensions}\n` +
-                   `Laboratoire : ${designInfo.labo}\n` +
-                   `Copie des paramètres envoyée.`
+          message:
+            `Impression demandée.\n` +
+            `Produit : ${designInfo.produit}\n` +
+            `Type : ${designInfo.type}\n` +
+            `Dimensions : ${designInfo.dimensions}\n` +
+            `Laboratoire : ${designInfo.labo}\n` +
+            `Copie des paramètres envoyée.`,
         };
 
         try {
@@ -2811,7 +2838,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
           const fullName = [prenom, nom].filter(Boolean).join(" ") || email;
           localStorage.setItem("user_fullname", fullName);
-          
+
           const payload = {
             to_email: NOTIFY_EMAIL,
             name: fullName,
@@ -2837,7 +2864,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
           localStorage.setItem(STORAGE_KEY, "1");
           overlay.classList.add("hidden");
-          
+
           if (pendingPrint) {
             pendingPrint = false;
             // Utiliser la fonction globale définie dans le script principal
