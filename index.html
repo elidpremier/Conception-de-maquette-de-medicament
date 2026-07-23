@@ -36,6 +36,24 @@
         --fs-scale-body: 1;
         --fs-scale-flap: 1;
         --fs-scale-small: 1;
+
+        /* Face background colors */
+        --bg-p5: #ffffff;
+        --bg-p9: #ffffff;
+        --bg-p7: #ffffff;
+        --bg-p12: #ffffff;
+        --bg-p1: var(--accent);
+        --bg-p1-rabat: var(--accent);
+        --bg-p10: var(--accent);
+        --bg-p10-rabat: var(--accent);
+
+        /* Face background colors — mode Liquide (Sirop / Flacon) */
+        --bg-lp5: #ffffff;
+        --bg-lp7: #ffffff;
+        --bg-lp6: #ffffff;
+        --bg-lp8: #ffffff;
+        --bg-lp1: var(--accent);
+        --bg-lp10: var(--accent);
       }
 
       * {
@@ -302,6 +320,25 @@
         border: 1px dashed rgba(148, 163, 184, 0.5); /* Fold line simulation */
       }
 
+      #p5, #fieldzone-p5 { background: var(--bg-p5) !important; }
+      #p9, #fieldzone-p9 { background: var(--bg-p9) !important; }
+      #p7, #fieldzone-p7 { background: var(--bg-p7) !important; }
+      #p12, #fieldzone-p12 { background: var(--bg-p12) !important; }
+      #p1 { background: var(--bg-p1); }
+      #p10 { background: var(--bg-p10); }
+      #fieldzone-p1 { background: var(--bg-p1) !important; }
+      #fieldzone-p1-rabat { background: var(--bg-p1-rabat) !important; }
+      #fieldzone-p10 { background: var(--bg-p10) !important; }
+      #fieldzone-p10-rabat { background: var(--bg-p10-rabat) !important; }
+
+      /* Zones de champs — mode Liquide (Sirop / Flacon) */
+      #fieldzone-lp5 { background: var(--bg-lp5) !important; }
+      #fieldzone-lp7 { background: var(--bg-lp7) !important; }
+      #fieldzone-lp6 { background: var(--bg-lp6) !important; }
+      #fieldzone-lp8 { background: var(--bg-lp8) !important; }
+      #fieldzone-lp1 { background: var(--bg-lp1) !important; }
+      #fieldzone-lp10 { background: var(--bg-lp10) !important; }
+
       /* Outer Red Cut Contour Overlay (masking borders inside the SVG) */
       .die-lines {
         position: absolute;
@@ -355,7 +392,7 @@
 
       /* Orange Tuck Flap Left (Row 1 / Horizontal tablet style) */
       .orange-flap-left {
-        background: var(--accent);
+        background: var(--bg-p1);
         color: #ffffff;
         clip-path: polygon(100% 0, 100% 100%, 0% 85%, 0% 15%);
         border: none;
@@ -390,7 +427,7 @@
 
       /* Orange Tuck Flap Right (Row 3 / Horizontal style) */
       .orange-flap-right {
-        background: var(--accent);
+        background: var(--bg-p10);
         color: #ffffff;
         clip-path: polygon(0 0, 0 100%, 100% 85%, 100% 15%);
         border: none;
@@ -1166,6 +1203,304 @@
       .gate-status.visible {
         display: block;
       }
+
+      /* === Système de champs personnalisables (positionnement libre) === */
+      .field-zone {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .custom-field {
+        position: absolute;
+        box-sizing: border-box;
+        overflow: hidden;
+        line-height: 1.25;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .custom-field[data-align="center"] {
+        text-align: center;
+      }
+      .custom-field[data-align="right"] {
+        text-align: right;
+      }
+      .custom-field[data-align="left"] {
+        text-align: left;
+      }
+
+      .field-pictogram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: 50%;
+        border: 3px solid;
+        font-weight: 800;
+        line-height: 1.1;
+      }
+
+      .field-barcode-graphic {
+        width: 100%;
+        height: 70%;
+        background: repeating-linear-gradient(
+          90deg,
+          #000 0px,
+          #000 2px,
+          transparent 2px,
+          transparent 4px,
+          #000 4px,
+          #000 5px,
+          transparent 5px,
+          transparent 8px
+        );
+      }
+
+      .field-barcode-number {
+        font-family: "Space Mono", monospace;
+        text-align: center;
+        margin-top: 2px;
+      }
+
+      .field-datamatrix-grid {
+        display: grid;
+        width: 100%;
+        height: 100%;
+      }
+
+      .field-datamatrix-grid div {
+        background: currentColor;
+      }
+
+      .field-braille-text {
+        letter-spacing: 2px;
+        font-family: "Space Mono", monospace;
+      }
+
+      /* Éditeur de champs (sidebar) */
+      .field-editor-row {
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #0f172a;
+      }
+
+      .field-editor-row-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .field-editor-row-header input[type="text"] {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #f8fafc;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 2px 0;
+      }
+
+      .field-editor-row-header input[type="text"]:focus {
+        outline: none;
+        border-bottom: 1px solid #3b82f6;
+      }
+
+      .field-remove-btn {
+        background: #7f1d1d;
+        color: #fecaca;
+        border: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      .field-remove-btn:hover {
+        background: #991b1b;
+      }
+
+      .field-editor-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .field-editor-grid label {
+        font-size: 9px;
+        text-transform: uppercase;
+        color: #64748b;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .field-editor-grid input,
+      .field-editor-grid select {
+        width: 100%;
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #f8fafc;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+
+      .field-editor-row textarea {
+        width: 100%;
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #f8fafc;
+        padding: 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        resize: vertical;
+        min-height: 40px;
+      }
+
+      /* === Validation chevauchements / débordements === */
+      @keyframes pulse-red {
+        0%, 100% { outline-color: #ef4444; outline-style: solid; }
+        50% { outline-color: transparent; }
+      }
+      @keyframes pulse-orange {
+        0%, 100% { outline-color: #f97316; outline-style: solid; }
+        50% { outline-color: transparent; }
+      }
+      .custom-field.field-overflow {
+        outline: 2px solid #ef4444;
+        animation: pulse-red 1.2s ease-in-out infinite;
+        z-index: 50 !important;
+      }
+      .custom-field.field-overlap {
+        outline: 2px solid #f97316;
+        animation: pulse-orange 1.2s ease-in-out infinite;
+        z-index: 50 !important;
+      }
+
+      /* Panneau résumé des erreurs de validation */
+      #validationSummary {
+        border-radius: 6px;
+        padding: 0;
+        font-size: 11px;
+        display: none;
+        margin-bottom: 8px;
+        line-height: 1.5;
+        overflow: hidden;
+      }
+      #validationSummary.has-errors {
+        display: block;
+        border: 1px solid #ef4444;
+        background: rgba(127, 29, 29, 0.3);
+        padding: 8px 12px;
+      }
+      #validationSummary.has-warnings {
+        display: block;
+        border: 1px solid #f97316;
+        background: rgba(124, 45, 18, 0.25);
+        padding: 8px 12px;
+      }
+      .validation-title {
+        font-weight: 800;
+        color: #fca5a5;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+      }
+      .validation-item { color: #fca5a5; padding: 1px 0; font-size: 10px; }
+      .validation-item.warn { color: #fdba74; }
+
+      /* Groupement par face dans l'éditeur */
+      .face-group-header {
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        padding: 8px 4px 3px;
+        border-bottom: 1px solid #334155;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .face-group-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* Badge de type */
+      .type-badge {
+        font-size: 7px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        flex-shrink: 0;
+      }
+      .type-text      { background: #1e40af; color: #bfdbfe; }
+      .type-pictogram { background: #7c3aed; color: #ddd6fe; }
+      .type-barcode   { background: #0f766e; color: #99f6e4; }
+      .type-datamatrix{ background: #0369a1; color: #bae6fd; }
+      .type-braille   { background: #4b5563; color: #f3f4f6; }
+      .type-shape     { background: #c2410c; color: #fed7aa; }
+
+      /* Bouton toggle accordéon */
+      .field-editor-toggle {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 3px;
+        line-height: 1;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+        user-select: none;
+      }
+      .field-editor-row.collapsed .field-editor-toggle {
+        transform: rotate(-90deg);
+      }
+      .field-editor-row-body {
+        max-height: 900px;
+        overflow: hidden;
+        transition: max-height 0.25s ease;
+      }
+      .field-editor-row.collapsed .field-editor-row-body {
+        max-height: 0;
+      }
+
+      /* Erreurs dans l'éditeur */
+      .field-editor-row.has-overflow .field-editor-row-header {
+        border-left: 3px solid #ef4444;
+        padding-left: 7px;
+      }
+      .field-editor-row.has-overlap .field-editor-row-header {
+        border-left: 3px solid #f97316;
+        padding-left: 7px;
+      }
+      .field-error-badge {
+        font-size: 11px;
+        flex-shrink: 0;
+        cursor: default;
+      }
+
+      /* Hover sur les champs dans le preview */
+      .custom-field:hover {
+        outline: 1px dashed rgba(59, 130, 246, 0.6);
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -1287,28 +1622,92 @@
           </div>
         </fieldset>
 
-        <fieldset data-mode-only="tablet">
-          <legend>Contenu par panneau</legend>
+        <h2>Champs personnalisés (par face)</h2>
+        <fieldset>
+          <legend>Ajouter / Gérer les champs</legend>
           <div class="input-group">
-            <label>Flanc Inférieur</label>
-            <select id="contentP7">
-              <option value="technical" selected>Infos techniques</option>
-              <option value="composition">Composition / Posologie</option>
-              <option value="barcode">Code-barres seul</option>
-              <option value="none">Vide</option>
-            </select>
+            <label>Champs prédéfinis disponibles</label>
+            <select id="defaultFieldPicker"></select>
           </div>
           <div class="input-group">
-            <label>Flanc Supérieur</label>
-            <select id="contentP12">
-              <option value="composition" selected>
-                Composition / Posologie
-              </option>
-              <option value="technical">Infos techniques</option>
-              <option value="barcode">Code-barres seul</option>
-              <option value="none">Vide</option>
-            </select>
+            <button
+              type="button"
+              id="addDefaultFieldBtn"
+              class="action-btn secondary-btn"
+              style="padding: 8px; font-size: 12px">
+              Ajouter le champ sélectionné
+            </button>
           </div>
+          <div class="input-group">
+            <button
+              type="button"
+              id="addFieldBtn"
+              class="action-btn"
+              style="padding: 8px; font-size: 12px">
+              + Ajouter un champ libre
+            </button>
+          </div>
+          <div class="input-group">
+            <button
+              type="button"
+              id="addShapeBtn"
+              class="action-btn secondary-btn"
+              style="padding: 8px; font-size: 12px">
+              + Ajouter une zone de couleur / design
+            </button>
+          </div>
+          <div
+            class="input-group"
+            style="display: flex; flex-direction: row; gap: 8px">
+            <button
+              type="button"
+              id="exportFieldsBtn"
+              class="action-btn secondary-btn"
+              style="padding: 6px; font-size: 11px; flex: 1">
+              Exporter JSON
+            </button>
+            <button
+              type="button"
+              id="importFieldsBtn"
+              class="action-btn secondary-btn"
+              style="padding: 6px; font-size: 11px; flex: 1">
+              Importer JSON
+            </button>
+            <input
+              type="file"
+              id="importFieldsInput"
+              accept="application/json"
+              style="display: none" />
+          </div>
+          <div class="input-group">
+            <button
+              type="button"
+              id="resetFieldsBtn"
+              class="action-btn secondary-btn"
+              style="padding: 6px 12px; font-size: 11px">
+              Réinitialiser tous les champs (par défaut)
+            </button>
+          </div>
+          <div class="input-group" style="display: flex; flex-direction: row; gap: 8px; align-items: flex-end;">
+            <div style="flex: 1;">
+              <label style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px;">Face à réinitialiser</label>
+              <select id="resetFacePicker" style="width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 7px 10px; border-radius: 6px; font-size: 12px;"></select>
+            </div>
+            <button
+              type="button"
+              id="resetFaceBtn"
+              class="action-btn secondary-btn"
+              style="padding: 8px 10px; font-size: 11px; flex-shrink: 0; white-space: nowrap;">
+              ↺ Réinitialiser la face
+            </button>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Liste des champs</legend>
+          <div id="validationSummary"></div>
+          <div
+            id="fieldEditorContainer"
+            style="display: flex; flex-direction: column; gap: 10px"></div>
         </fieldset>
 
         <h2>Dimensions & Echelle</h2>
@@ -1369,7 +1768,25 @@
           </div>
         </fieldset>
 
-        <h2>Textes des Panneaux</h2>
+        <fieldset>
+          <legend>Couleur des Faces</legend>
+          <div class="input-group">
+            <label>Face à personnaliser</label>
+            <select id="faceColorPicker" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 8px 12px; border-radius: 6px; font-size: 13px;"></select>
+          </div>
+          <div class="input-group">
+            <label>Couleur de fond</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="color-input-wrapper" style="flex: 1;">
+                <input type="color" id="faceColorVal" value="#ffffff" style="width: 100%; height: 32px;" />
+              </div>
+              <button type="button" id="faceColorReset" class="action-btn secondary-btn" style="padding: 10px 14px; font-size: 12px; height: 42px;">Réinitialiser</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <div style="display: none">
+        <h2>Textes des Panneaux [obsolète — remplacé par les champs personnalisés]</h2>
         <fieldset>
           <legend>Identité</legend>
           <div class="input-group">
@@ -1398,8 +1815,8 @@
           </div>
         </fieldset>
 
-        <fieldset data-mode-only="tablet">
-          <legend>Comprimé — Composition (Flanc)</legend>
+        <fieldset style="display: none">
+          <legend>Comprimé — Composition (Flanc) [obsolète]</legend>
           <div class="input-group">
             <label
               >Texte de composition (option "Composition / Posologie")</label
@@ -1443,7 +1860,7 @@ Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 
           </div>
         </fieldset>
 
-        <fieldset data-mode-only="liquid">
+        <fieldset>
           <legend>Sirop — Côté Gauche (P6)</legend>
           <div class="input-group">
             <label>Texte descriptif (Face avant / arrière)</label>
@@ -1469,6 +1886,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             >
           </div>
         </fieldset>
+        </div>
 
         <h2>Typographie</h2>
         <fieldset>
@@ -1670,6 +2088,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
     </div>
 
     <script>
+      // Exact conversion ratio 96px/25.4mm for physical print dimensions
+      const MM_TO_PX = 3.779527559;
+
       // Controls Selection
       const controls = {
         boxType: document.getElementById("boxType"),
@@ -1698,8 +2119,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         fsScaleSmall: document.getElementById("fsScaleSmall"),
         flapLength: document.getElementById("flapLength"),
         dustFlapsEnabled: document.getElementById("dustFlapsEnabled"),
-        contentP7: document.getElementById("contentP7"),
-        contentP12: document.getElementById("contentP12"),
       };
 
       const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
@@ -1851,6 +2270,14 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
         updateTextBinders();
         updateGeometry();
+
+        // Le mode a changé : les pickers et l'éditeur de champs doivent
+        // être reconstruits pour ne montrer que les faces pertinentes.
+        populateDefaultFieldPicker();
+        populateResetFacePicker();
+        populateFaceColorPicker();
+        renderFieldEditor();
+        applyCustomFaceColors();
       });
 
       // Content Generators for Tablet (Horizontal) Mode
@@ -2075,84 +2502,1817 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       `;
       }
 
+      // ============================================================
+      // === Système de champs personnalisables (mode Comprimés) ===
+      // Chaque champ définit : sur quelle face il apparaît, sa
+      // position (x/y en %), sa taille (largeur/hauteur en %), sa
+      // police et son contenu. Le rendu est entièrement généré à
+      // partir de ce tableau — aucune position n'est plus codée en dur.
+      // ============================================================
+
+      const FIELDS_STORAGE_KEY = "packaging_fields_config_v1";
+
+      const TABLET_FACE_OPTIONS = [
+        { value: "p5", label: "Face avant" },
+        { value: "p9", label: "Face arrière" },
+        { value: "p1", label: "Rabat gauche — zone rectangle (côté)" },
+        {
+          value: "p1-rabat",
+          label: "Rabat gauche — zone trapèze (verrouillage)",
+        },
+        { value: "p10", label: "Rabat droit — zone rectangle (côté)" },
+        {
+          value: "p10-rabat",
+          label: "Rabat droit — zone trapèze (verrouillage)",
+        },
+        { value: "p12", label: "Flanc supérieur" },
+        { value: "p7", label: "Flanc inférieur" },
+      ];
+
+      // Faces disponibles pour le mode Sirop / Flacon liquide
+      // (correspondance avec les panneaux du patron déplié vertical).
+      const LIQUID_FACE_OPTIONS = [
+        { value: "lp5", label: "Face avant" },
+        { value: "lp7", label: "Face arrière" },
+        { value: "lp6", label: "Côté gauche (ingrédients)" },
+        { value: "lp8", label: "Côté droit (notice & codes)" },
+        { value: "lp1", label: "Rabat haut — zone visible (côté pli)" },
+        { value: "lp10", label: "Rabat bas — zone visible (côté pli)" },
+      ];
+
+      // Rétro-compatibilité : ancien nom utilisé ailleurs dans le code.
+      const FACE_OPTIONS = TABLET_FACE_OPTIONS;
+
+      function isLiquidMode() {
+        return controls.boxType.value === "liquid";
+      }
+
+      function getActiveFaceOptions() {
+        return isLiquidMode() ? LIQUID_FACE_OPTIONS : TABLET_FACE_OPTIONS;
+      }
+
+      const TYPE_OPTIONS = [
+        { value: "text", label: "Texte" },
+        { value: "table", label: "Tableau (nom … valeur, pointillés)" },
+        { value: "pictogram", label: "Pictogramme" },
+        { value: "barcode", label: "Code-barres EAN-13" },
+        { value: "datamatrix", label: "Datamatrix (2D)" },
+        { value: "braille", label: "Braille" },
+        { value: "shape", label: "Zone de couleur / design" },
+        { value: "logo", label: "Logo personnalisé" },
+      ];
+
+      // Rotation du contenu d'un champ : permet de disposer le texte (ou
+      // tout autre type de champ) dans un sens comme dans l'autre — utile
+      // notamment dans les zones étroites (trapèze de verrouillage des
+      // rabats) où le contenu se lit mieux tourné à 90°.
+      const ROTATION_OPTIONS = [
+        { value: 0, label: "0° (normal)" },
+        { value: 90, label: "90° (horaire)" },
+        { value: 180, label: "180° (tête en bas)" },
+        { value: 270, label: "270° (anti-horaire)" },
+      ];
+
+      const SHAPE_TYPE_OPTIONS = [
+        { value: "rectangle", label: "Rectangle uni" },
+        { value: "circle", label: "Cercle / Ovale" },
+        { value: "diagonal-tl-br", label: "Diagonale ↘ (2 couleurs)" },
+        { value: "diagonal-tr-bl", label: "Diagonale ↙ (2 couleurs)" },
+        { value: "curve-wave", label: "Courbe / vague (2 couleurs)" },
+      ];
+
+      function defaultTabletFieldsConfig() {
+        return [
+          // --- Face avant ---
+          {
+            id: "denomination",
+            label: "Dénomination de la spécialité",
+            face: "p5",
+            x: 6,
+            y: 6,
+            w: 88,
+            h: 20,
+            fontSize: 22,
+            bold: true,
+            color: "#1e3a8a",
+            align: "left",
+            type: "text",
+            content: "Paracétamol",
+          },
+          {
+            id: "dci",
+            label: "DCI",
+            face: "p5",
+            x: 6,
+            y: 27,
+            w: 88,
+            h: 9,
+            fontSize: 12,
+            bold: true,
+            color: "#1e293b",
+            align: "left",
+            type: "text",
+            content: "PARACÉTAMOL",
+          },
+          {
+            id: "dosage",
+            label: "Dosage unitaire",
+            face: "p5",
+            x: 6,
+            y: 38,
+            w: 55,
+            h: 12,
+            fontSize: 16,
+            bold: true,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "500 mg",
+          },
+          {
+            id: "forme_quantite",
+            label: "Forme pharmaceutique et quantité",
+            face: "p5",
+            x: 6,
+            y: 52,
+            w: 55,
+            h: 9,
+            fontSize: 11,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "20 comprimés",
+          },
+          {
+            id: "voie_administration",
+            label: "Voie d'administration",
+            face: "p5",
+            x: 6,
+            y: 63,
+            w: 55,
+            h: 8,
+            fontSize: 10,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Voie orale",
+          },
+          {
+            id: "pictogramme_securite",
+            label: "Pictogramme de sécurité (dès 6 ans)",
+            face: "p5",
+            x: 66,
+            y: 50,
+            w: 28,
+            h: 32,
+            fontSize: 9,
+            bold: true,
+            color: "#1e3a8a",
+            align: "center",
+            type: "pictogram",
+            content: "Dès 6 ans\n+22kg",
+          },
+          {
+            id: "logo_avant",
+            label: "Logo laboratoire (Face avant)",
+            face: "p5",
+            x: 6,
+            y: 74,
+            w: 55,
+            h: 18,
+            fontSize: 10,
+            bold: true,
+            color: "#1e3a8a",
+            color2: "#f5a623",
+            align: "left",
+            type: "logo",
+            content: "",
+          },
+          // --- Face arrière ---
+          {
+            id: "indications",
+            label: "Indications d'usage",
+            face: "p9",
+            x: 6,
+            y: 6,
+            w: 88,
+            h: 24,
+            fontSize: 10,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content:
+              "Traitement de la douleur et de la fièvre chez l'adulte et l'enfant de plus de 22 kg.",
+          },
+          {
+            id: "mise_en_garde",
+            label: "Mise en garde essentielle",
+            face: "p9",
+            x: 6,
+            y: 32,
+            w: 88,
+            h: 22,
+            fontSize: 9.5,
+            bold: true,
+            color: "#b91c1c",
+            align: "left",
+            type: "text",
+            content:
+              "ATTENTION : Ne pas associer avec un autre médicament contenant du paracétamol (risque de toxicité grave du foie).",
+          },
+          {
+            id: "consigne_enfants",
+            label: "Consigne générale",
+            face: "p9",
+            x: 6,
+            y: 56,
+            w: 88,
+            h: 8,
+            fontSize: 9,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Ne pas laisser à la portée des enfants.",
+          },
+          {
+            id: "pictogramme_hepatique",
+            label: "Pictogramme d'alerte hépatique",
+            face: "p9",
+            x: 68,
+            y: 66,
+            w: 26,
+            h: 28,
+            fontSize: 8,
+            bold: true,
+            color: "#dc2626",
+            align: "center",
+            type: "pictogram",
+            content: "⚠",
+          },
+          // --- Face latérale gauche : mentions administratives ---
+          {
+            id: "titulaire_amm",
+            label: "Titulaire de l'AMM",
+            face: "p1",
+            x: 6,
+            y: 4,
+            w: 88,
+            h: 30,
+            fontSize: 8,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "COMPANY NAME\nAdresse administrative du laboratoire",
+          },
+          {
+            id: "fabricant",
+            label: "Fabricant",
+            face: "p1",
+            x: 6,
+            y: 36,
+            w: 88,
+            h: 24,
+            fontSize: 8,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Fabriqué par [Nom du Fabricant], Ouagadougou, Burkina Faso",
+          },
+          {
+            id: "numero_amm",
+            label: "Numéro d'AMM",
+            face: "p1",
+            x: 6,
+            y: 64,
+            w: 88,
+            h: 10,
+            fontSize: 8.5,
+            bold: true,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "N° AMM : BF-XXXXX-XX",
+          },
+          {
+            id: "statut_legal",
+            label: "Statut légal",
+            face: "p1",
+            x: 6,
+            y: 78,
+            w: 88,
+            h: 16,
+            fontSize: 7.5,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content:
+              "Médicament non soumis à prescription obligatoire (Vente libre en pharmacie).",
+          },
+          // --- Rabat gauche : zone trapèze (verrouillage) ---
+          {
+            id: "rabat_gauche_trapeze",
+            label: "Repère rabat gauche (trapèze)",
+            face: "p1-rabat",
+            x: 10,
+            y: 20,
+            w: 80,
+            h: 60,
+            fontSize: 7,
+            bold: true,
+            color: "#94a3b8",
+            align: "center",
+            type: "text",
+            rotation: 90,
+            content: "NE PAS DÉCOLLER",
+          },
+          // --- Rabat droit : zone trapèze (verrouillage) ---
+          {
+            id: "rabat_droit_trapeze",
+            label: "Repère rabat droit (trapèze)",
+            face: "p10-rabat",
+            x: 10,
+            y: 20,
+            w: 80,
+            h: 60,
+            fontSize: 7,
+            bold: true,
+            color: "#94a3b8",
+            align: "center",
+            type: "text",
+            rotation: 90,
+            content: "NE PAS DÉCOLLER",
+          },
+          // --- Face latérale droite : mentions scientifiques/économiques ---
+          {
+            id: "composition_unitaire",
+            label: "Composition unitaire",
+            face: "p10",
+            x: 6,
+            y: 4,
+            w: 88,
+            h: 34,
+            fontSize: 8,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "table",
+            content:
+              "Paracétamol: 500 mg\nPovidone: q.s.\nAmidon prégélatinisé: q.s.\nAcide stéarique: q.s.p. un comprimé",
+          },
+          {
+            id: "conservation",
+            label: "Consignes de conservation",
+            face: "p10",
+            x: 6,
+            y: 42,
+            w: 88,
+            h: 18,
+            fontSize: 8,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content:
+              "Conserver à une température ne dépassant pas 30°C. Conserver au sec.",
+          },
+          {
+            id: "prix",
+            label: "Prix réglementé (PGHT)",
+            face: "p10",
+            x: 6,
+            y: 66,
+            w: 88,
+            h: 12,
+            fontSize: 9,
+            bold: true,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "PGHT : XXXX F CFA",
+          },
+          // --- Rabat supérieur : données dynamiques de production ---
+          {
+            id: "lot",
+            label: "Numéro de lot",
+            face: "p12",
+            x: 6,
+            y: 8,
+            w: 88,
+            h: 22,
+            fontSize: 9,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "Lot : T12345",
+          },
+          {
+            id: "date_fab",
+            label: "Date de fabrication",
+            face: "p12",
+            x: 6,
+            y: 38,
+            w: 88,
+            h: 18,
+            fontSize: 9,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "Date Fab. : 04/2026",
+          },
+          {
+            id: "date_exp",
+            label: "Date d'expiration",
+            face: "p12",
+            x: 6,
+            y: 62,
+            w: 88,
+            h: 18,
+            fontSize: 9,
+            bold: true,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "Date Exp. : 04/2029",
+          },
+          // --- Rabat inférieur : traçabilité et sécurité ---
+          {
+            id: "code_barres",
+            label: "Code-barres EAN-13",
+            face: "p7",
+            x: 4,
+            y: 6,
+            w: 44,
+            h: 46,
+            fontSize: 8,
+            bold: false,
+            color: "#000000",
+            align: "center",
+            type: "barcode",
+            content: "1234567890123",
+          },
+          {
+            id: "datamatrix",
+            label: "Code Datamatrix (GS1)",
+            face: "p7",
+            x: 54,
+            y: 6,
+            w: 40,
+            h: 40,
+            fontSize: 6,
+            bold: false,
+            color: "#000000",
+            align: "center",
+            type: "datamatrix",
+            content: "GTIN+SERIAL+LOT+EXP",
+          },
+          {
+            id: "braille",
+            label: "Marquage en Braille",
+            face: "p7",
+            x: 4,
+            y: 56,
+            w: 90,
+            h: 36,
+            fontSize: 11,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "braille",
+            content: "PARACETAMOL 500",
+          },
+        ];
+      }
+
+      // ============================================================
+      // === Champs par défaut — mode Sirop / Flacon liquide ===
+      // Même logique que le mode Comprimés : chaque information
+      // réglementaire/marketing est un champ positionnable sur l'une
+      // des 6 faces du patron liquide (avant, arrière, 2 côtés, 2
+      // rabats), avec les mêmes types disponibles (texte, pictogramme,
+      // code-barres, datamatrix, braille, logo, forme).
+      // ============================================================
+      function defaultLiquidFieldsConfig() {
+        return [
+          // --- Face avant (lp5) ---
+          {
+            id: "liq_logo_avant",
+            label: "Logo laboratoire (Face avant)",
+            face: "lp5",
+            x: 6,
+            y: 4,
+            w: 88,
+            h: 9,
+            fontSize: 10,
+            bold: true,
+            color: "#1e3a8a",
+            color2: "#f97316",
+            align: "left",
+            type: "logo",
+            content: "",
+          },
+          {
+            id: "liq_denomination",
+            label: "Dénomination de la spécialité",
+            face: "lp5",
+            x: 6,
+            y: 16,
+            w: 88,
+            h: 11,
+            fontSize: 16,
+            bold: true,
+            color: "#1e3a8a",
+            align: "left",
+            type: "text",
+            content: "Sirop de Paracétamol",
+          },
+          {
+            id: "liq_dci_dosage",
+            label: "DCI / Dosage",
+            face: "lp5",
+            x: 6,
+            y: 28,
+            w: 88,
+            h: 8,
+            fontSize: 10.5,
+            bold: true,
+            color: "#1e293b",
+            align: "left",
+            type: "text",
+            content: "PARACÉTAMOL 2,4 % (120 mg / 5 ml)",
+          },
+          {
+            id: "liq_contenance",
+            label: "Forme pharmaceutique et contenance",
+            face: "lp5",
+            x: 6,
+            y: 37,
+            w: 55,
+            h: 7,
+            fontSize: 10,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Sirop — Flacon de 200 ml",
+          },
+          {
+            id: "liq_voie_administration",
+            label: "Voie d'administration",
+            face: "lp5",
+            x: 6,
+            y: 45,
+            w: 55,
+            h: 6,
+            fontSize: 8.5,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Voie orale",
+          },
+          {
+            id: "liq_pictogramme_securite",
+            label: "Pictogramme de sécurité (âge / cuillère-mesure)",
+            face: "lp5",
+            x: 66,
+            y: 36,
+            w: 28,
+            h: 16,
+            fontSize: 8,
+            bold: true,
+            color: "#1e3a8a",
+            align: "center",
+            type: "pictogram",
+            content: "Utiliser la\npipette fournie",
+          },
+          {
+            id: "liq_description",
+            label: "Texte descriptif / accroche",
+            face: "lp5",
+            x: 6,
+            y: 55,
+            w: 88,
+            h: 28,
+            fontSize: 8,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content:
+              "Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.",
+          },
+          {
+            id: "liq_footer_labo",
+            label: "Pied de page laboratoire",
+            face: "lp5",
+            x: 6,
+            y: 90,
+            w: 88,
+            h: 8,
+            fontSize: 7,
+            bold: false,
+            color: "#64748b",
+            align: "left",
+            type: "text",
+            content: "COMPANY NAME — YOUR SLOGAN HERE",
+          },
+          // --- Face arrière (lp7) ---
+          {
+            id: "liq_indications",
+            label: "Indications d'usage",
+            face: "lp7",
+            x: 6,
+            y: 6,
+            w: 88,
+            h: 18,
+            fontSize: 9.5,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content:
+              "Traitement symptomatique des douleurs légères à modérées et/ou de la fièvre.",
+          },
+          {
+            id: "liq_posologie",
+            label: "Posologie",
+            face: "lp7",
+            x: 6,
+            y: 26,
+            w: 88,
+            h: 16,
+            fontSize: 9,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content:
+              "Enfants : 15 mg/kg toutes les 6 heures. Utiliser exclusivement la pipette doseuse fournie.",
+          },
+          {
+            id: "liq_mise_en_garde",
+            label: "Mise en garde essentielle",
+            face: "lp7",
+            x: 6,
+            y: 44,
+            w: 88,
+            h: 18,
+            fontSize: 9,
+            bold: true,
+            color: "#b91c1c",
+            align: "left",
+            type: "text",
+            content:
+              "ATTENTION : Ne pas associer avec un autre médicament contenant du paracétamol (risque de toxicité grave du foie).",
+          },
+          {
+            id: "liq_consigne_enfants",
+            label: "Consigne générale",
+            face: "lp7",
+            x: 6,
+            y: 64,
+            w: 60,
+            h: 8,
+            fontSize: 8.5,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content: "Tenir hors de la portée et de la vue des enfants.",
+          },
+          {
+            id: "liq_pictogramme_hepatique",
+            label: "Pictogramme d'alerte hépatique",
+            face: "lp7",
+            x: 68,
+            y: 76,
+            w: 24,
+            h: 18,
+            fontSize: 8,
+            bold: true,
+            color: "#dc2626",
+            align: "center",
+            type: "pictogram",
+            content: "⚠",
+          },
+          // --- Côté gauche : ingrédients (lp6) ---
+          {
+            id: "liq_composition_table",
+            label: "Table de composition",
+            face: "lp6",
+            x: 6,
+            y: 4,
+            w: 88,
+            h: 46,
+            fontSize: 8,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content:
+              "Composition / Dose\nParacétamol : 24 mg\nSaccharose : 0.3 g\nPropylène Glycol : 0.1 ml\nSorbitol : 0.15 g\nArôme fraise : Q.S.\nEau purifiée : Q.S.P 1 ml",
+          },
+          {
+            id: "liq_precautions",
+            label: "Précautions de conservation",
+            face: "lp6",
+            x: 6,
+            y: 54,
+            w: 88,
+            h: 16,
+            fontSize: 7.5,
+            bold: false,
+            color: "#475569",
+            align: "left",
+            type: "text",
+            content:
+              "Précautions : conserver à une température ne dépassant pas 30°C.",
+          },
+          {
+            id: "liq_dates_lot",
+            label: "Dates de fabrication / expiration et lot",
+            face: "lp6",
+            x: 6,
+            y: 74,
+            w: 88,
+            h: 18,
+            fontSize: 8,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            content: "Fab. : MM/AAAA   Exp. : MM/AAAA\nN° de Lot : T12345",
+          },
+          {
+            id: "liq_reg_amm",
+            label: "Réglementaire / N° AMM",
+            face: "lp6",
+            x: 6,
+            y: 90,
+            w: 88,
+            h: 8,
+            fontSize: 7,
+            bold: false,
+            color: "#64748b",
+            align: "left",
+            type: "text",
+            content: "Mfg.Lic.No : 123456 / MA No : 9876543",
+          },
+          // --- Côté droit : notice & codes (lp8) ---
+          {
+            id: "liq_titulaire_fabricant",
+            label: "Titulaire AMM / Fabricant",
+            face: "lp8",
+            x: 6,
+            y: 4,
+            w: 88,
+            h: 20,
+            fontSize: 7.5,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content:
+              "COMPANY NAME\nFabriqué par [Nom du Fabricant], Ouagadougou, Burkina Faso",
+          },
+          {
+            id: "liq_statut_legal",
+            label: "Statut légal",
+            face: "lp8",
+            x: 6,
+            y: 26,
+            w: 88,
+            h: 12,
+            fontSize: 7.5,
+            bold: false,
+            color: "#334155",
+            align: "left",
+            type: "text",
+            content:
+              "Médicament non soumis à prescription obligatoire (Vente libre en pharmacie).",
+          },
+          {
+            id: "liq_code_barres",
+            label: "Code-barres EAN-13",
+            face: "lp8",
+            x: 4,
+            y: 42,
+            w: 44,
+            h: 24,
+            fontSize: 8,
+            bold: false,
+            color: "#000000",
+            align: "center",
+            type: "barcode",
+            content: "1234567890123",
+          },
+          {
+            id: "liq_datamatrix",
+            label: "Code Datamatrix (GS1)",
+            face: "lp8",
+            x: 54,
+            y: 42,
+            w: 40,
+            h: 24,
+            fontSize: 6,
+            bold: false,
+            color: "#000000",
+            align: "center",
+            type: "datamatrix",
+            content: "GTIN+SERIAL+LOT+EXP",
+          },
+          {
+            id: "liq_braille",
+            label: "Marquage en Braille",
+            face: "lp8",
+            x: 4,
+            y: 70,
+            w: 90,
+            h: 24,
+            fontSize: 10,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "braille",
+            content: "SIROP PARACETAMOL",
+          },
+          // --- Rabat haut : zone visible (lp1) ---
+          {
+            id: "liq_flap_top_product",
+            label: "Bandeau produit (rabat haut)",
+            face: "lp1",
+            x: 4,
+            y: 8,
+            w: 92,
+            h: 45,
+            fontSize: 9,
+            bold: true,
+            color: "#ffffff",
+            align: "center",
+            type: "text",
+            content: "SIROP DE PARACÉTAMOL",
+          },
+          {
+            id: "liq_flap_top_dosage",
+            label: "Bandeau dosage (rabat haut)",
+            face: "lp1",
+            x: 4,
+            y: 55,
+            w: 92,
+            h: 35,
+            fontSize: 6,
+            bold: false,
+            color: "#ffffff",
+            align: "center",
+            type: "text",
+            content: "PARACÉTAMOL 2,4 % (120 MG / 5 ML)",
+          },
+          // --- Rabat bas : zone visible (lp10) ---
+          {
+            id: "liq_flap_bottom_dosage",
+            label: "Bandeau dosage (rabat bas)",
+            face: "lp10",
+            x: 4,
+            y: 8,
+            w: 92,
+            h: 35,
+            fontSize: 6,
+            bold: false,
+            color: "#ffffff",
+            align: "center",
+            type: "text",
+            content: "PARACÉTAMOL 2,4 % (120 MG / 5 ML)",
+          },
+          {
+            id: "liq_flap_bottom_product",
+            label: "Bandeau produit (rabat bas)",
+            face: "lp10",
+            x: 4,
+            y: 48,
+            w: 92,
+            h: 45,
+            fontSize: 9,
+            bold: true,
+            color: "#ffffff",
+            align: "center",
+            type: "text",
+            content: "SIROP DE PARACÉTAMOL",
+          },
+        ];
+      }
+
+      // Fusion des deux jeux de champs par défaut (Comprimés + Liquide) —
+      // conservée pour compatibilité avec le code existant qui appelle
+      // defaultFieldsConfig() sans se soucier du mode actif ; le filtrage
+      // par face (voir currentModeFaces()) garantit qu'un mode ne voit et
+      // ne réinitialise jamais que ses propres champs.
+      function defaultFieldsConfig() {
+        return [...defaultTabletFieldsConfig(), ...defaultLiquidFieldsConfig()];
+      }
+
+      function loadFieldsConfig() {
+        try {
+          const raw = localStorage.getItem(FIELDS_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length) return parsed;
+          }
+        } catch (e) {
+          console.error("Lecture des champs échouée :", e);
+        }
+        return defaultFieldsConfig();
+      }
+
+      function saveFieldsConfig() {
+        try {
+          localStorage.setItem(FIELDS_STORAGE_KEY, JSON.stringify(fieldsConfig));
+        } catch (e) {
+          console.error("Sauvegarde des champs échouée :", e);
+        }
+      }
+
+      let fieldsConfig = loadFieldsConfig();
+
+      function escapeHtml(str) {
+        return String(str == null ? "" : str).replace(
+          /[&<>"']/g,
+          (s) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[s],
+        );
+      }
+
+      const BRAILLE_MAP = {
+        a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑", f: "⠋", g: "⠛", h: "⠓",
+        i: "⠊", j: "⠚", k: "⠅", l: "⠇", m: "⠍", n: "⠝", o: "⠕", p: "⠏",
+        q: "⠟", r: "⠗", s: "⠎", t: "⠞", u: "⠥", v: "⠧", w: "⠺", x: "⠭",
+        y: "⠽", z: "⠵", " ": " ",
+        "0": "⠴", "1": "⠂", "2": "⠆", "3": "⠒", "4": "⠲",
+        "5": "⠢", "6": "⠖", "7": "⠶", "8": "⠦", "9": "⠔",
+      };
+
+      function toBraille(text) {
+        return (text || "")
+          .toLowerCase()
+          .split("")
+          .map((ch) => BRAILLE_MAP[ch] || ch)
+          .join("");
+      }
+
+      function buildDatamatrixNode(field) {
+        const wrap = document.createElement("div");
+        wrap.className = "field-datamatrix-grid";
+        const size = 12;
+        wrap.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        wrap.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+        wrap.style.color = field.color || "#000000";
+        const str = field.content || "GS1";
+        let seed = 0;
+        for (let i = 0; i < str.length; i++) {
+          seed = (seed * 31 + str.charCodeAt(i)) >>> 0;
+        }
+        for (let i = 0; i < size * size; i++) {
+          seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+          const on = (seed >>> 16) % 2 === 0;
+          const cell = document.createElement("div");
+          cell.style.opacity = on ? "1" : "0";
+          wrap.appendChild(cell);
+        }
+        return wrap;
+      }
+
+      function buildLogoNode(field) {
+        const wrap = document.createElement("div");
+        wrap.className = "logo-container";
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.width = "100%";
+        wrap.style.height = "100%";
+        wrap.style.overflow = "hidden";
+        wrap.style.justifyContent = field.align === "center" ? "center" : (field.align === "right" ? "flex-end" : "flex-start");
+
+        const size = field.fontSize ? field.fontSize * 2 : 22;
+        let logoHtml = "";
+        if (customLogoUrl) {
+          logoHtml = `<img src="${customLogoUrl}" alt="Logo" style="width:${size}px; height:${size}px; object-fit:contain; flex-shrink:0;" />`;
+        } else {
+          const c1 = field.color || "var(--primary)";
+          const c2 = field.color2 || "var(--accent)";
+          logoHtml = `
+            <svg viewBox="0 0 100 100" style="width:${size}px; height:${size}px; flex-shrink:0;" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100" height="100" rx="20" fill="${c1}" />
+              <path d="M30 50H70M50 30V70" stroke="${c2}" stroke-width="8" stroke-linecap="round" />
+              <circle cx="50" cy="50" r="10" fill="#ffffff" />
+            </svg>
+          `;
+        }
+
+        const nameColor = field.color || "var(--primary)";
+        const sloganColor = field.color2 || "var(--accent)";
+        const showText = field.content !== "logo-only" && field.content !== "icon-only";
+
+        if (showText) {
+          const nameText = field.content ? field.content : controls.txtLabName.value;
+          const sloganText = controls.txtSlogan.value;
+          wrap.innerHTML = `
+            ${logoHtml}
+            <div class="logo-text" style="display:flex; flex-direction:column; overflow:hidden; text-align:left;">
+              <span class="logo-name" style="font-size:${field.fontSize || 10}px; font-weight:800; color:${nameColor}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; line-height:1.1;">${escapeHtml(nameText)}</span>
+              <span class="logo-slogan" style="font-size:${Math.max(5, (field.fontSize || 10) * 0.7)}px; font-weight:700; color:${sloganColor}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; line-height:1.1;">${escapeHtml(sloganText)}</span>
+            </div>
+          `;
+        } else {
+          wrap.innerHTML = logoHtml;
+        }
+
+        return wrap;
+      }
+
+      function buildShapeNode(field) {
+        const shapeType = field.shapeType || "rectangle";
+        const c1 = field.color || "#1e3a8a";
+        const c2 = field.color2 || "#f97316";
+        const wrap = document.createElement("div");
+        wrap.style.position = "relative";
+        wrap.style.width = "100%";
+        wrap.style.height = "100%";
+        wrap.style.overflow = "hidden";
+
+        if (shapeType === "circle") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "50%";
+        } else if (shapeType === "diagonal-tl-br" || shapeType === "diagonal-tr-bl") {
+          const base = document.createElement("div");
+          base.style.position = "absolute";
+          base.style.inset = "0";
+          base.style.background = c1;
+          const tri = document.createElement("div");
+          tri.style.position = "absolute";
+          tri.style.inset = "0";
+          tri.style.background = c2;
+          tri.style.clipPath =
+            shapeType === "diagonal-tl-br"
+              ? "polygon(100% 0, 100% 100%, 0 100%)"
+              : "polygon(0 0, 100% 0, 0 100%)";
+          wrap.appendChild(base);
+          wrap.appendChild(tri);
+        } else if (shapeType === "curve-wave") {
+          wrap.style.background = c1;
+          const svgNS = "http://www.w3.org/2000/svg";
+          const svg = document.createElementNS(svgNS, "svg");
+          svg.setAttribute("viewBox", "0 0 100 100");
+          svg.setAttribute("preserveAspectRatio", "none");
+          svg.style.position = "absolute";
+          svg.style.inset = "0";
+          svg.style.width = "100%";
+          svg.style.height = "100%";
+          const path = document.createElementNS(svgNS, "path");
+          path.setAttribute(
+            "d",
+            "M0,55 C 30,40 70,70 100,50 L100,100 L0,100 Z",
+          );
+          path.setAttribute("fill", c2);
+          svg.appendChild(path);
+          wrap.appendChild(svg);
+        } else {
+          // rectangle uni
+          wrap.style.background = c1;
+        }
+
+        return wrap;
+      }
+
+      // Faces disponibles pour le mode Comprimés (correspondance
+      // avec les panneaux du patron déplié).
+      const TABLET_FIELD_FACES = [
+        "p5",
+        "p9",
+        "p1",
+        "p1-rabat",
+        "p10",
+        "p10-rabat",
+        "p12",
+        "p7",
+      ];
+
+      // Faces disponibles pour le mode Sirop / Flacon liquide.
+      const LIQUID_FIELD_FACES = ["lp5", "lp7", "lp6", "lp8", "lp1", "lp10"];
+
+      // Rétro-compatibilité (ancien nom, mode Comprimés uniquement).
+      const CUSTOM_FIELD_FACES = TABLET_FIELD_FACES;
+
+      // Toutes les faces des deux modes confondus — utilisé uniquement
+      // pour nettoyer les zones DOM avant un nouveau rendu.
+      const ALL_FIELD_FACES = [...TABLET_FIELD_FACES, ...LIQUID_FIELD_FACES];
+
+      // Renvoie la liste des faces pertinentes pour le mode actuellement
+      // sélectionné (Comprimés ou Liquide) : sert à filtrer l'éditeur de
+      // champs, la validation et les réinitialisations pour qu'un mode
+      // n'affecte jamais les champs de l'autre.
+      function currentModeFaces() {
+        return isLiquidMode() ? LIQUID_FIELD_FACES : TABLET_FIELD_FACES;
+      }
+
+      function renderAllCustomFields() {
+        ALL_FIELD_FACES.forEach((faceId) => {
+          const zone = document.getElementById("fieldzone-" + faceId);
+          if (zone) zone.innerHTML = "";
+        });
+
+        // Les zones de couleur/design (fond) sont rendues avant les
+        // autres champs, pour rester derrière le texte quel que soit
+        // leur ordre dans la liste.
+        const orderedFields = [...fieldsConfig].sort(
+          (a, b) => (a.type === "shape" ? 0 : 1) - (b.type === "shape" ? 0 : 1),
+        );
+
+        orderedFields.forEach((field) => {
+          const zone = document.getElementById("fieldzone-" + field.face);
+          if (!zone) return;
+
+          const el = document.createElement("div");
+          el.className = "custom-field";
+          el.dataset.fieldId = field.id;
+          el.style.left = field.x + "%";
+          el.style.top = field.y + "%";
+          el.style.width = field.w + "%";
+          el.style.height = field.h + "%";
+          el.style.textAlign = field.align || "left";
+          el.style.fontSize = (field.fontSize || 10) + "px";
+          el.style.fontWeight = field.bold ? "800" : "400";
+          el.style.color = field.color || "#0f172a";
+          const rot = Number(field.rotation) || 0;
+          if (rot) {
+            el.style.transform = `rotate(${rot}deg)`;
+            el.style.transformOrigin = "center center";
+          }
+
+          if (field.type === "barcode") {
+            el.innerHTML = `
+              <div class="field-barcode-graphic"></div>
+              <div class="field-barcode-number" style="font-size:${Math.max(6, (field.fontSize || 10) * 0.65)}px;">${escapeHtml(field.content)}</div>
+            `;
+          } else if (field.type === "datamatrix") {
+            el.appendChild(buildDatamatrixNode(field));
+          } else if (field.type === "braille") {
+            el.innerHTML = `
+              <div class="field-braille-text" style="font-size:${field.fontSize || 11}px;">${escapeHtml(toBraille(field.content))}</div>
+              <div style="font-size:${Math.max(6, (field.fontSize || 11) * 0.55)}px; color:#64748b; margin-top:2px;">${escapeHtml(field.content)}</div>
+            `;
+          } else if (field.type === "pictogram") {
+            el.innerHTML = `<div class="field-pictogram" style="width:100%; height:100%; border-color:${field.color || "#1e3a8a"}; color:${field.color || "#1e3a8a"}; font-size:${field.fontSize || 9}px;">${escapeHtml(field.content).replace(/\n/g, "<br/>")}</div>`;
+          } else if (field.type === "table") {
+            // Tableau à 2 colonnes séparées par des pointillés : la
+            // composition qualitative (nom) à gauche, la quantité à
+            // droite. Une ligne de contenu = "Nom: valeur". Réutilise
+            // le même rendu que la table de composition liquide, mais
+            // disponible pour n'importe quelle face (Comprimés inclus).
+            const rows = String(field.content || "")
+              .split("\n")
+              .map((l) => l.trim())
+              .filter(Boolean)
+              .map((line) => {
+                const sepIdx = line.indexOf(":");
+                const name = sepIdx >= 0 ? line.slice(0, sepIdx).trim() : line;
+                const value = sepIdx >= 0 ? line.slice(sepIdx + 1).trim() : "";
+                return `<div class="liquid-table-row" style="font-size:${field.fontSize || 8}px; color:${field.color || "#334155"}; font-weight:${field.bold ? 800 : 400};"><span>${escapeHtml(name)}</span><span>${escapeHtml(value)}</span></div>`;
+              })
+              .join("");
+            el.innerHTML = `<div class="liquid-composition-table" style="margin-top:0;">${rows}</div>`;
+          } else if (field.type === "shape") {
+            el.style.padding = "0";
+            el.appendChild(buildShapeNode(field));
+          } else if (field.type === "logo") {
+            el.style.padding = "0";
+            el.appendChild(buildLogoNode(field));
+          } else {
+            el.textContent = field.content;
+          }
+
+          zone.appendChild(el);
+        });
+        // Validation chevauchements/débordements après chaque rendu
+        validateFields();
+      }
+
+      // Identifiant du dernier champ ajouté — permet d'ouvrir
+      // automatiquement son accordéon lors du prochain rendu.
+      let _lastAddedFieldId = null;
+
+      // Mapping face → label + couleur pour le groupement visuel
+      const FACE_LABEL_MAP = {
+        'p5':       { label: 'Face avant',              color: '#2563eb' },
+        'p9':       { label: 'Face arrière',             color: '#b45309' },
+        'p1':       { label: 'Côté gauche (rect.)',      color: '#166534' },
+        'p1-rabat': { label: 'Rabat gauche (trapèze)',   color: '#14532d' },
+        'p10':      { label: 'Côté droit (rect.)',       color: '#7c3aed' },
+        'p10-rabat':{ label: 'Rabat droit (trapèze)',    color: '#4c1d95' },
+        'p12':      { label: 'Flanc supérieur',          color: '#be185d' },
+        'p7':       { label: 'Flanc inférieur',          color: '#9f1239' },
+        // --- Mode Liquide (Sirop / Flacon) ---
+        'lp5':      { label: 'Face avant',                color: '#2563eb' },
+        'lp7':      { label: 'Face arrière',               color: '#b45309' },
+        'lp6':      { label: 'Côté gauche (ingrédients)',  color: '#166534' },
+        'lp8':      { label: 'Côté droit (notice & codes)',color: '#7c3aed' },
+        'lp1':      { label: 'Rabat haut',                 color: '#be185d' },
+        'lp10':     { label: 'Rabat bas',                  color: '#9f1239' },
+      };
+
+      // Mapping type → libellé court pour le badge
+      const TYPE_LABEL_MAP = {
+        text:       'Texte',
+        table:      'Tableau',
+        pictogram:  'Picto',
+        barcode:    'EAN-13',
+        datamatrix: 'Matrix',
+        braille:    'Braille',
+        shape:      'Forme',
+        logo:       'Logo',
+      };
+
+      // ============================================================
+      // === Validation des chevauchements et débordements ===
+      // ============================================================
+      function validateFields() {
+        const summary = document.getElementById('validationSummary');
+        const editorContainer = document.getElementById('fieldEditorContainer');
+        const issues = []; // { type: 'overflow'|'overlap', label, fieldId }
+
+        // Réinitialiser les marqueurs visuels
+        document.querySelectorAll('.custom-field').forEach(el => {
+          el.classList.remove('field-overflow', 'field-overlap');
+        });
+        if (editorContainer) {
+          editorContainer.querySelectorAll('.field-editor-row').forEach(row => {
+            row.classList.remove('has-overflow', 'has-overlap');
+            const badge = row.querySelector('.field-error-badge');
+            if (badge) badge.textContent = '';
+          });
+        }
+
+        // Ne valider que les champs du mode actuellement sélectionné
+        // (Comprimés ou Liquide) : un champ inactif dans l'autre mode
+        // ne doit jamais polluer le résumé de validation.
+        const modeFaces = currentModeFaces();
+        const activeFields = fieldsConfig.filter(f => modeFaces.includes(f.face));
+
+        // Grouper les champs par face
+        const byFace = {};
+        activeFields.forEach(field => {
+          if (!byFace[field.face]) byFace[field.face] = [];
+          byFace[field.face].push(field);
+        });
+
+        // Détecter les débordements
+        activeFields.forEach(field => {
+          const overflowX = (field.x + field.w) > 102; // petite tolérance de 2%
+          const overflowY = (field.y + field.h) > 102;
+          if (overflowX || overflowY) {
+            issues.push({ type: 'overflow', label: field.label, fieldId: field.id });
+          }
+        });
+
+        // Détecter les chevauchements (AABB) — on ignore les shapes entre eux
+        Object.values(byFace).forEach(group => {
+          const nonShapes = group.filter(f => f.type !== 'shape');
+          for (let i = 0; i < nonShapes.length; i++) {
+            for (let j = i + 1; j < nonShapes.length; j++) {
+              const a = nonShapes[i];
+              const b = nonShapes[j];
+              const overX = a.x < (b.x + b.w) && (a.x + a.w) > b.x;
+              const overY = a.y < (b.y + b.h) && (a.y + a.h) > b.y;
+              if (overX && overY) {
+                if (!issues.find(iss => iss.type === 'overlap' && iss.fieldId === a.id)) {
+                  issues.push({ type: 'overlap', label: a.label, fieldId: a.id });
+                }
+                if (!issues.find(iss => iss.type === 'overlap' && iss.fieldId === b.id)) {
+                  issues.push({ type: 'overlap', label: b.label, fieldId: b.id });
+                }
+              }
+            }
+          }
+        });
+
+        // Appliquer les marqueurs visuels sur les éléments rendus
+        issues.forEach(issue => {
+          const rendered = document.querySelector(`.custom-field[data-field-id="${issue.fieldId}"]`);
+          if (rendered) {
+            rendered.classList.add(issue.type === 'overflow' ? 'field-overflow' : 'field-overlap');
+          }
+          if (editorContainer) {
+            const row = editorContainer.querySelector(`.field-editor-row[data-field-id="${issue.fieldId}"]`);
+            if (row) {
+              row.classList.add(issue.type === 'overflow' ? 'has-overflow' : 'has-overlap');
+              const badge = row.querySelector('.field-error-badge');
+              if (badge) badge.textContent = issue.type === 'overflow' ? '⚠️' : '🔶';
+            }
+          }
+        });
+
+        // Mettre à jour le panneau résumé
+        if (summary) {
+          const overflows = issues.filter(i => i.type === 'overflow');
+          const overlaps  = issues.filter(i => i.type === 'overlap');
+          if (issues.length === 0) {
+            summary.className = '';
+            summary.innerHTML = '';
+          } else {
+            summary.className = overflows.length > 0 ? 'has-errors' : 'has-warnings';
+            summary.innerHTML = `
+              <div class="validation-title">
+                ${overflows.length > 0 ? '🔴 ' + overflows.length + ' débordement(s)' : ''}
+                ${overlaps.length > 0 ? (overflows.length > 0 ? ' &nbsp;·&nbsp; ' : '') + '🟠 ' + overlaps.length + ' chevauchement(s)' : ''}
+              </div>
+              ${overflows.map(i => `<div class="validation-item">↕ ${escapeHtml(i.label)} — dépasse la face</div>`).join('')}
+              ${overlaps.map(i => `<div class="validation-item warn">↔ ${escapeHtml(i.label)} — chevauche un autre champ</div>`).join('')}
+            `;
+          }
+        }
+      }
+
+      // ============================================================
+      // === Éditeur de champs — accordéon + groupement par face ===
+      // ============================================================
+      function renderFieldEditor() {
+        const container = document.getElementById("fieldEditorContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        // Ordre des faces pour le groupement — dépend du mode actif
+        // (Comprimés ou Liquide) afin qu'un mode n'affiche jamais les
+        // champs de l'autre dans l'éditeur.
+        const modeFaces = currentModeFaces();
+        const FACE_ORDER = modeFaces;
+        const byFaceOrdered = {};
+        FACE_ORDER.forEach(f => { byFaceOrdered[f] = []; });
+        const miscGroup = [];
+        fieldsConfig.forEach((field, idx) => {
+          if (!modeFaces.includes(field.face)) return; // hors du mode actif
+          if (byFaceOrdered[field.face] !== undefined) {
+            byFaceOrdered[field.face].push({ field, idx });
+          } else {
+            miscGroup.push({ field, idx });
+          }
+        });
+
+        const groups = [
+          ...FACE_ORDER
+            .map(faceId => ({ faceId, items: byFaceOrdered[faceId] }))
+            .filter(g => g.items.length > 0),
+          ...(miscGroup.length > 0 ? [{ faceId: 'other', items: miscGroup }] : []),
+        ];
+
+        groups.forEach(({ faceId, items }) => {
+          const faceInfo = FACE_LABEL_MAP[faceId] || { label: 'Autre', color: '#64748b' };
+
+          // En-tête de groupe par face
+          const groupHeader = document.createElement('div');
+          groupHeader.className = 'face-group-header';
+          groupHeader.innerHTML = `<div class="face-group-dot" style="background:${faceInfo.color}"></div>${escapeHtml(faceInfo.label)} <span style="color:#475569;font-weight:400;">(${items.length})</span>`;
+          container.appendChild(groupHeader);
+
+          items.forEach(({ field, idx }) => {
+            const isShape = field.type === "shape";
+            const isLogo = field.type === "logo";
+            const typeLabel = TYPE_LABEL_MAP[field.type] || field.type;
+            const isNew = _lastAddedFieldId === field.id;
+
+            const row = document.createElement("div");
+            row.className = "field-editor-row" + (isNew ? "" : " collapsed");
+            row.dataset.fieldId = field.id;
+
+            const commonGrid = `
+              <div><label>Face</label>
+                <select data-idx="${idx}" data-prop="face">
+                  ${getActiveFaceOptions().map(o => `<option value="${o.value}" ${o.value === field.face ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div><label>Type</label>
+                <select data-idx="${idx}" data-prop="type">
+                  ${TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === field.type ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div><label>X (%)</label><input type="number" data-idx="${idx}" data-prop="x" value="${field.x}" min="0" max="200" step="1" /></div>
+              <div><label>Y (%)</label><input type="number" data-idx="${idx}" data-prop="y" value="${field.y}" min="0" max="200" step="1" /></div>
+              <div><label>Largeur (%)</label><input type="number" data-idx="${idx}" data-prop="w" value="${field.w}" min="1" max="200" step="1" /></div>
+              <div><label>Hauteur (%)</label><input type="number" data-idx="${idx}" data-prop="h" value="${field.h}" min="1" max="200" step="1" /></div>
+              <div><label>Rotation</label>
+                <select data-idx="${idx}" data-prop="rotation">
+                  ${ROTATION_OPTIONS.map(o => `<option value="${o.value}" ${Number(field.rotation) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+            `;
+
+            const shapeGrid = `
+              <div><label>Style de forme</label>
+                <select data-idx="${idx}" data-prop="shapeType">
+                  ${SHAPE_TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === (field.shapeType || 'rectangle') ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div><label>Couleur principale</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color || '#1e3a8a'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Couleur secondaire</label>
+                <input type="color" data-idx="${idx}" data-prop="color2" value="${field.color2 || '#f97316'}" style="height:26px;padding:2px" />
+              </div>
+            `;
+
+            const textGrid = `
+              <div><label>Police (px)</label><input type="number" data-idx="${idx}" data-prop="fontSize" value="${field.fontSize}" min="4" max="60" step="0.5" /></div>
+              <div><label>Alignement</label>
+                <select data-idx="${idx}" data-prop="align">
+                  <option value="left"   ${field.align === 'left'   ? 'selected' : ''}>Gauche</option>
+                  <option value="center" ${field.align === 'center' ? 'selected' : ''}>Centré</option>
+                  <option value="right"  ${field.align === 'right'  ? 'selected' : ''}>Droite</option>
+                </select>
+              </div>
+              <div><label>Couleur</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color}" style="height:26px;padding:2px" />
+              </div>
+              <div><label style="display:flex;align-items:center;gap:4px;cursor:pointer;text-transform:none;font-size:11px;color:#cbd5e1;">
+                <input type="checkbox" data-idx="${idx}" data-prop="bold" ${field.bold ? 'checked' : ''} style="width:auto" /> Gras
+              </label></div>
+            `;
+
+            const logoGrid = `
+              <div><label>Taille (px)</label><input type="number" data-idx="${idx}" data-prop="fontSize" value="${field.fontSize}" min="4" max="60" step="0.5" /></div>
+              <div><label>Nom (Couleur)</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color || '#1e3a8a'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Slogan (Couleur)</label>
+                <input type="color" data-idx="${idx}" data-prop="color2" value="${field.color2 || '#f5a623'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Alignement</label>
+                <select data-idx="${idx}" data-prop="align">
+                  <option value="left"   ${field.align === 'left'   ? 'selected' : ''}>Gauche</option>
+                  <option value="center" ${field.align === 'center' ? 'selected' : ''}>Centré</option>
+                  <option value="right"  ${field.align === 'right'  ? 'selected' : ''}>Droite</option>
+                </select>
+              </div>
+            `;
+
+            const contentBlock = isShape ? '' : `
+              <div style="margin-top:4px;">
+                <label style="font-size:9px;text-transform:uppercase;color:#64748b;display:block;margin-bottom:2px;">Contenu ${isLogo ? '(Saisir "logo-only" pour masquer le texte, ou texte personnalisé pour remplacer le nom)' : (field.type === 'table' ? '(une ligne = "Nom : valeur" — nom à gauche, valeur à droite, séparés par des pointillés)' : '')}</label>
+                <textarea data-idx="${idx}" data-prop="content" rows="2">${escapeHtml(field.content)}</textarea>
+              </div>
+            `;
+
+            row.innerHTML = `
+              <div class="field-editor-row-header">
+                <button type="button" class="field-editor-toggle" title="Déplier/Replier">▼</button>
+                <span class="type-badge type-${field.type}">${typeLabel}</span>
+                <input type="text" data-idx="${idx}" data-prop="label" value="${escapeHtml(field.label)}" />
+                <span class="field-error-badge" title="Erreur de positionnement"></span>
+                <button type="button" class="field-remove-btn" data-idx="${idx}" title="Supprimer ce champ">✕</button>
+              </div>
+              <div class="field-editor-row-body">
+                <div class="field-editor-grid" style="margin-top:8px;">
+                  ${commonGrid}
+                  ${isShape ? shapeGrid : (isLogo ? logoGrid : textGrid)}
+                </div>
+                ${contentBlock}
+              </div>
+            `;
+            container.appendChild(row);
+          });
+        });
+
+        // Réinitialiser _lastAddedFieldId après le rendu
+        _lastAddedFieldId = null;
+
+        // Toggle accordéon au clic sur le bouton
+        container.querySelectorAll('.field-editor-toggle').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.currentTarget.closest('.field-editor-row').classList.toggle('collapsed');
+          });
+        });
+
+        // Écouteurs d'événements sur les inputs (identique à avant)
+        container.querySelectorAll("[data-prop]").forEach((input) => {
+          const evtName =
+            input.tagName === "SELECT" ||
+            input.type === "checkbox" ||
+            input.type === "color"
+              ? "change"
+              : "input";
+          input.addEventListener(evtName, (e) => {
+            const idx = Number(e.target.dataset.idx);
+            const prop = e.target.dataset.prop;
+            let value =
+              e.target.type === "checkbox" ? e.target.checked : e.target.value;
+            if (["x", "y", "w", "h", "fontSize", "rotation"].includes(prop)) {
+              value = Number(value);
+            }
+            fieldsConfig[idx][prop] = value;
+            saveFieldsConfig();
+            if (prop === "label") return;
+            if (prop === "type") {
+              if (value === "shape") {
+                fieldsConfig[idx].shapeType = fieldsConfig[idx].shapeType || "rectangle";
+                fieldsConfig[idx].color     = fieldsConfig[idx].color     || "#1e3a8a";
+                fieldsConfig[idx].color2    = fieldsConfig[idx].color2    || "#f97316";
+              } else if (value === "logo") {
+                fieldsConfig[idx].color     = fieldsConfig[idx].color     || "#1e3a8a";
+                fieldsConfig[idx].color2    = fieldsConfig[idx].color2    || "#f5a623";
+                fieldsConfig[idx].fontSize  = fieldsConfig[idx].fontSize  || 10;
+              } else if (value === "table") {
+                fieldsConfig[idx].fontSize = fieldsConfig[idx].fontSize || 8;
+                fieldsConfig[idx].color    = fieldsConfig[idx].color    || "#334155";
+                if (!fieldsConfig[idx].content || fieldsConfig[idx].content === "Nouveau texte") {
+                  fieldsConfig[idx].content = "Nom du composant: Valeur";
+                }
+              }
+              _lastAddedFieldId = fieldsConfig[idx].id;
+              renderFieldEditor();
+            }
+            renderAllCustomFields();
+          });
+        });
+
+        container.querySelectorAll(".field-remove-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const idx = Number(e.currentTarget.dataset.idx);
+            fieldsConfig.splice(idx, 1);
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+          });
+        });
+      }
+
+      const addFieldBtn = document.getElementById("addFieldBtn");
+      const addShapeBtn = document.getElementById("addShapeBtn");
+      const defaultFieldPicker = document.getElementById("defaultFieldPicker");
+      const addDefaultFieldBtn = document.getElementById("addDefaultFieldBtn");
+      const exportFieldsBtn = document.getElementById("exportFieldsBtn");
+      const importFieldsBtn = document.getElementById("importFieldsBtn");
+      const importFieldsInput = document.getElementById("importFieldsInput");
+      const resetFieldsBtn = document.getElementById("resetFieldsBtn");
+
+      function populateDefaultFieldPicker() {
+        if (!defaultFieldPicker) return;
+        const modeFaces = currentModeFaces();
+        defaultFieldPicker.innerHTML = defaultFieldsConfig()
+          .filter((f) => modeFaces.includes(f.face))
+          .map((f) => `<option value="${f.id}">${escapeHtml(f.label)}</option>`)
+          .join("");
+      }
+
+      function populateResetFacePicker() {
+        const picker = document.getElementById('resetFacePicker');
+        if (!picker) return;
+        picker.innerHTML = getActiveFaceOptions()
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('');
+      }
+
+      if (addDefaultFieldBtn) {
+        addDefaultFieldBtn.addEventListener("click", () => {
+          const chosenId = defaultFieldPicker.value;
+          const template = defaultFieldsConfig().find(
+            (f) => f.id === chosenId,
+          );
+          if (!template) return;
+          const clone = JSON.parse(JSON.stringify(template));
+          if (fieldsConfig.some((f) => f.id === clone.id)) {
+            clone.id = clone.id + "_" + Date.now();
+            clone.label = clone.label + " (copie)";
+          }
+          fieldsConfig.push(clone);
+          saveFieldsConfig();
+          _lastAddedFieldId = clone.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (addShapeBtn) {
+        addShapeBtn.addEventListener("click", () => {
+          const newShape = {
+            id: "shape_" + Date.now(),
+            label: "Zone de couleur",
+            face: currentModeFaces()[0],
+            x: 0,
+            y: 0,
+            w: 35,
+            h: 35,
+            type: "shape",
+            shapeType: "diagonal-tl-br",
+            color: "#1e3a8a",
+            color2: "#f97316",
+            fontSize: 10,
+            bold: false,
+            align: "left",
+            rotation: 0,
+            content: "",
+          };
+          fieldsConfig.push(newShape);
+          saveFieldsConfig();
+          _lastAddedFieldId = newShape.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (addFieldBtn) {
+        addFieldBtn.addEventListener("click", () => {
+          const newField = {
+            id: "custom_" + Date.now(),
+            label: "Nouveau champ",
+            face: currentModeFaces()[0],
+            x: 10,
+            y: 10,
+            w: 40,
+            h: 15,
+            fontSize: 10,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            rotation: 0,
+            content: "Nouveau texte",
+          };
+          fieldsConfig.push(newField);
+          saveFieldsConfig();
+          _lastAddedFieldId = newField.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (resetFieldsBtn) {
+        resetFieldsBtn.addEventListener("click", () => {
+          if (
+            !confirm(
+              "Réinitialiser tous les champs personnalisés du mode actuel aux valeurs par défaut ?",
+            )
+          )
+            return;
+          // Ne réinitialise que les champs du mode actif ; les champs de
+          // l'autre mode (Comprimés / Liquide) restent inchangés.
+          const modeFaces = currentModeFaces();
+          fieldsConfig = fieldsConfig.filter(f => !modeFaces.includes(f.face));
+          fieldsConfig.push(...defaultFieldsConfig().filter(f => modeFaces.includes(f.face)));
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      // --- Réinitialisation par face ---
+      const resetFaceBtn = document.getElementById('resetFaceBtn');
+      if (resetFaceBtn) {
+        resetFaceBtn.addEventListener('click', () => {
+          const picker = document.getElementById('resetFacePicker');
+          if (!picker) return;
+          const faceId = picker.value;
+          const faceLabel = getActiveFaceOptions().find(o => o.value === faceId)?.label || faceId;
+          if (!confirm(`Réinitialiser tous les champs de la face "${faceLabel}" aux valeurs par défaut ?\n\nLes champs libres ajoutés sur cette face seront supprimés.`))
+            return;
+          // Supprimer les champs de cette face
+          fieldsConfig = fieldsConfig.filter(f => f.face !== faceId);
+          // Ré-insérer les valeurs par défaut pour cette face
+          const defaults = defaultFieldsConfig().filter(f => f.face === faceId);
+          fieldsConfig.push(...defaults);
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (exportFieldsBtn) {
+        exportFieldsBtn.addEventListener("click", () => {
+          const blob = new Blob([JSON.stringify(fieldsConfig, null, 2)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "gabarit-champs.json";
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      if (importFieldsBtn) {
+        importFieldsBtn.addEventListener("click", () => {
+          importFieldsInput.click();
+        });
+      }
+
+      if (importFieldsInput) {
+        importFieldsInput.addEventListener("change", (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(reader.result);
+              if (Array.isArray(parsed)) {
+                fieldsConfig = parsed;
+                saveFieldsConfig();
+                renderFieldEditor();
+                renderAllCustomFields();
+              } else {
+                alert("Fichier JSON invalide : un tableau de champs est attendu.");
+              }
+            } catch (err) {
+              alert("Impossible de lire ce fichier JSON.");
+            }
+          };
+          reader.readAsText(file);
+          e.target.value = "";
+        });
+      }
+
       function updateTextBinders() {
         const type = controls.boxType.value;
 
         // Update panels text content based on the selected mode
         if (type === "tablet") {
-          const flapPx = Number(controls.flapLength.value) * 2.8;
-          // P1: Rabat Gauche — la zone rabat (largeur réglable, repliée/
-          // collée à l'intérieur) reste vide ; le contenu du Côté
-          // Latéral 1 est confiné à la zone visible, entièrement avant
-          // le pli qui l'attache à la Face avant, pour rester lisible
-          // une fois la boîte reconstituée.
+          const flapPx = Number(controls.flapLength.value) * MM_TO_PX;
+          // P1 (Rabat gauche) et P10 (Rabat droit) sont chacun composés de
+          // deux zones éditables DISTINCTES et INDÉPENDANTES :
+          // - la zone trapèze (verrouillage, repliée à l'intérieur de la
+          //   boîte une fois fermée) : "p1-rabat" / "p10-rabat" ;
+          // - la zone rectangle (côté visible une fois la boîte fermée) :
+          //   "p1" / "p10".
+          // Chacune possède son propre "field-zone" et peut donc recevoir
+          // un contenu personnalisé différent via le moteur de champs.
           document.getElementById("cnt-p1").innerHTML = `
           <div style="display:flex; width:100%; height:100%;">
-            <div style="flex: 0 0 ${flapPx}px;"></div>
-            <div style="flex: 1 1 auto; height:100%;">${getSideContent("left")}</div>
+            <div class="field-zone" style="flex: 0 0 ${flapPx}px;" id="fieldzone-p1-rabat"></div>
+            <div class="field-zone" style="flex: 1 1 auto; height:100%;" id="fieldzone-p1"></div>
           </div>
         `;
-          // P5: Front
-          document.getElementById("cnt-p5").innerHTML = getFrontContent();
-          // P7: Bottom — contenu configurable
-          document.getElementById("cnt-p7").innerHTML = getPanelContent(
-            controls.contentP7.value,
-          );
-          // P9: Back
-          document.getElementById("cnt-p9").innerHTML = getFrontContent();
-          // P10: Rabat Droit — même logique en miroir : le contenu du
-          // Côté Latéral 2 reste dans la zone visible, avant le pli qui
-          // l'attache à la Face arrière ; la zone rabat (largeur
-          // réglable) reste vide.
+          document.getElementById("cnt-p5").innerHTML =
+            '<div class="field-zone" id="fieldzone-p5"></div>';
+          document.getElementById("cnt-p7").innerHTML =
+            '<div class="field-zone" id="fieldzone-p7"></div>';
+          document.getElementById("cnt-p9").innerHTML =
+            '<div class="field-zone" id="fieldzone-p9"></div>';
           document.getElementById("cnt-p10").innerHTML = `
           <div style="display:flex; width:100%; height:100%;">
-            <div style="flex: 1 1 auto; height:100%;">${getSideContent("right")}</div>
-            <div style="flex: 0 0 ${flapPx}px;"></div>
+            <div class="field-zone" style="flex: 1 1 auto; height:100%;" id="fieldzone-p10"></div>
+            <div class="field-zone" style="flex: 0 0 ${flapPx}px;" id="fieldzone-p10-rabat"></div>
           </div>
         `;
-          // P12: Top — contenu configurable
-          document.getElementById("cnt-p12").innerHTML = getPanelContent(
-            controls.contentP12.value,
-          );
+          document.getElementById("cnt-p12").innerHTML =
+            '<div class="field-zone" id="fieldzone-p12"></div>';
+
+          renderAllCustomFields();
         } else {
           // Liquid format (Vertical)
           // P1: Rabat Haut (Tuck Lid) — le contenu reste confiné à la
           // zone rectangulaire visible (côté pli avec la Face Avant) ;
           // la zone trapèze de verrouillage (pointe) reste vide.
           // L'ordre est : orange puis bleu (le bleu est collé au pli en bas).
-          document.getElementById("cnt-p1").innerHTML = `
-          <div class="flap-rect-content">
-            <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
-            <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
-          </div>
-        `;
+          // P1 (Rabat haut) : zone visible rectangulaire côté pli —
+          // reçoit son propre field-zone comme les autres faces liquides.
+          document.getElementById("cnt-p1").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp1"></div>';
 
           // Front & Back panels (High Fidelity Liquid template)
           document.getElementById("cnt-p5").innerHTML =
-            getLiquidFrontBackContent();
+            '<div class="field-zone" id="fieldzone-lp5"></div>';
           document.getElementById("cnt-p7").innerHTML =
-            getLiquidFrontBackContent();
+            '<div class="field-zone" id="fieldzone-lp7"></div>';
 
           // Left Side Panel 1 (Ingredients table)
-          document.getElementById("cnt-p6").innerHTML = getLiquidSide1Content();
+          document.getElementById("cnt-p6").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp6"></div>';
 
           // Right Side Panel 2 (Dosage and Barcode)
-          document.getElementById("cnt-p8").innerHTML = getLiquidSide2Content();
+          document.getElementById("cnt-p8").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp8"></div>';
 
           // P10: Rabat Bas (Tuck Lid) — même logique, contenu confiné
           // à la zone rectangulaire côté pli avec la Face Arrière ; la
           // zone trapèze de verrouillage (pointe) reste vide.
-          // Inversion 180°. Les bandes doivent être collées au pli (en haut).
-          document.getElementById("cnt-p10").innerHTML = `
-          <div class="flap-rect-content" style="transform: rotate(180deg); transform-origin: center center; justify-content: flex-end;">
-            <div class="flap-stripe-blue">${controls.txtProduct.value}</div>
-            <div class="flap-stripe-orange">${controls.txtDosage.value}</div>
-          </div>
-        `;
+          document.getElementById("cnt-p10").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp10"></div>';
 
           // P9: Glue flap (Vertical tab)
           document.getElementById("cnt-p9").innerHTML =
             `<span>ZONE ENCOLLAGE</span>`;
+
+          renderAllCustomFields();
         }
       }
 
@@ -2174,7 +4334,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       function updateGeometry() {
         const type = controls.boxType.value;
-        const scale = 2.8;
+        const scale = MM_TO_PX;
 
         const w = controls.dimW.value * scale;
         const h = controls.dimH.value * scale;
@@ -2420,6 +4580,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
           // SVG Outline for Liquid vertical carton
           drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled);
+        }
+        if (typeof applyCustomFaceColors === 'function') {
+          applyCustomFaceColors();
         }
       }
 
@@ -2716,6 +4879,95 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         toggleMarginsBtn.classList.toggle("secondary-btn");
       });
 
+      // --- Gestion de la couleur personnalisée des faces ---
+      const faceColorPicker = document.getElementById("faceColorPicker");
+      const faceColorVal = document.getElementById("faceColorVal");
+      const faceColorReset = document.getElementById("faceColorReset");
+      const FACES_BG_STORAGE_KEY = "packaging_faces_bg_v1";
+      let customFacesBg = {};
+
+      try {
+        const saved = localStorage.getItem(FACES_BG_STORAGE_KEY);
+        if (saved) {
+          customFacesBg = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error("Erreur de chargement des couleurs de face:", e);
+      }
+
+      function rgbToHex(rgb) {
+        if (!rgb) return "#ffffff";
+        const parts = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!parts) {
+          if (rgb.startsWith("#")) return rgb;
+          return "#ffffff";
+        }
+        delete (parts[0]);
+        for (let i = 1; i <= 3; ++i) {
+          parts[i] = parseInt(parts[i], 10).toString(16);
+          if (parts[i].length == 1) parts[i] = '0' + parts[i];
+        }
+        return '#' + parts.join('');
+      }
+
+      // Faces couleur/design personnalisables pour chaque mode. La liste
+      // complète (comprimé + liquide) est balayée pour appliquer/retirer
+      // les variables CSS --bg-*, quel que soit le mode actif — cela
+      // garde les couleurs personnalisées de l'autre mode intactes en
+      // mémoire (customFacesBg) sans jamais les afficher hors de propos.
+      function populateFaceColorPicker() {
+        if (!faceColorPicker) return;
+        const previous = faceColorPicker.value;
+        faceColorPicker.innerHTML = getActiveFaceOptions()
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('');
+        // Conserve la sélection précédente si elle existe encore dans le
+        // nouveau mode, sinon retombe sur la première face disponible.
+        const stillValid = getActiveFaceOptions().some(o => o.value === previous);
+        faceColorPicker.value = stillValid ? previous : getActiveFaceOptions()[0]?.value;
+      }
+
+      function applyCustomFaceColors() {
+        const faces = ['p5', 'p9', 'p12', 'p7', 'p1', 'p1-rabat', 'p10', 'p10-rabat', 'lp5', 'lp7', 'lp6', 'lp8', 'lp1', 'lp10'];
+        faces.forEach(f => {
+          if (customFacesBg[f]) {
+            document.documentElement.style.setProperty(`--bg-${f}`, customFacesBg[f]);
+          } else {
+            document.documentElement.style.removeProperty(`--bg-${f}`);
+          }
+        });
+        
+        // Mettre à jour la valeur de l'input couleur pour correspondre à la face sélectionnée
+        const currentFace = faceColorPicker.value;
+        const targetId = `fieldzone-${currentFace}`;
+        
+        let el = document.getElementById(targetId);
+        if (!el && (currentFace === 'p5' || currentFace === 'p9' || currentFace === 'p7' || currentFace === 'p12')) {
+          el = document.getElementById(currentFace);
+        }
+        
+        if (el) {
+          const computedBg = window.getComputedStyle(el).backgroundColor;
+          faceColorVal.value = rgbToHex(computedBg);
+        }
+      }
+
+      if (faceColorPicker && faceColorVal && faceColorReset) {
+        faceColorPicker.addEventListener("change", applyCustomFaceColors);
+        faceColorVal.addEventListener("change", () => {
+          const face = faceColorPicker.value;
+          customFacesBg[face] = faceColorVal.value;
+          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          applyCustomFaceColors();
+        });
+        faceColorReset.addEventListener("click", () => {
+          const face = faceColorPicker.value;
+          delete customFacesBg[face];
+          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          applyCustomFaceColors();
+        });
+      }
+
       // Gestion de l'authentification avant impression
       const STORAGE_KEY = "packaging_tool_access_granted";
       const EMAILJS_PUBLIC_KEY = "KDD6-WtUH7j_2-0ON";
@@ -2786,8 +5038,13 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       // Initial triggers
       applyZoom();
       applyModeVisibility(controls.boxType.value);
+      populateDefaultFieldPicker();
+      populateResetFacePicker();
+      populateFaceColorPicker();
+      renderFieldEditor();
       updateTextBinders();
       updateGeometry();
+      applyCustomFaceColors();
     </script>
 
     <!-- === Gate d'accès (identification obligatoire) === -->
