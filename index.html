@@ -1129,6 +1129,13 @@
         .zoom-controls {
           display: none !important;
         }
+        .field-resize-handle {
+          display: none !important;
+        }
+        .custom-field {
+          cursor: default !important;
+          outline: none !important;
+        }
         .main-layout {
           display: block !important;
           height: auto !important;
@@ -1219,6 +1226,41 @@
         line-height: 1.25;
         white-space: pre-wrap;
         word-wrap: break-word;
+        cursor: move;
+        touch-action: none;
+      }
+
+      .custom-field:hover {
+        outline: 1px dashed rgba(37, 99, 235, 0.65);
+        outline-offset: 1px;
+      }
+
+      .custom-field.dragging,
+      .custom-field.resizing {
+        outline: 2px solid #2563eb;
+        z-index: 60 !important;
+        opacity: 0.9;
+      }
+
+      /* Poignée de redimensionnement (coin bas-droit) — apparaît au
+         survol du champ pour ajuster largeur/hauteur à la souris. */
+      .field-resize-handle {
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 11px;
+        height: 11px;
+        background: #2563eb;
+        border: 1.5px solid #ffffff;
+        border-radius: 2px;
+        cursor: nwse-resize;
+        z-index: 61;
+        opacity: 0;
+        transition: opacity 0.1s ease;
+      }
+      .custom-field:hover .field-resize-handle,
+      .custom-field.resizing .field-resize-handle {
+        opacity: 1;
       }
 
       .custom-field[data-align="center"] {
@@ -1455,6 +1497,9 @@
       .type-datamatrix{ background: #0369a1; color: #bae6fd; }
       .type-braille   { background: #4b5563; color: #f3f4f6; }
       .type-shape     { background: #c2410c; color: #fed7aa; }
+      .type-logo      { background: #a16207; color: #fef08a; }
+      .type-table     { background: #15803d; color: #bbf7d0; }
+      .type-image     { background: #be185d; color: #fbcfe8; }
 
       /* Bouton toggle accordéon */
       .field-editor-toggle {
@@ -2560,6 +2605,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         { value: "braille", label: "Braille" },
         { value: "shape", label: "Zone de couleur / design" },
         { value: "logo", label: "Logo personnalisé" },
+        { value: "image", label: "Image importée" },
       ];
 
       // Rotation du contenu d'un champ : permet de disposer le texte (ou
@@ -2574,11 +2620,37 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       ];
 
       const SHAPE_TYPE_OPTIONS = [
-        { value: "rectangle", label: "Rectangle uni" },
-        { value: "circle", label: "Cercle / Ovale" },
-        { value: "diagonal-tl-br", label: "Diagonale ↘ (2 couleurs)" },
-        { value: "diagonal-tr-bl", label: "Diagonale ↙ (2 couleurs)" },
-        { value: "curve-wave", label: "Courbe / vague (2 couleurs)" },
+        // --- Unis ---
+        { value: "rectangle", label: "Rectangle uni", group: "Unis" },
+        { value: "rounded-rectangle", label: "Rectangle arrondi", group: "Unis" },
+        { value: "pill", label: "Pilule (bords totalement arrondis)", group: "Unis" },
+        { value: "circle", label: "Cercle / Ovale", group: "Unis" },
+
+        // --- Dégradés (2 couleurs, transition douce) ---
+        { value: "gradient-linear", label: "Dégradé linéaire (diagonal)", group: "Dégradés" },
+        { value: "gradient-horizontal", label: "Dégradé horizontal", group: "Dégradés" },
+        { value: "gradient-vertical", label: "Dégradé vertical", group: "Dégradés" },
+        { value: "gradient-radial", label: "Dégradé radial (halo)", group: "Dégradés" },
+
+        // --- Bicolores (séparation nette) ---
+        { value: "diagonal-tl-br", label: "Diagonale ↘ (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "diagonal-tr-bl", label: "Diagonale ↙ (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "split-horizontal", label: "Séparation horizontale (haut/bas)", group: "Bicolores (séparation nette)" },
+        { value: "split-vertical", label: "Séparation verticale (gauche/droite)", group: "Bicolores (séparation nette)" },
+        { value: "curve-wave", label: "Courbe / vague (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "corner-accent-tr", label: "Accent triangulaire (coin haut-droit)", group: "Bicolores (séparation nette)" },
+
+        // --- Motifs / textures ---
+        { value: "stripes-diagonal", label: "Rayures diagonales", group: "Motifs / textures" },
+        { value: "stripes-horizontal", label: "Rayures horizontales", group: "Motifs / textures" },
+        { value: "dots-pattern", label: "Pois / motif à points", group: "Motifs / textures" },
+        { value: "grid-pattern", label: "Quadrillage fin", group: "Motifs / textures" },
+
+        // --- Cadres & contours (fond transparent) ---
+        { value: "outline-frame", label: "Cadre (contour simple)", group: "Cadres & contours" },
+        { value: "outline-frame-rounded", label: "Cadre arrondi", group: "Cadres & contours" },
+        { value: "ring", label: "Anneau (cercle contour)", group: "Cadres & contours" },
+        { value: "double-frame", label: "Double cadre (liseré intérieur)", group: "Cadres & contours" },
       ];
 
       function defaultTabletFieldsConfig() {
@@ -3552,10 +3624,40 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         wrap.style.width = "100%";
         wrap.style.height = "100%";
         wrap.style.overflow = "hidden";
+        wrap.style.boxSizing = "border-box";
+
+        // Petit utilitaire pour les formes bicolores en 2 blocs superposés
+        // (évite de dupliquer le clip-path/position à chaque fois).
+        function addSplitBlocks(insetA, bgA, insetB, bgB) {
+          const a = document.createElement("div");
+          a.style.position = "absolute";
+          a.style.inset = insetA;
+          a.style.background = bgA;
+          const b = document.createElement("div");
+          b.style.position = "absolute";
+          b.style.inset = insetB;
+          b.style.background = bgB;
+          wrap.appendChild(a);
+          wrap.appendChild(b);
+        }
 
         if (shapeType === "circle") {
           wrap.style.background = c1;
           wrap.style.borderRadius = "50%";
+        } else if (shapeType === "rounded-rectangle") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "10%";
+        } else if (shapeType === "pill") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "999px";
+        } else if (shapeType === "gradient-linear") {
+          wrap.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-horizontal") {
+          wrap.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-vertical") {
+          wrap.style.background = `linear-gradient(180deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-radial") {
+          wrap.style.background = `radial-gradient(circle at 30% 30%, ${c1}, ${c2})`;
         } else if (shapeType === "diagonal-tl-br" || shapeType === "diagonal-tr-bl") {
           const base = document.createElement("div");
           base.style.position = "absolute";
@@ -3571,6 +3673,10 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               : "polygon(0 0, 100% 0, 0 100%)";
           wrap.appendChild(base);
           wrap.appendChild(tri);
+        } else if (shapeType === "split-horizontal") {
+          addSplitBlocks("0 0 50% 0", c1, "50% 0 0 0", c2);
+        } else if (shapeType === "split-vertical") {
+          addSplitBlocks("0 50% 0 0", c1, "0 0 0 50%", c2);
         } else if (shapeType === "curve-wave") {
           wrap.style.background = c1;
           const svgNS = "http://www.w3.org/2000/svg";
@@ -3589,8 +3695,50 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           path.setAttribute("fill", c2);
           svg.appendChild(path);
           wrap.appendChild(svg);
+        } else if (shapeType === "corner-accent-tr") {
+          wrap.style.background = c1;
+          const tri = document.createElement("div");
+          tri.style.position = "absolute";
+          tri.style.inset = "0";
+          tri.style.background = c2;
+          tri.style.clipPath = "polygon(100% 0, 100% 45%, 55% 0)";
+          wrap.appendChild(tri);
+        } else if (shapeType === "stripes-diagonal") {
+          wrap.style.background = `repeating-linear-gradient(45deg, ${c1} 0px, ${c1} 10px, ${c2} 10px, ${c2} 20px)`;
+        } else if (shapeType === "stripes-horizontal") {
+          wrap.style.background = `repeating-linear-gradient(180deg, ${c1} 0px, ${c1} 8px, ${c2} 8px, ${c2} 16px)`;
+        } else if (shapeType === "dots-pattern") {
+          wrap.style.background = c1;
+          wrap.style.backgroundImage = `radial-gradient(${c2} 20%, transparent 21%)`;
+          wrap.style.backgroundSize = "14px 14px";
+        } else if (shapeType === "grid-pattern") {
+          wrap.style.background = c1;
+          wrap.style.backgroundImage = `
+            linear-gradient(${c2} 1px, transparent 1px),
+            linear-gradient(90deg, ${c2} 1px, transparent 1px)
+          `;
+          wrap.style.backgroundSize = "10px 10px";
+        } else if (shapeType === "outline-frame") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `2px solid ${c1}`;
+        } else if (shapeType === "outline-frame-rounded") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `2px solid ${c1}`;
+          wrap.style.borderRadius = "10%";
+        } else if (shapeType === "ring") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `3px solid ${c1}`;
+          wrap.style.borderRadius = "50%";
+        } else if (shapeType === "double-frame") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `3px solid ${c1}`;
+          const inner = document.createElement("div");
+          inner.style.position = "absolute";
+          inner.style.inset = "4px";
+          inner.style.border = `1px solid ${c2}`;
+          wrap.appendChild(inner);
         } else {
-          // rectangle uni
+          // rectangle uni (valeur par défaut / repli)
           wrap.style.background = c1;
         }
 
@@ -3700,14 +3848,151 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           } else if (field.type === "logo") {
             el.style.padding = "0";
             el.appendChild(buildLogoNode(field));
+          } else if (field.type === "image") {
+            // Image librement importée par l'utilisateur (logo produit,
+            // pictogramme réglementaire scanné, visuel marketing…),
+            // indépendante du logo du laboratoire. Stockée en base64
+            // directement dans field.src (incluse dans l'export JSON).
+            el.style.padding = "0";
+            if (field.src) {
+              const img = document.createElement("img");
+              img.src = field.src;
+              img.alt = field.label || "";
+              img.style.width = "100%";
+              img.style.height = "100%";
+              img.style.objectFit = field.fit || "contain";
+              img.style.display = "block";
+              el.appendChild(img);
+            } else {
+              el.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; border:1px dashed #94a3b8; color:#94a3b8; font-size:9px; text-align:center; padding:2px;">Image non définie<br/>(voir l'éditeur de champs)</div>`;
+            }
           } else {
             el.textContent = field.content;
           }
+
+          // --- Drag & drop + redimensionnement à la souris ---
+          // Déplacer le champ en le faisant glisser directement sur
+          // l'aperçu ; la poignée en bas à droite permet d'ajuster sa
+          // taille. Les champs numériques X/Y/Largeur/Hauteur de
+          // l'éditeur restent synchronisés en temps réel.
+          el.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return; // clic gauche uniquement
+            startFieldDrag(e, field.id);
+          });
+
+          const resizeHandle = document.createElement("div");
+          resizeHandle.className = "field-resize-handle";
+          resizeHandle.title = "Redimensionner";
+          resizeHandle.addEventListener("pointerdown", (e) => {
+            e.stopPropagation(); // ne pas déclencher le déplacement du champ
+            startFieldResize(e, field.id);
+          });
+          el.appendChild(resizeHandle);
 
           zone.appendChild(el);
         });
         // Validation chevauchements/débordements après chaque rendu
         validateFields();
+      }
+
+      // Met à jour les champs numériques X/Y/Largeur/Hauteur de
+      // l'éditeur pour un champ donné, sans reconstruire tout le
+      // panneau (évite de perdre le focus / l'état déplié pendant un
+      // glisser-déposer).
+      function syncFieldEditorInputs(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        const row = document.querySelector(
+          `#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`,
+        );
+        if (!row) return;
+        ["x", "y", "w", "h"].forEach((prop) => {
+          const input = row.querySelector(`[data-prop="${prop}"]`);
+          if (input) input.value = field[prop];
+        });
+      }
+
+      // Déplacement d'un champ par glisser-déposer directement sur
+      // l'aperçu du patron. Les coordonnées sont en % de la field-zone
+      // parente, cohérentes avec le moteur de rendu (renderAllCustomFields).
+      function startFieldDrag(e, fieldId) {
+        const el = e.currentTarget;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const zoneRect = el.parentElement.getBoundingClientRect();
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const startX = field.x;
+        const startY = field.y;
+        let moved = false;
+
+        el.classList.add("dragging");
+
+        function onMove(ev) {
+          moved = true;
+          const dxPct = ((ev.clientX - startClientX) / zoneRect.width) * 100;
+          const dyPct = ((ev.clientY - startClientY) / zoneRect.height) * 100;
+          field.x = Math.max(0, Math.min(200, Math.round((startX + dxPct) * 10) / 10));
+          field.y = Math.max(0, Math.min(200, Math.round((startY + dyPct) * 10) / 10));
+          el.style.left = field.x + "%";
+          el.style.top = field.y + "%";
+        }
+
+        function onUp() {
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+          el.classList.remove("dragging");
+          if (moved) {
+            saveFieldsConfig();
+            syncFieldEditorInputs(fieldId);
+            validateFields();
+          }
+        }
+
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
+      }
+
+      // Redimensionnement d'un champ via sa poignée (coin bas-droit).
+      function startFieldResize(e, fieldId) {
+        const handle = e.currentTarget;
+        const el = handle.parentElement;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const zoneRect = el.parentElement.getBoundingClientRect();
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const startW = field.w;
+        const startH = field.h;
+
+        el.classList.add("resizing");
+
+        function onMove(ev) {
+          const dwPct = ((ev.clientX - startClientX) / zoneRect.width) * 100;
+          const dhPct = ((ev.clientY - startClientY) / zoneRect.height) * 100;
+          field.w = Math.max(2, Math.min(200, Math.round((startW + dwPct) * 10) / 10));
+          field.h = Math.max(2, Math.min(200, Math.round((startH + dhPct) * 10) / 10));
+          el.style.width = field.w + "%";
+          el.style.height = field.h + "%";
+        }
+
+        function onUp() {
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+          el.classList.remove("resizing");
+          saveFieldsConfig();
+          syncFieldEditorInputs(fieldId);
+          validateFields();
+        }
+
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
       }
 
       // Identifiant du dernier champ ajouté — permet d'ouvrir
@@ -3743,6 +4028,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         braille:    'Braille',
         shape:      'Forme',
         logo:       'Logo',
+        image:      'Image',
       };
 
       // ============================================================
@@ -3889,6 +4175,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           items.forEach(({ field, idx }) => {
             const isShape = field.type === "shape";
             const isLogo = field.type === "logo";
+            const isImage = field.type === "image";
             const typeLabel = TYPE_LABEL_MAP[field.type] || field.type;
             const isNew = _lastAddedFieldId === field.id;
 
@@ -3921,7 +4208,20 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             const shapeGrid = `
               <div><label>Style de forme</label>
                 <select data-idx="${idx}" data-prop="shapeType">
-                  ${SHAPE_TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === (field.shapeType || 'rectangle') ? 'selected' : ''}>${o.label}</option>`).join('')}
+                  ${Object.entries(
+                    SHAPE_TYPE_OPTIONS.reduce((acc, o) => {
+                      (acc[o.group] = acc[o.group] || []).push(o);
+                      return acc;
+                    }, {}),
+                  )
+                    .map(
+                      ([group, opts]) => `
+                    <optgroup label="${group}">
+                      ${opts.map(o => `<option value="${o.value}" ${o.value === (field.shapeType || 'rectangle') ? 'selected' : ''}>${o.label}</option>`).join('')}
+                    </optgroup>
+                  `,
+                    )
+                    .join('')}
                 </select>
               </div>
               <div><label>Couleur principale</label>
@@ -3966,7 +4266,28 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               </div>
             `;
 
-            const contentBlock = isShape ? '' : `
+            const imageGrid = `
+              <div style="grid-column: span 2;">
+                <label>Fichier image</label>
+                <input type="file" accept="image/*" data-idx="${idx}" data-prop="imgfile" />
+              </div>
+              <div><label>Ajustement</label>
+                <select data-idx="${idx}" data-prop="fit">
+                  <option value="contain" ${(field.fit || 'contain') === 'contain' ? 'selected' : ''}>Contenir (proportions)</option>
+                  <option value="cover"   ${field.fit === 'cover'   ? 'selected' : ''}>Remplir (recadrée)</option>
+                  <option value="fill"    ${field.fit === 'fill'    ? 'selected' : ''}>Étirer</option>
+                </select>
+              </div>
+              <div style="grid-column: span 2; display:flex; align-items:center; gap:8px;">
+                ${field.src
+                  ? `<img src="${field.src}" alt="" style="max-width:60px; max-height:40px; object-fit:contain; border:1px solid #334155; border-radius:4px; background:#fff;" />`
+                  : `<span style="font-size:11px; color:#64748b;">Aucune image sélectionnée</span>`
+                }
+                ${field.src ? `<button type="button" class="field-image-clear-btn" data-idx="${idx}" style="font-size:11px; padding:4px 8px;">Retirer l'image</button>` : ''}
+              </div>
+            `;
+
+            const contentBlock = (isShape || isImage) ? '' : `
               <div style="margin-top:4px;">
                 <label style="font-size:9px;text-transform:uppercase;color:#64748b;display:block;margin-bottom:2px;">Contenu ${isLogo ? '(Saisir "logo-only" pour masquer le texte, ou texte personnalisé pour remplacer le nom)' : (field.type === 'table' ? '(une ligne = "Nom : valeur" — nom à gauche, valeur à droite, séparés par des pointillés)' : '')}</label>
                 <textarea data-idx="${idx}" data-prop="content" rows="2">${escapeHtml(field.content)}</textarea>
@@ -3984,7 +4305,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               <div class="field-editor-row-body">
                 <div class="field-editor-grid" style="margin-top:8px;">
                   ${commonGrid}
-                  ${isShape ? shapeGrid : (isLogo ? logoGrid : textGrid)}
+                  ${isShape ? shapeGrid : (isLogo ? logoGrid : (isImage ? imageGrid : textGrid))}
                 </div>
                 ${contentBlock}
               </div>
@@ -4003,8 +4324,11 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           });
         });
 
-        // Écouteurs d'événements sur les inputs (identique à avant)
+        // Écouteurs d'événements sur les inputs (identique à avant),
+        // à l'exception des inputs de type "file" (gérés séparément
+        // plus bas car ils nécessitent une lecture asynchrone en base64).
         container.querySelectorAll("[data-prop]").forEach((input) => {
+          if (input.type === "file") return;
           const evtName =
             input.tagName === "SELECT" ||
             input.type === "checkbox" ||
@@ -4037,10 +4361,44 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
                 if (!fieldsConfig[idx].content || fieldsConfig[idx].content === "Nouveau texte") {
                   fieldsConfig[idx].content = "Nom du composant: Valeur";
                 }
+              } else if (value === "image") {
+                fieldsConfig[idx].fit = fieldsConfig[idx].fit || "contain";
               }
               _lastAddedFieldId = fieldsConfig[idx].id;
               renderFieldEditor();
             }
+            renderAllCustomFields();
+          });
+        });
+
+        // Import d'image (type "image") : lecture du fichier choisi et
+        // conversion en base64, stockée directement dans field.src pour
+        // rester incluse dans l'export/import JSON et le localStorage.
+        container.querySelectorAll('input[type="file"][data-prop="imgfile"]').forEach((input) => {
+          input.addEventListener("change", (e) => {
+            const idx = Number(e.target.dataset.idx);
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              fieldsConfig[idx].src = reader.result;
+              saveFieldsConfig();
+              _lastAddedFieldId = fieldsConfig[idx].id;
+              renderFieldEditor();
+              renderAllCustomFields();
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+
+        // Retirer l'image d'un champ "image"
+        container.querySelectorAll(".field-image-clear-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const idx = Number(e.currentTarget.dataset.idx);
+            delete fieldsConfig[idx].src;
+            saveFieldsConfig();
+            _lastAddedFieldId = fieldsConfig[idx].id;
+            renderFieldEditor();
             renderAllCustomFields();
           });
         });
