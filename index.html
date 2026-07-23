@@ -13,23 +13,17 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet" />
-
     <style>
       :root {
         --primary: #1e3a8a;
         --accent: #f97316;
+        --logo-size: 22px;
+
         --bg-workspace: #f1f5f9;
-        --bg-panel: #ffffff;
-        --border-color: #cbd5e1;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
 
         /* Box Geometry Variables (scaled in JS) */
         --box-w: 252px;
         --box-h: 168px;
-        --box-d: 67px;
-        --box-flap: 126px;
-        --box-glue: 33px;
 
         /* Global typography scale (adjustable via sidebar sliders) */
         --fs-scale-title: 1;
@@ -53,7 +47,9 @@
         --bg-lp6: #ffffff;
         --bg-lp8: #ffffff;
         --bg-lp1: var(--accent);
+        --bg-lp1-rabat: var(--accent);
         --bg-lp10: var(--accent);
+        --bg-lp10-rabat: var(--accent);
       }
 
       * {
@@ -337,7 +333,9 @@
       #fieldzone-lp6 { background: var(--bg-lp6) !important; }
       #fieldzone-lp8 { background: var(--bg-lp8) !important; }
       #fieldzone-lp1 { background: var(--bg-lp1) !important; }
+      #fieldzone-lp1-rabat { background: var(--bg-lp1-rabat) !important; }
       #fieldzone-lp10 { background: var(--bg-lp10) !important; }
+      #fieldzone-lp10-rabat { background: var(--bg-lp10-rabat) !important; }
 
       /* Outer Red Cut Contour Overlay (masking borders inside the SVG) */
       .die-lines {
@@ -533,15 +531,6 @@
       .vertical-tuck-bottom .flap-stripe-orange {
       }
 
-      /* White Tuck Flaps */
-      .white-tuck-left {
-        clip-path: polygon(100% 0, 100% 100%, 25% 85%, 25% 15%);
-      }
-
-      .white-tuck-right {
-        clip-path: polygon(0 0, 0 100%, 75% 85%, 75% 15%);
-      }
-
       /* Dust Flaps (Tapered side flaps) */
       .dust-left-top {
         clip-path: polygon(100% 0, 100% 100%, 20% 80%, 20% 0);
@@ -653,29 +642,6 @@
         left: 1px;
       }
 
-      .main-panel-content .brand-subtitle {
-        font-size: calc(var(--box-w) * 0.045 * var(--fs-scale-body, 1));
-        color: #1e293b;
-        margin-top: 4px;
-        font-weight: 500;
-      }
-
-      /* Liquid Mode Brand Header Layout (High Fidelity Vecteezy match) */
-      .liquid-brand-header {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        margin-top: 6px;
-      }
-
-      .liquid-logo-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
       .liquid-logo-widget {
         display: flex;
         align-items: center;
@@ -683,8 +649,8 @@
       }
 
       .liquid-logo-widget svg {
-        width: 24px;
-        height: 24px;
+        width: var(--logo-size, 24px);
+        height: var(--logo-size, 24px);
       }
 
       .liquid-logo-widget span {
@@ -692,54 +658,6 @@
         font-weight: 800;
         color: #475569;
         letter-spacing: 0.04em;
-      }
-
-      .liquid-qty-label {
-        font-size: calc(10px * var(--fs-scale-small, 1));
-        font-weight: 700;
-        color: #475569;
-      }
-
-      .liquid-bar-blue {
-        background: var(--primary);
-        color: #ffffff;
-        padding: 8px 12px;
-        font-size: calc(18px * var(--fs-scale-title, 1));
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        text-align: left;
-        line-height: 1.1;
-      }
-
-      .liquid-bar-orange {
-        background: var(--accent);
-        color: #ffffff;
-        padding: 4px 12px;
-        font-size: calc(12px * var(--fs-scale-body, 1));
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        text-align: right;
-        line-height: 1.1;
-      }
-
-      .liquid-decor-leaves {
-        position: absolute;
-        bottom: -32px;
-        left: 12px;
-        width: 46px;
-        height: 46px;
-        opacity: 0.15;
-        pointer-events: none;
-      }
-
-      .liquid-desc-text {
-        font-size: calc(8px * var(--fs-scale-body, 1));
-        line-height: 1.3;
-        color: #475569;
-        margin-top: 36px;
-        text-align: justify;
       }
 
       .liquid-bottom-footer {
@@ -808,6 +726,10 @@
         overflow: hidden;
       }
 
+      body.hide-lab-name .logo-name {
+        display: none !important;
+      }
+
       .logo-name {
         font-size: calc(10px * var(--fs-scale-small, 1));
         font-weight: 800;
@@ -865,41 +787,9 @@
         margin: auto 0;
       }
 
-      /* Bottom Side Panel - Composition, Barcode, Mfg */
-      .bottom-panel-content {
-        width: 100%;
-        height: 100%;
-        padding: 8px 16px;
-        display: grid;
-        grid-template-columns: 1.2fr 1fr 1fr;
-        gap: 12px;
-        align-items: center;
-        overflow: hidden;
-      }
-
-      /* Vertical Syrup side panels details */
-      .liquid-side-1 {
-        width: 100%;
-        height: 100%;
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-      }
-
       .liquid-composition-table {
         width: 100%;
         margin-top: 10px;
-      }
-
-      .liquid-table-title {
-        font-size: calc(9px * var(--fs-scale-small, 1));
-        font-weight: 800;
-        color: var(--primary);
-        text-transform: uppercase;
-        margin-bottom: 6px;
-        border-bottom: 1px solid #cbd5e1;
-        padding-bottom: 2px;
       }
 
       .liquid-table-row {
@@ -941,24 +831,6 @@
         text-overflow: ellipsis;
       }
 
-      .panel-section-title {
-        font-weight: 800;
-        font-size: calc(var(--box-h) * 0.055 * var(--fs-scale-body, 1));
-        color: #0f172a;
-        margin-bottom: 2px;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-      }
-
-      .barcode-area {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        overflow: hidden;
-      }
-
       .barcode-graphic {
         width: 100%;
         height: 24px;
@@ -982,18 +854,6 @@
         margin-top: 2px;
       }
 
-      /* Top Side Panel - Composition, Dosage */
-      .top-panel-content {
-        width: 100%;
-        height: 100%;
-        padding: 8px 16px;
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 12px;
-        align-items: center;
-        overflow: hidden;
-      }
-
       .bullets-list {
         list-style: none;
         padding-left: 0;
@@ -1013,13 +873,6 @@
         left: 0;
         color: var(--accent);
         font-weight: bold;
-      }
-
-      /* Côtés du format Sirop : liste non proportionnelle à la hauteur
-         totale de la boîte (sinon texte disproportionné sur les formats
-         hauts) — taille fixe pilotée par le curseur "Petits textes". */
-      .liquid-side-list.bullets-list li {
-        font-size: calc(7px * var(--fs-scale-small, 1));
       }
 
       .legend-panel {
@@ -1114,6 +967,10 @@
 
       /* Print settings overrides */
       @media print {
+        @page {
+          size: auto;
+          margin: 0mm;
+        }
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
@@ -1122,10 +979,13 @@
         body {
           background: white !important;
           color: black !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         .sidebar,
         header,
         .legend-panel,
+        .retractable-footer,
         .zoom-controls {
           display: none !important;
         }
@@ -1139,13 +999,22 @@
         .main-layout {
           display: block !important;
           height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         .workspace {
           background: white !important;
           padding: 0 !important;
+          margin: 0 !important;
+          display: block !important;
+          overflow: visible !important;
         }
         .patron-sheet {
           padding: 0 !important;
+          transform: none !important;
+          transform-origin: top left !important;
+          margin: 0 !important;
+          border: none !important;
         }
         .panel {
           border-color: #333 !important;
@@ -1216,7 +1085,7 @@
         position: relative;
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        overflow: visible;
       }
 
       .custom-field {
@@ -1546,6 +1415,369 @@
         outline: 1px dashed rgba(59, 130, 246, 0.6);
         cursor: pointer;
       }
+
+      /* Selection et Redimensionnement actif */
+      .custom-field.selected {
+        outline: 2px dashed #2563eb;
+        outline-offset: 1px;
+        z-index: 59 !important;
+      }
+      .custom-field:hover .field-resize-handle,
+      .custom-field.resizing .field-resize-handle,
+      .custom-field.selected .field-resize-handle {
+        opacity: 1;
+      }
+
+      /* Snapping Guides */
+      .snap-guide-v {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        border-left: 1px dashed #ef4444;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .snap-guide-h {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1px;
+        border-top: 1px dashed #ef4444;
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      /* Floating Contextual Toolbar */
+      .floating-toolbar {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(8px);
+        border: 1px solid #475569;
+        border-radius: 8px;
+        padding: 6px 10px;
+        gap: 6px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        pointer-events: auto;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s ease, visibility 0.15s ease;
+      }
+      .floating-toolbar.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      .floating-toolbar select,
+      .floating-toolbar input[type="number"] {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #f8fafc;
+        border-radius: 4px;
+        padding: 4px 6px;
+        font-size: 12px;
+        outline: none;
+        height: 28px;
+      }
+      .floating-toolbar select {
+        max-width: 130px;
+      }
+      .tb-btn {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #f8fafc;
+        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.15s ease;
+      }
+      .tb-btn:hover {
+        background: #334155;
+        border-color: #475569;
+      }
+      .tb-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+      }
+      .tb-delete-btn:hover {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: #ffffff;
+      }
+      .toolbar-divider {
+        width: 1px;
+        height: 20px;
+        background: #334155;
+      }
+      .color-picker-container {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        border: 1px solid #334155;
+        overflow: hidden;
+        position: relative;
+        background: #0f172a;
+      }
+      .color-picker-container input[type="color"] {
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        width: 38px;
+        height: 38px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      /* Custom icon buttons in header */
+      .icon-btn {
+        background: #1e293b;
+        color: #f8fafc;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+      .icon-btn:hover {
+        background: #334155;
+        border-color: #475569;
+        color: #ffffff;
+      }
+      .icon-btn.primary-btn {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+      }
+      .icon-btn.primary-btn:hover {
+        background: #1d4ed8;
+      }
+      .icon-btn.secondary-btn {
+        background: #1e293b;
+      }
+      .icon-btn.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+      }
+
+      /* Dropdown Menu styling */
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 42px;
+        background-color: #1e293b;
+        min-width: 240px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+        border: 1px solid #334155;
+        border-radius: 8px;
+        z-index: 200;
+        padding: 6px 0;
+      }
+      .dropdown-content.show {
+        display: block;
+      }
+      .dropdown-content a {
+        color: #cbd5e1;
+        padding: 10px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 13px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .dropdown-content a:hover {
+        background-color: #334155;
+        color: #ffffff;
+      }
+
+      /* Retractable Footer Legend */
+      .retractable-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #1e293b;
+        border-top: 1px solid #334155;
+        z-index: 190;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(calc(100% - 32px));
+        font-family: inherit;
+      }
+      
+      .retractable-footer.expanded,
+      .retractable-footer:hover {
+        transform: translateY(0);
+      }
+
+      .footer-header {
+        height: 32px;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        background: #1e293b;
+        user-select: none;
+        border-bottom: 1px solid transparent;
+      }
+      
+      .retractable-footer.expanded .footer-header {
+        border-bottom-color: #334155;
+      }
+      
+      .footer-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      
+      .footer-arrow {
+        font-size: 10px;
+        color: #94a3b8;
+        transition: transform 0.3s ease;
+      }
+      
+      .retractable-footer.expanded .footer-arrow {
+        transform: rotate(180deg);
+      }
+      
+      .footer-content {
+        padding: 16px 24px;
+        background: #0f172a;
+      }
+
+      /* Global Layout / Adjust workspace for retractable footer */
+      .workspace {
+        position: relative;
+        padding-bottom: 40px;
+      }
+
+      /* Pulse Highlights */
+      @keyframes pulse-highlight {
+        0% { background-color: rgba(37, 99, 235, 0.35); }
+        100% { background-color: transparent; }
+      }
+      .field-editor-row.highlight-pulse {
+        animation: pulse-highlight 1.5s ease-out;
+      }
+
+      /* --- Éditeur de tracé pour les formes personnalisées --- */
+      .shape-draw-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.75);
+        z-index: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .shape-draw-panel {
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 16px;
+        max-width: 92vw;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      }
+      .shape-draw-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .shape-draw-header h3 {
+        margin: 0;
+        font-size: 14px;
+        color: #f1f5f9;
+      }
+      .shape-draw-close {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 18px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .shape-draw-close:hover { color: #f1f5f9; }
+      .shape-draw-help {
+        font-size: 11px;
+        color: #94a3b8;
+        margin: 0;
+        max-width: 480px;
+      }
+      .shape-draw-canvas-wrap {
+        background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 20px 20px;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        cursor: crosshair;
+        touch-action: none;
+      }
+      .shape-draw-point {
+        fill: #f59e0b;
+        stroke: #0f172a;
+        stroke-width: 1.5;
+        cursor: grab;
+      }
+      .shape-draw-point:hover { fill: #fbbf24; }
+      .shape-draw-point.first-point {
+        fill: #22c55e;
+      }
+      .shape-draw-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .shape-draw-footer button {
+        font-size: 12px;
+        padding: 7px 12px;
+        border-radius: 6px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0;
+        cursor: pointer;
+      }
+      .shape-draw-footer button:hover { background: #334155; }
+      .shape-draw-footer button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .shape-draw-footer button.primary {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+      }
+      .shape-draw-footer button.primary:hover { background: #1d4ed8; }
+      .shape-draw-footer button.danger {
+        background: transparent;
+        border-color: #7f1d1d;
+        color: #fca5a5;
+      }
+      .shape-draw-footer button.danger:hover { background: #7f1d1d; }
     </style>
   </head>
   <body>
@@ -1596,32 +1828,66 @@
           <circle cx="50" cy="50" r="10" fill="#3b82f6" />
         </svg>
         <div>
-          <h1>Concepteur de packaging par <strong>IDO</strong></h1>
-          <p style="font-size: 10px; color: #94a3b8">
-            Gabarit technique haute fidélité
-          </p>
+          <h1>Packaging par <strong>IDO</strong></h1>
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px">
+      <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
         <button
-          class="action-btn secondary-btn"
+          class="icon-btn"
           id="toggleLabelsBtn"
-          style="padding: 8px 16px; font-size: 12px">
-          Masquer Zones
+          title="Afficher/Masquer les zones de texte (👁️)"
+          aria-label="Toggle Zones">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
         </button>
         <button
-          class="action-btn secondary-btn"
+          class="icon-btn"
           id="toggleMarginsBtn"
-          style="padding: 8px 16px; font-size: 12px">
-          Marges Perdues
+          title="Afficher/Masquer les marges perdues (⛶)"
+          aria-label="Toggle Marges">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+            <line x1="15" y1="3" x2="15" y2="21"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+          </svg>
         </button>
         <button
-          class="action-btn"
+          class="icon-btn primary-btn"
           id="printBtn"
-          style="padding: 8px 16px; font-size: 12px">
-          Imprimer / PDF
+          title="Imprimer / Enregistrer en PDF (🖨️)"
+          aria-label="Imprimer">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
         </button>
+        
+        <!-- Menu d'actions secondaires dropdown -->
+        <div class="dropdown">
+          <button class="icon-btn secondary-btn" id="menuDropdownBtn" title="Menu d'actions" aria-label="Menu d'actions">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="19" cy="12" r="1"/>
+              <circle cx="5" cy="12" r="1"/>
+            </svg>
+          </button>
+          <div class="dropdown-content" id="headerDropdown">
+            <a href="#" id="undoAction" data-action="undo">↩️ Annuler (Ctrl+Z)</a>
+            <a href="#" id="redoAction" data-action="redo">↪️ Rétablir (Ctrl+Maj+Z)</a>
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 4px 0;" />
+            <a href="#" id="exportJsonAction" data-action="export-json">📤 Exporter le gabarit (JSON)</a>
+            <a href="#" id="importJsonAction" data-action="import-json">📥 Importer un gabarit (JSON)</a>
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 4px 0;" />
+            <a href="#" id="resetAllAction" data-action="reset-all" style="color: #f87171;">⚠️ Réinitialiser tous les champs</a>
+            <a href="#" id="toggleLegendAction" data-action="toggle-legend">ℹ️ Afficher/Masquer la Légende</a>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1645,13 +1911,17 @@
           <legend>Rabats (Tuck Flaps)</legend>
           <div class="input-group">
             <label>Longueur du rabat (mm)</label>
-            <input
-              type="range"
-              id="flapLength"
-              min="8"
-              max="50"
-              step="1"
-              value="28" />
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input
+                type="range"
+                id="flapLength"
+                min="8"
+                max="50"
+                step="1"
+                value="28"
+                style="flex: 1;" />
+              <span id="flapLengthVal" style="font-size: 11px; color: #94a3b8; min-width: 32px;">28mm</span>
+            </div>
           </div>
           <div class="input-group">
             <label
@@ -1698,7 +1968,7 @@
               id="addShapeBtn"
               class="action-btn secondary-btn"
               style="padding: 8px; font-size: 12px">
-              + Ajouter une zone de couleur / design
+              + Ajouter une Forme (Zone de couleur / design)
             </button>
           </div>
           <div
@@ -1776,9 +2046,9 @@
           </div>
         </fieldset>
 
-        <h2>Logo</h2>
+        <h2>Logo & Identité</h2>
         <fieldset>
-          <legend>Logo personnalisé</legend>
+          <legend>Configuration du Logo</legend>
           <div class="input-group">
             <label>Importer une image (PNG/SVG/JPG)</label>
             <input type="file" id="logoUpload" accept="image/*" />
@@ -1791,6 +2061,27 @@
               style="padding: 6px 12px; font-size: 12px">
               Réinitialiser le logo par défaut
             </button>
+          </div>
+          <div class="input-group">
+            <label>Taille du logo (px)</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="range" id="logoSizeSlider" min="10" max="80" value="22" step="1" style="flex: 1;" />
+              <span id="logoSizeVal" style="font-size: 11px; color: #94a3b8; min-width: 32px;">22px</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;">
+              <input type="checkbox" id="showLabName" checked style="width:auto" />
+              Afficher le nom du laboratoire (à décocher si déjà présent dans le logo)
+            </label>
+          </div>
+          <div class="input-group" id="labNameGroup">
+            <label>Nom du Laboratoire</label>
+            <input type="text" id="txtLabName" value="COMPANY NAME" />
+          </div>
+          <div class="input-group">
+            <label>Slogan du Laboratoire</label>
+            <input type="text" id="txtSlogan" value="YOUR SLOGAN HERE" />
           </div>
         </fieldset>
 
@@ -1848,17 +2139,7 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Laboratoire</legend>
-          <div class="input-group">
-            <label>Nom</label>
-            <input type="text" id="txtLabName" value="COMPANY NAME" />
-          </div>
-          <div class="input-group">
-            <label>Slogan</label>
-            <input type="text" id="txtSlogan" value="YOUR SLOGAN HERE" />
-          </div>
-        </fieldset>
+
 
         <fieldset style="display: none">
           <legend>Comprimé — Composition (Flanc) [obsolète]</legend>
@@ -1932,55 +2213,51 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           </div>
         </fieldset>
         </div>
-
-        <h2>Typographie</h2>
-        <fieldset>
-          <legend>Taille de police (par zone)</legend>
-          <div class="input-group">
-            <label>Titres / Marque</label>
-            <input
-              type="range"
-              id="fsScaleTitle"
-              min="0.6"
-              max="1.6"
-              step="0.05"
-              value="1" />
-          </div>
-          <div class="input-group">
-            <label>Texte courant</label>
-            <input
-              type="range"
-              id="fsScaleBody"
-              min="0.6"
-              max="1.6"
-              step="0.05"
-              value="1" />
-          </div>
-          <div class="input-group">
-            <label>Rabats</label>
-            <input
-              type="range"
-              id="fsScaleFlap"
-              min="0.6"
-              max="1.6"
-              step="0.05"
-              value="1" />
-          </div>
-          <div class="input-group">
-            <label>Petits textes (code-barres, logo)</label>
-            <input
-              type="range"
-              id="fsScaleSmall"
-              min="0.6"
-              max="1.6"
-              step="0.05"
-              value="1" />
-          </div>
-        </fieldset>
       </div>
 
       <!-- Workspace Preview -->
       <div class="workspace">
+        <!-- Floating Contextual Toolbar -->
+        <div id="floatingToolbar" class="floating-toolbar">
+          <div class="toolbar-group">
+            <select id="tbFontFamily" title="Police">
+              <option value="inherit">Par défaut</option>
+              <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
+              <option value="'Space Mono', monospace">Space Mono</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Times New Roman, serif">Times New Roman</option>
+              <option value="Courier New, monospace">Courier New</option>
+            </select>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group" style="display: flex; align-items: center; gap: 4px;">
+            <button id="tbFontDec" title="Diminuer la taille" class="tb-btn">−</button>
+            <input type="number" id="tbFontSize" min="4" max="60" step="0.5" style="width: 45px; text-align: center;" />
+            <button id="tbFontInc" title="Augmenter la taille" class="tb-btn">+</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <button id="tbBold" title="Gras" class="tb-btn" style="font-weight: bold;">B</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group" style="display: flex; gap: 2px;">
+            <button id="tbAlignLeft" title="Aligner à gauche" class="tb-btn">←</button>
+            <button id="tbAlignCenter" title="Centrer" class="tb-btn">↔</button>
+            <button id="tbAlignRight" title="Aligner à droite" class="tb-btn">→</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <div class="color-picker-container" title="Couleur de texte">
+              <input type="color" id="tbColor" />
+            </div>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <button id="tbDuplicate" title="Dupliquer le champ (Ctrl/Cmd+D)" class="tb-btn">⧉</button>
+            <button id="tbDelete" title="Supprimer le champ" class="tb-btn tb-delete-btn">✕</button>
+          </div>
+        </div>
+
         <div class="zoom-controls" id="zoomControls">
           <button type="button" id="zoomOutBtn" title="Zoom arrière">−</button>
           <span id="zoomLevelLabel">100%</span>
@@ -2093,48 +2370,217 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       </div>
     </div>
 
-    <!-- Legend Overlay Info -->
-    <div style="padding: 0 40px 40px 40px; background: #0f172a">
-      <div class="legend-panel">
-        <h3>Repères Techniques & Légendes de Production</h3>
-        <div class="legend-list">
-          <div class="legend-item">
-            <div
-              class="legend-color"
-              style="
-                border: 2px dashed rgba(148, 163, 184, 0.7);
-                background: #fff;
-              "></div>
-            <span>Ligne de Pliage (Ril-line)</span>
-          </div>
-          <div class="legend-item">
-            <div
-              class="legend-color"
-              style="background: #f1f5f9; border: 1px solid #cbd5e1"></div>
-            <span>Pattes de collage & Rabats (Non imprimés)</span>
-          </div>
-          <div class="legend-item">
-            <div
-              class="legend-color"
-              style="
-                border: 1.5px solid #ef4444;
-                background: transparent;
-              "></div>
-            <span>Ligne de Coupe / Emporte-pièce (Die-cut)</span>
-          </div>
-          <div class="legend-item">
-            <div
-              class="legend-color"
-              style="border: 1px dotted #22c55e; background: transparent"></div>
-            <span>Zone tranquille / Safe margin (10mm)</span>
+    <!-- Retractable Footer (Legend) -->
+    <footer id="retractableFooter" class="retractable-footer">
+      <div class="footer-header" id="footerHeader">
+        <span class="footer-title">ℹ️ Repères Techniques & Légendes de Production</span>
+        <span class="footer-arrow" id="footerArrow">▲</span>
+      </div>
+      <div class="footer-content">
+        <div class="legend-panel" style="margin-top: 0; border: none; background: transparent; padding: 0;">
+          <div class="legend-list">
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="
+                  border: 2px dashed rgba(148, 163, 184, 0.7);
+                  background: #fff;
+                "></div>
+              <span>Ligne de Pliage (Ril-line)</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="background: #f1f5f9; border: 1px solid #cbd5e1"></div>
+              <span>Pattes de collage & Rabats (Non imprimés)</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="
+                  border: 1.5px solid #ef4444;
+                  background: transparent;
+                "></div>
+              <span>Ligne de Coupe / Emporte-pièce (Die-cut)</span>
+            </div>
+            <div class="legend-item">
+              <div
+                class="legend-color"
+                style="border: 1px dotted #22c55e; background: transparent"></div>
+              <span>Zone tranquille / Safe margin (10mm)</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </footer>
 
     <script>
       // Exact conversion ratio 96px/25.4mm for physical print dimensions
       const MM_TO_PX = 3.779527559;
+
+      // Selection state for PowerPoint-style custom fields
+      let selectedFieldId = null;
+      // La barre d'outils flottante ne s'affiche qu'à la demande (clic
+      // droit sur un champ), pour ne pas masquer le contenu à chaque
+      // simple clic de sélection.
+      let toolbarVisible = false;
+
+      function getFaceDimensionsPx(faceId) {
+        const type = controls.boxType.value;
+        const scale = MM_TO_PX;
+        const w = controls.dimW.value * scale;
+        const h = controls.dimH.value * scale;
+        const d = controls.dimD.value * scale;
+        const flap = Number(controls.flapLength.value) * scale;
+
+        if (type === "tablet") {
+          switch (faceId) {
+            case "p5": // Avant
+            case "p9": // Arrière
+              return { width: w, height: h };
+            case "p1": // Côté gauche
+            case "p10": // Côté droit
+              return { width: d, height: h }; // rectangular visible part
+            case "p1-rabat":
+            case "p10-rabat":
+              return { width: flap, height: h };
+            case "p12": // Supérieur
+            case "p7": // Inférieur
+              return { width: w, height: d };
+            default:
+              return { width: w, height: h };
+          }
+        } else {
+          // Liquid mode
+          switch (faceId) {
+            case "lp5": // Avant
+            case "lp7": // Arrière
+              return { width: w, height: h };
+            case "lp6": // Côté gauche
+            case "lp8": // Côté droit
+              return { width: d, height: h };
+            case "lp1": // Rabat haut visible
+            case "lp10": // Rabat bas visible
+              return { width: w, height: d };
+            case "lp1-rabat":
+            case "lp10-rabat":
+              return { width: w, height: flap };
+            default:
+              return { width: w, height: h };
+          }
+        }
+      }
+
+      function selectField(fieldId, skipSidebarScroll = false, focusInput = true) {
+        selectedFieldId = fieldId;
+        
+        // Add visual outline class on target
+        document.querySelectorAll(".custom-field").forEach(el => {
+          if (el.dataset.fieldId === fieldId) {
+            el.classList.add("selected");
+          } else {
+            el.classList.remove("selected");
+          }
+        });
+
+        // Show toolbar
+        updateFloatingToolbar();
+
+        if (skipSidebarScroll) return;
+
+        // Focus & highlight sidebar input
+        const row = document.querySelector(`#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`);
+        if (row) {
+          // Uncollapse if collapsed
+          if (row.classList.contains("collapsed")) {
+            row.classList.remove("collapsed");
+          }
+          
+          // Scroll into view inside sidebar
+          row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          
+          // Highlight row temporarily
+          row.classList.add("highlight-pulse");
+          setTimeout(() => {
+            row.classList.remove("highlight-pulse");
+          }, 1500);
+
+          // Focus first text input — désactivé pour un clic depuis le
+          // plan de travail (canvas), afin que les flèches du clavier
+          // restent disponibles immédiatement pour le déplacement fin
+          // (nudge) du champ au lieu d'être captées par le champ texte.
+          if (focusInput) {
+            const firstInput = row.querySelector("input[type='text'], textarea");
+            if (firstInput) {
+              firstInput.focus();
+            }
+          }
+        }
+      }
+
+      function deselectField() {
+        selectedFieldId = null;
+        toolbarVisible = false;
+        document.querySelectorAll(".custom-field").forEach(el => el.classList.remove("selected"));
+        const toolbar = document.getElementById("floatingToolbar");
+        if (toolbar) toolbar.classList.remove("show");
+      }
+
+      function updateFloatingToolbar() {
+        const toolbar = document.getElementById("floatingToolbar");
+        if (!toolbar) return;
+        if (!selectedFieldId || !toolbarVisible) {
+          toolbar.classList.remove("show");
+          return;
+        }
+
+        const field = fieldsConfig.find((f) => f.id === selectedFieldId);
+        if (!field) {
+          deselectField();
+          return;
+        }
+
+        // Find the rendered element on canvas
+        const renderedEl = document.querySelector(`.custom-field[data-field-id="${selectedFieldId}"]`);
+        if (!renderedEl) {
+          toolbar.classList.remove("show");
+          return;
+        }
+
+        // Position toolbar
+        const rect = renderedEl.getBoundingClientRect();
+        const workspaceEl = document.querySelector(".workspace");
+        const workspaceRect = workspaceEl.getBoundingClientRect();
+
+        // Calculate position relative to the workspace container
+        // We place the toolbar well above the top of the element, centered
+        // horizontally, with enough clearance to not overlap the field
+        // itself or its selection outline.
+        const TOOLBAR_OFFSET = 70;
+        const left = rect.left - workspaceRect.left + workspaceEl.scrollLeft + rect.width / 2;
+        let top = rect.top - workspaceRect.top + workspaceEl.scrollTop - TOOLBAR_OFFSET;
+
+        // Prevent toolbar from going off the top of the workspace viewport
+        if (top < workspaceEl.scrollTop + 10) {
+          top = rect.bottom - workspaceRect.top + workspaceEl.scrollTop + (TOOLBAR_OFFSET - 25);
+        }
+
+        toolbar.style.left = `${left}px`;
+        toolbar.style.top = `${top}px`;
+        toolbar.style.transform = "translateX(-50%)";
+        toolbar.classList.add("show");
+
+        // Sync inputs in the toolbar
+        document.getElementById("tbFontFamily").value = field.fontFamily || "inherit";
+        document.getElementById("tbFontSize").value = field.fontSize || 10;
+        document.getElementById("tbBold").classList.toggle("active", !!field.bold);
+        
+        document.getElementById("tbAlignLeft").classList.toggle("active", field.align === "left");
+        document.getElementById("tbAlignCenter").classList.toggle("active", field.align === "center");
+        document.getElementById("tbAlignRight").classList.toggle("active", field.align === "right");
+        
+        document.getElementById("tbColor").value = field.color || "#000000";
+      }
 
       // Controls Selection
       const controls = {
@@ -2148,6 +2594,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         txtDosage: document.getElementById("txtDosage"),
         txtQty: document.getElementById("txtQty"),
         txtLabName: document.getElementById("txtLabName"),
+        showLabName: document.getElementById("showLabName"),
         txtSlogan: document.getElementById("txtSlogan"),
         txtComposition2: document.getElementById("txtComposition2"),
         txtIndications: document.getElementById("txtIndications"),
@@ -2158,12 +2605,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         txtLiquidDescription: document.getElementById("txtLiquidDescription"),
         txtLiquidComposition: document.getElementById("txtLiquidComposition"),
         txtLiquidPrecautions: document.getElementById("txtLiquidPrecautions"),
-        fsScaleTitle: document.getElementById("fsScaleTitle"),
-        fsScaleBody: document.getElementById("fsScaleBody"),
-        fsScaleFlap: document.getElementById("fsScaleFlap"),
-        fsScaleSmall: document.getElementById("fsScaleSmall"),
         flapLength: document.getElementById("flapLength"),
         dustFlapsEnabled: document.getElementById("dustFlapsEnabled"),
+        logoSizeSlider: document.getElementById("logoSizeSlider"),
       };
 
       const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
@@ -2222,9 +2666,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       function getLogoMarkup(sizePx) {
         if (customLogoUrl) {
-          return `<img src="${customLogoUrl}" alt="Logo" style="width:${sizePx}px; height:${sizePx}px; object-fit:contain; flex-shrink:0;" />`;
+          return `<img src="${customLogoUrl}" alt="Logo" style="width:var(--logo-size, ${sizePx}px); height:var(--logo-size, ${sizePx}px); object-fit:contain; flex-shrink:0;" />`;
         }
-        return `<div class="logo-icon" style="width:${sizePx}px; height:${sizePx}px;"></div>`;
+        return `<div class="logo-icon" style="width:var(--logo-size, ${sizePx}px); height:var(--logo-size, ${sizePx}px);"></div>`;
       }
 
       logoUpload.addEventListener("change", (e) => {
@@ -2325,228 +2769,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         applyCustomFaceColors();
       });
 
-      // Content Generators for Tablet (Horizontal) Mode
-      function getFrontContent() {
-        return `
-        <div class="main-panel-content">
-          <div class="dots-grid">
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-          </div>
-          <div>
-            <h3 class="brand-title">${controls.txtProduct.value}<sup>TM</sup></h3>
-            <p class="brand-subtitle">${controls.txtDosage.value}</p>
-          </div>
-          <div class="logo-container">
-            ${getLogoMarkup(22)}
-            <div class="logo-text">
-              <span class="logo-name">${controls.txtLabName.value}</span>
-              <span class="logo-slogan">${controls.txtSlogan.value}</span>
-            </div>
-          </div>
-        </div>
-      `;
-      }
-
-      function getSideContent(side) {
-        const sideClass =
-          side === "left"
-            ? "side-panel-content--left"
-            : "side-panel-content--right";
-        return `
-        <div class="side-panel-content ${sideClass}">
-          <span class="qty-badge">${controls.txtQty.value}</span>
-          <div class="dots-grid">
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-          </div>
-          ${getLogoMarkup(22)}
-        </div>
-      `;
-      }
-
-      function getTechnicalContent() {
-        const reg = controls.txtRegInfo.value.replace(/\//g, "<br/>");
-        return `
-        <div class="bottom-panel-content">
-          <div class="panel-section">
-            <div class="panel-section-title">Dates</div>
-            <div><strong>Fab. :</strong> ${controls.txtMfgDate.value}</div>
-            <div><strong>Exp. :</strong> ${controls.txtExpDate.value}</div>
-            <div style="margin-top: 4px; font-weight: bold;">${reg}</div>
-          </div>
-          <div class="barcode-area">
-            <div class="barcode-graphic"></div>
-            <div class="barcode-number">${controls.txtBarcode.value}</div>
-          </div>
-          <div class="panel-section" style="text-align: right;">
-            <div class="panel-section-title">Manufactured by</div>
-            <div style="font-weight: 700;">${controls.txtLabName.value}</div>
-            <div>${controls.txtSlogan.value}</div>
-          </div>
-        </div>
-      `;
-      }
-
-      function getCompositionDosageContent() {
-        const listItems = controls.txtIndications.value
-          .split("\n")
-          .filter((l) => l.trim())
-          .map((l) => `<li>${l}</li>`)
-          .join("");
-        return `
-        <div class="top-panel-content">
-          <div class="panel-section">
-            <div class="panel-section-title">Composition</div>
-            <div>${controls.txtComposition2.value}</div>
-          </div>
-          <div class="panel-section">
-            <div class="panel-section-title">Posologie & Mode d'emploi</div>
-            <ul class="bullets-list">
-              ${listItems}
-            </ul>
-          </div>
-        </div>
-      `;
-      }
-
-      function getBarcodeOnlyContent() {
-        return `
-        <div class="barcode-area" style="display:flex; align-items:center; justify-content:center; height:100%;">
-          <div>
-            <div class="barcode-graphic"></div>
-            <div class="barcode-number">${controls.txtBarcode.value}</div>
-          </div>
-        </div>
-      `;
-      }
-
-      // Générateur générique de contenu par panneau — utilisé par les
-      // sélecteurs "Contenu par panneau" (modularité de l'interface).
-      function getPanelContent(mode) {
-        switch (mode) {
-          case "technical":
-            return getTechnicalContent();
-          case "composition":
-            return getCompositionDosageContent();
-          case "barcode":
-            return getBarcodeOnlyContent();
-          case "none":
-          default:
-            return "";
-        }
-      }
-
-      // Content Generators for Liquid (Vertical) Mode
-      function getLiquidFrontBackContent() {
-        return `
-        <div class="main-panel-content" style="padding: 20px;">
-          <div class="liquid-brand-header">
-            <div class="liquid-logo-row">
-              <div class="liquid-logo-widget">
-                ${
-                  customLogoUrl
-                    ? `<img src="${customLogoUrl}" alt="Logo" style="width:24px; height:24px; object-fit:contain; flex-shrink:0;" />`
-                    : `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C8 6 4 10 4 14C4 18.4 7.6 22 12 22C16.4 22 20 18.4 20 14C20 10 16 6 12 2ZM12 20C8.7 20 6 17.3 6 14C6 11.5 8.6 8.3 12 4.6C15.4 8.3 18 11.5 18 14C18 17.3 15.3 20 12 20Z" fill="var(--primary)"/>
-                  <circle cx="12" cy="14" r="3" fill="var(--accent)"/>
-                </svg>`
-                }
-                <span>${controls.txtLabName.value}</span>
-              </div>
-              <div class="liquid-qty-label">${controls.txtQty.value}</div>
-            </div>
-            
-            <div class="liquid-bar-blue">${controls.txtProduct.value}</div>
-            <div class="liquid-bar-orange">${controls.txtDosage.value}</div>
-            
-            <!-- Stylized overlapping leaf contour overlay -->
-            <svg class="liquid-decor-leaves" viewBox="0 0 100 100" fill="none" stroke="#cbd5e1" stroke-width="2">
-              <path d="M10 80 C 40 40, 60 40, 90 20 M 10 80 C 20 50, 50 30, 90 20 Z" />
-              <path d="M10 80 C 30 70, 60 60, 80 90 M 10 80 C 40 90, 70 90, 80 90 Z" />
-            </svg>
-          </div>
-          
-          <div class="liquid-desc-text">
-            ${controls.txtLiquidDescription.value}
-          </div>
-          
-          <div class="liquid-bottom-footer">
-            ${controls.txtLabName.value}
-            <span>${controls.txtSlogan.value}</span>
-          </div>
-        </div>
-      `;
-      }
-
-      function getLiquidSide1Content() {
-        // Composition Ingredients table — construite depuis le champ
-        // éditable "Table de composition" (une ligne = "Nom: valeur").
-        const rows = controls.txtLiquidComposition.value
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean)
-          .map((line) => {
-            const idx = line.indexOf(":");
-            const name = idx >= 0 ? line.slice(0, idx).trim() : line;
-            const value = idx >= 0 ? line.slice(idx + 1).trim() : "";
-            return `<div class="liquid-table-row"><span>${name}</span><span>${value}</span></div>`;
-          })
-          .join("");
-
-        return `
-        <div class="liquid-side-1">
-          <div class="liquid-composition-table">
-            <div class="liquid-table-title">Composition / Dose</div>
-            ${rows}
-          </div>
-          
-          <div style="font-size: calc(7px * var(--fs-scale-small, 1)); line-height: 1.3; color: #475569; margin: 12px 0;">
-            <strong style="text-transform:uppercase; font-size: calc(7.5px * var(--fs-scale-small, 1)); display:block; margin-bottom:3px; color:#0f172a;">Précautions :</strong>
-            ${controls.txtLiquidPrecautions.value}
-          </div>
-
-          <div style="font-size: calc(7.5px * var(--fs-scale-small, 1)); border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: auto;">
-            <strong>Fab. :</strong> ${controls.txtMfgDate.value} &nbsp;
-            <strong>Exp. :</strong> ${controls.txtExpDate.value}<br/>
-            <strong>Code AMM:</strong> ${controls.txtRegInfo.value.split("/")[1] || "En cours"}<br/>
-            <strong>N° de Lot:</strong> ${controls.txtBarcode.value}
-          </div>
-        </div>
-      `;
-      }
-
-      function getLiquidSide2Content() {
-        // Posology details and barcode layout matching the second side panel in the model
-        const listItems = controls.txtIndications.value
-          .split("\n")
-          .filter((l) => l.trim())
-          .map((l) => `<li>${l}</li>`)
-          .join("");
-        return `
-        <div class="liquid-side-1">
-          <div style="font-size: calc(7px * var(--fs-scale-small, 1)); line-height: 1.3; color: #475569;">
-            <strong style="text-transform:uppercase; font-size: calc(7.5px * var(--fs-scale-small, 1)); display:block; margin-bottom:3px; color:#0f172a;">Indications & Dosage :</strong>
-            <ul class="bullets-list liquid-side-list" style="margin-top: 4px;">
-              ${listItems}
-            </ul>
-          </div>
-          
-          <div style="margin-top: auto; padding-top: 10px;">
-            <div class="barcode-area">
-              <div class="barcode-graphic"></div>
-              <div class="barcode-number">${controls.txtBarcode.value}</div>
-            </div>
-            <div style="font-size: calc(7px * var(--fs-scale-small, 1)); color: #64748b; text-align: center; margin-top: 4px;">
-              ${controls.txtRegInfo.value.split("/")[0] || ""}
-            </div>
-          </div>
-        </div>
-      `;
-      }
-
       // ============================================================
       // === Système de champs personnalisables (mode Comprimés) ===
       // Chaque champ définit : sur quelle face il apparaît, sa
@@ -2582,7 +2804,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         { value: "lp6", label: "Côté gauche (ingrédients)" },
         { value: "lp8", label: "Côté droit (notice & codes)" },
         { value: "lp1", label: "Rabat haut — zone visible (côté pli)" },
+        { value: "lp1-rabat", label: "Rabat haut — zone trapèze (verrouillage)" },
         { value: "lp10", label: "Rabat bas — zone visible (côté pli)" },
+        { value: "lp10-rabat", label: "Rabat bas — zone trapèze (verrouillage)" },
       ];
 
       // Rétro-compatibilité : ancien nom utilisé ailleurs dans le code.
@@ -2603,7 +2827,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         { value: "barcode", label: "Code-barres EAN-13" },
         { value: "datamatrix", label: "Datamatrix (2D)" },
         { value: "braille", label: "Braille" },
-        { value: "shape", label: "Zone de couleur / design" },
+        { value: "shape", label: "Forme / Zone de couleur" },
         { value: "logo", label: "Logo personnalisé" },
         { value: "image", label: "Image importée" },
       ];
@@ -2651,6 +2875,35 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         { value: "outline-frame-rounded", label: "Cadre arrondi", group: "Cadres & contours" },
         { value: "ring", label: "Anneau (cercle contour)", group: "Cadres & contours" },
         { value: "double-frame", label: "Double cadre (liseré intérieur)", group: "Cadres & contours" },
+
+        // --- Formes géométriques standards (plein ou contour) ---
+        { value: "triangle", label: "Triangle", group: "Formes géométriques" },
+        { value: "triangle-inverted", label: "Triangle inversé", group: "Formes géométriques" },
+        { value: "right-triangle", label: "Triangle rectangle", group: "Formes géométriques" },
+        { value: "diamond", label: "Losange", group: "Formes géométriques" },
+        { value: "pentagon", label: "Pentagone", group: "Formes géométriques" },
+        { value: "hexagon", label: "Hexagone", group: "Formes géométriques" },
+        { value: "star", label: "Étoile (5 branches)", group: "Formes géométriques" },
+        { value: "arrow-right", label: "Flèche →", group: "Formes géométriques" },
+        { value: "arrow-left", label: "Flèche ←", group: "Formes géométriques" },
+        { value: "arrow-up", label: "Flèche ↑", group: "Formes géométriques" },
+        { value: "arrow-down", label: "Flèche ↓", group: "Formes géométriques" },
+        { value: "chevron-right", label: "Chevron", group: "Formes géométriques" },
+        { value: "line-horizontal", label: "Ligne horizontale", group: "Formes géométriques" },
+        { value: "line-vertical", label: "Ligne verticale", group: "Formes géométriques" },
+        { value: "line-diagonal", label: "Ligne diagonale", group: "Formes géométriques" },
+
+        // --- Forme personnalisée (tracé libre par clic) ---
+        { value: "custom", label: "✏️ Forme personnalisée (dessin libre)", group: "Personnalisé" },
+      ];
+
+      // Formes dont le style visuel supporte le choix Plein/Contour +
+      // épaisseur de trait dans l'éditeur de champ.
+      const GEOMETRIC_SHAPE_TYPES = [
+        "triangle", "triangle-inverted", "right-triangle", "diamond",
+        "pentagon", "hexagon", "star", "arrow-right", "arrow-left",
+        "arrow-up", "arrow-down", "chevron-right",
+        "line-horizontal", "line-vertical", "line-diagonal",
       ];
 
       function defaultTabletFieldsConfig() {
@@ -3504,7 +3757,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         return defaultFieldsConfig();
       }
 
-      function saveFieldsConfig() {
+      function persistFieldsConfig() {
         try {
           localStorage.setItem(FIELDS_STORAGE_KEY, JSON.stringify(fieldsConfig));
         } catch (e) {
@@ -3512,7 +3765,74 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         }
       }
 
+      // --- Historique Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ---
+      // Approche : on garde un instantané "stable" (historyBaseline) et un
+      // court délai (debounce) avant de le pousser dans la pile d'annulation.
+      // Ainsi une frappe continue (ex: édition d'un texte) ne crée qu'une
+      // seule étape d'historique une fois la saisie interrompue, au lieu
+      // d'une étape par caractère.
+      const MAX_HISTORY = 30;
+      let undoStack = [];
+      let redoStack = [];
+      let historyBaseline = null;
+      let historyDebounceTimer = null;
+
+      function commitHistorySnapshot() {
+        const current = JSON.stringify(fieldsConfig);
+        if (current === historyBaseline) return;
+        undoStack.push(historyBaseline);
+        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+        historyBaseline = current;
+        redoStack = [];
+      }
+
+      function scheduleHistorySnapshot() {
+        clearTimeout(historyDebounceTimer);
+        historyDebounceTimer = setTimeout(commitHistorySnapshot, 600);
+      }
+
+      function restoreFieldsConfigSnapshot(json) {
+        fieldsConfig = JSON.parse(json);
+        historyBaseline = json;
+        persistFieldsConfig();
+        deselectField();
+        renderFieldEditor();
+        renderAllCustomFields();
+      }
+
+      function undoFieldChange() {
+        clearTimeout(historyDebounceTimer);
+        const current = JSON.stringify(fieldsConfig);
+        if (current !== historyBaseline) {
+          // Une modification était en cours (ex: frappe non encore
+          // "commitée") : Annuler revient simplement à la dernière
+          // version stable, sans consommer la pile d'historique.
+          redoStack.push(current);
+          restoreFieldsConfigSnapshot(historyBaseline);
+          return;
+        }
+        if (undoStack.length === 0) return;
+        redoStack.push(current);
+        if (redoStack.length > MAX_HISTORY) redoStack.shift();
+        restoreFieldsConfigSnapshot(undoStack.pop());
+      }
+
+      function redoFieldChange() {
+        clearTimeout(historyDebounceTimer);
+        if (redoStack.length === 0) return;
+        const current = JSON.stringify(fieldsConfig);
+        undoStack.push(current);
+        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+        restoreFieldsConfigSnapshot(redoStack.pop());
+      }
+
+      function saveFieldsConfig() {
+        persistFieldsConfig();
+        scheduleHistorySnapshot();
+      }
+
       let fieldsConfig = loadFieldsConfig();
+      historyBaseline = JSON.stringify(fieldsConfig);
 
       function escapeHtml(str) {
         return String(str == null ? "" : str).replace(
@@ -3545,14 +3865,14 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           .join("");
       }
 
-      function buildDatamatrixNode(field) {
+      function buildDatamatrixNode(field, contentOverride) {
         const wrap = document.createElement("div");
         wrap.className = "field-datamatrix-grid";
         const size = 12;
         wrap.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
         wrap.style.gridTemplateRows = `repeat(${size}, 1fr)`;
         wrap.style.color = field.color || "#000000";
-        const str = field.content || "GS1";
+        const str = contentOverride || field.content || "GS1";
         let seed = 0;
         for (let i = 0; i < str.length; i++) {
           seed = (seed * 31 + str.charCodeAt(i)) >>> 0;
@@ -3578,15 +3898,19 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         wrap.style.overflow = "hidden";
         wrap.style.justifyContent = field.align === "center" ? "center" : (field.align === "right" ? "flex-end" : "flex-start");
 
-        const size = field.fontSize ? field.fontSize * 2 : 22;
+        // La taille de l'icône du logo suit le slider global "Taille du
+        // logo" (--logo-size) pour rester cohérente partout où le logo
+        // apparaît. field.fontSize ne sert plus qu'à dimensionner le texte
+        // du nom/slogan à côté du logo, pas l'icône elle-même.
+        const sizeStyle = `width:var(--logo-size, 22px); height:var(--logo-size, 22px);`;
         let logoHtml = "";
         if (customLogoUrl) {
-          logoHtml = `<img src="${customLogoUrl}" alt="Logo" style="width:${size}px; height:${size}px; object-fit:contain; flex-shrink:0;" />`;
+          logoHtml = `<img src="${customLogoUrl}" alt="Logo" style="${sizeStyle} object-fit:contain; flex-shrink:0;" />`;
         } else {
           const c1 = field.color || "var(--primary)";
           const c2 = field.color2 || "var(--accent)";
           logoHtml = `
-            <svg viewBox="0 0 100 100" style="width:${size}px; height:${size}px; flex-shrink:0;" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 100 100" style="${sizeStyle} flex-shrink:0;" xmlns="http://www.w3.org/2000/svg">
               <rect width="100" height="100" rx="20" fill="${c1}" />
               <path d="M30 50H70M50 30V70" stroke="${c2}" stroke-width="8" stroke-linecap="round" />
               <circle cx="50" cy="50" r="10" fill="#ffffff" />
@@ -3737,12 +4061,133 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           inner.style.inset = "4px";
           inner.style.border = `1px solid ${c2}`;
           wrap.appendChild(inner);
+        } else if (GEOMETRIC_SHAPE_POINTS[shapeType]) {
+          wrap.appendChild(
+            buildGeometricSvgNode(shapeType, c1, field.fillMode || "fill", field.strokeWidth || 4),
+          );
+        } else if (shapeType === "custom") {
+          if (field.points && field.points.length >= 2) {
+            wrap.appendChild(
+              buildCustomSvgNode(field.points, !!field.closed, c1, field.fillMode || "outline", field.strokeWidth || 3),
+            );
+          }
+          // Si aucun point n'a encore été tracé, la zone reste vide
+          // (rien à afficher) plutôt que de retomber sur un rectangle uni.
         } else {
           // rectangle uni (valeur par défaut / repli)
           wrap.style.background = c1;
         }
 
         return wrap;
+      }
+
+      // --- Formes géométriques standards (triangle, losange, étoile,
+      // flèches, lignes...) construites en SVG afin de supporter
+      // nativement le mode "plein" ou "contour" avec épaisseur de trait
+      // réglable, en plus de la rotation déjà gérée au niveau du champ. ---
+      const GEOMETRIC_SHAPE_POINTS = {
+        triangle: "50,3 97,97 3,97",
+        "triangle-inverted": "3,3 97,3 50,97",
+        "right-triangle": "3,3 97,97 3,97",
+        diamond: "50,3 97,50 50,97 3,50",
+        pentagon: "50,3 95,38 78,95 22,95 5,38",
+        hexagon: "25,3 75,3 97,50 75,97 25,97 3,50",
+        star: "50,3 61,37 97,37 68,58 79,94 50,72 21,94 32,58 3,37 39,37",
+        "arrow-right": "3,35 60,35 60,12 97,50 60,88 60,65 3,65",
+        "arrow-left": "97,35 40,35 40,12 3,50 40,88 40,65 97,65",
+        "arrow-up": "35,97 35,40 12,40 50,3 88,40 65,40 65,97",
+        "arrow-down": "35,3 35,60 12,60 50,97 88,60 65,60 65,3",
+        "chevron-right": "10,3 55,50 10,97 30,97 75,50 30,3",
+      };
+      const GEOMETRIC_LINE_TYPES = {
+        "line-horizontal": [3, 50, 97, 50],
+        "line-vertical": [50, 3, 50, 97],
+        "line-diagonal": [5, 5, 95, 95],
+      };
+
+      function buildGeometricSvgNode(shapeType, color, fillMode, strokeWidth) {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 100 100");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.position = "absolute";
+        svg.style.inset = "0";
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        const sw = Math.max(0.5, Number(strokeWidth) || 4);
+
+        if (GEOMETRIC_LINE_TYPES[shapeType]) {
+          const [x1, y1, x2, y2] = GEOMETRIC_LINE_TYPES[shapeType];
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", color);
+          line.setAttribute("stroke-width", sw);
+          line.setAttribute("stroke-linecap", "round");
+          line.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(line);
+          return svg;
+        }
+
+        const poly = document.createElementNS(svgNS, "polygon");
+        poly.setAttribute("points", GEOMETRIC_SHAPE_POINTS[shapeType] || GEOMETRIC_SHAPE_POINTS.triangle);
+        if (fillMode === "outline") {
+          poly.setAttribute("fill", "none");
+          poly.setAttribute("stroke", color);
+          poly.setAttribute("stroke-width", sw);
+          poly.setAttribute("stroke-linejoin", "round");
+        } else {
+          poly.setAttribute("fill", color);
+        }
+        svg.appendChild(poly);
+        return svg;
+      }
+
+      // --- Forme personnalisée : rend une liste de points (en % 0-100 de
+      // la zone du champ) sous forme de polygone fermé (rempli ou en
+      // contour) ou de ligne ouverte (polyligne), tracés via l'éditeur de
+      // points "Dessiner la forme". ---
+      function buildCustomSvgNode(points, closed, color, fillMode, strokeWidth) {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 100 100");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.position = "absolute";
+        svg.style.inset = "0";
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        svg.style.overflow = "visible";
+        const sw = Math.max(0.5, Number(strokeWidth) || 3);
+        const ptsAttr = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+        if (closed) {
+          const poly = document.createElementNS(svgNS, "polygon");
+          poly.setAttribute("points", ptsAttr);
+          if (fillMode === "fill") {
+            poly.setAttribute("fill", color);
+            poly.setAttribute("stroke", "none");
+          } else {
+            poly.setAttribute("fill", "none");
+            poly.setAttribute("stroke", color);
+            poly.setAttribute("stroke-width", sw);
+            poly.setAttribute("stroke-linejoin", "round");
+            poly.setAttribute("vector-effect", "non-scaling-stroke");
+          }
+          svg.appendChild(poly);
+        } else {
+          const polyline = document.createElementNS(svgNS, "polyline");
+          polyline.setAttribute("points", ptsAttr);
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", color);
+          polyline.setAttribute("stroke-width", sw);
+          polyline.setAttribute("stroke-linecap", "round");
+          polyline.setAttribute("stroke-linejoin", "round");
+          polyline.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(polyline);
+        }
+        return svg;
       }
 
       // Faces disponibles pour le mode Comprimés (correspondance
@@ -3759,7 +4204,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       ];
 
       // Faces disponibles pour le mode Sirop / Flacon liquide.
-      const LIQUID_FIELD_FACES = ["lp5", "lp7", "lp6", "lp8", "lp1", "lp10"];
+      const LIQUID_FIELD_FACES = ["lp5", "lp7", "lp6", "lp8", "lp1", "lp1-rabat", "lp10", "lp10-rabat"];
 
       // Rétro-compatibilité (ancien nom, mode Comprimés uniquement).
       const CUSTOM_FIELD_FACES = TABLET_FIELD_FACES;
@@ -3774,6 +4219,21 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       // n'affecte jamais les champs de l'autre.
       function currentModeFaces() {
         return isLiquidMode() ? LIQUID_FIELD_FACES : TABLET_FIELD_FACES;
+      }
+
+      // Renvoie la taille visuelle réelle d'un champ (en % du parent),
+      // en tenant compte de la rotation. À 90°/270°, l'encombrement
+      // visuel sur l'écran échange largeur et hauteur : c'est CETTE
+      // taille qu'il faut utiliser pour toute limite/alignement/
+      // validation de débordement — jamais field.w/field.h bruts.
+      // Centralisé ici pour éviter que la conversion soit oubliée à
+      // un endroit (source du bug « objets qui sortent de la zone »).
+      function getVisualSize(field) {
+        const isRot = field.rotation === 90 || field.rotation === 270;
+        return {
+          w: isRot ? field.h : field.w,
+          h: isRot ? field.w : field.h,
+        };
       }
 
       function renderAllCustomFields() {
@@ -3793,8 +4253,16 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           const zone = document.getElementById("fieldzone-" + field.face);
           if (!zone) return;
 
+          // Replace placeholders dynamically
+          const dynamicContent = String(field.content || "")
+            .replace(/COMPANY NAME/g, controls.txtLabName.value)
+            .replace(/YOUR SLOGAN HERE/g, controls.txtSlogan.value);
+
           const el = document.createElement("div");
           el.className = "custom-field";
+          if (selectedFieldId === field.id) {
+            el.classList.add("selected");
+          }
           el.dataset.fieldId = field.id;
           el.style.left = field.x + "%";
           el.style.top = field.y + "%";
@@ -3804,33 +4272,52 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           el.style.fontSize = (field.fontSize || 10) + "px";
           el.style.fontWeight = field.bold ? "800" : "400";
           el.style.color = field.color || "#0f172a";
+          if (field.fontFamily) {
+            el.style.fontFamily = field.fontFamily;
+          }
           const rot = Number(field.rotation) || 0;
           if (rot) {
-            el.style.transform = `rotate(${rot}deg)`;
-            el.style.transformOrigin = "center center";
+            // Use top-left origin with translate compensation so that
+            // the visual center of the rotated element stays at the
+            // same position as the un-rotated center.  This keeps
+            // left/top coordinates meaningful and avoids clipping.
+            const wPct = field.w;
+            const hPct = field.h;
+            // Compensation in % of parent: shift by half-size, rotate,
+            // then shift back — expressed as a single translate pair.
+            const rad = rot * Math.PI / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            // After rotating around top-left, the center moves from
+            // (w/2, h/2) to (cos*w/2 - sin*h/2, sin*w/2 + cos*h/2).
+            // We need to translate so the center goes back to (w/2, h/2).
+            const cx = wPct / 2;
+            const cy = hPct / 2;
+            const rcx = cos * cx - sin * cy;
+            const rcy = sin * cx + cos * cy;
+            const dx = cx - rcx; // in % of parent
+            const dy = cy - rcy;
+            el.style.transformOrigin = "top left";
+            el.style.transform = `translate(${dx}%, ${dy}%) rotate(${rot}deg)`;
           }
 
           if (field.type === "barcode") {
             el.innerHTML = `
               <div class="field-barcode-graphic"></div>
-              <div class="field-barcode-number" style="font-size:${Math.max(6, (field.fontSize || 10) * 0.65)}px;">${escapeHtml(field.content)}</div>
+              <div class="field-barcode-number" style="font-size:${Math.max(6, (field.fontSize || 10) * 0.65)}px;">${escapeHtml(dynamicContent)}</div>
             `;
           } else if (field.type === "datamatrix") {
-            el.appendChild(buildDatamatrixNode(field));
+            // pass dynamicContent to datamatrix generator
+            el.appendChild(buildDatamatrixNode(field, dynamicContent));
           } else if (field.type === "braille") {
             el.innerHTML = `
-              <div class="field-braille-text" style="font-size:${field.fontSize || 11}px;">${escapeHtml(toBraille(field.content))}</div>
-              <div style="font-size:${Math.max(6, (field.fontSize || 11) * 0.55)}px; color:#64748b; margin-top:2px;">${escapeHtml(field.content)}</div>
+              <div class="field-braille-text" style="font-size:${field.fontSize || 11}px;">${escapeHtml(toBraille(dynamicContent))}</div>
+              <div style="font-size:${Math.max(6, (field.fontSize || 11) * 0.55)}px; color:#64748b; margin-top:2px;">${escapeHtml(dynamicContent)}</div>
             `;
           } else if (field.type === "pictogram") {
-            el.innerHTML = `<div class="field-pictogram" style="width:100%; height:100%; border-color:${field.color || "#1e3a8a"}; color:${field.color || "#1e3a8a"}; font-size:${field.fontSize || 9}px;">${escapeHtml(field.content).replace(/\n/g, "<br/>")}</div>`;
+            el.innerHTML = `<div class="field-pictogram" style="width:100%; height:100%; border-color:${field.color || "#1e3a8a"}; color:${field.color || "#1e3a8a"}; font-size:${field.fontSize || 9}px;">${escapeHtml(dynamicContent).replace(/\n/g, "<br/>")}</div>`;
           } else if (field.type === "table") {
-            // Tableau à 2 colonnes séparées par des pointillés : la
-            // composition qualitative (nom) à gauche, la quantité à
-            // droite. Une ligne de contenu = "Nom: valeur". Réutilise
-            // le même rendu que la table de composition liquide, mais
-            // disponible pour n'importe quelle face (Comprimés inclus).
-            const rows = String(field.content || "")
+            const rows = dynamicContent
               .split("\n")
               .map((l) => l.trim())
               .filter(Boolean)
@@ -3849,10 +4336,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             el.style.padding = "0";
             el.appendChild(buildLogoNode(field));
           } else if (field.type === "image") {
-            // Image librement importée par l'utilisateur (logo produit,
-            // pictogramme réglementaire scanné, visuel marketing…),
-            // indépendante du logo du laboratoire. Stockée en base64
-            // directement dans field.src (incluse dans l'export JSON).
             el.style.padding = "0";
             if (field.src) {
               const img = document.createElement("img");
@@ -3867,7 +4350,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               el.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; border:1px dashed #94a3b8; color:#94a3b8; font-size:9px; text-align:center; padding:2px;">Image non définie<br/>(voir l'éditeur de champs)</div>`;
             }
           } else {
-            el.textContent = field.content;
+            el.textContent = dynamicContent;
           }
 
           // --- Drag & drop + redimensionnement à la souris ---
@@ -3878,6 +4361,16 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           el.addEventListener("pointerdown", (e) => {
             if (e.button !== 0) return; // clic gauche uniquement
             startFieldDrag(e, field.id);
+          });
+
+          // Clic droit : sélectionne le champ ET ouvre la barre d'outils
+          // flottante (police, taille, couleur...). Le clic gauche se
+          // contente de sélectionner sans afficher la barre, pour ne
+          // pas masquer le champ à chaque clic.
+          el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            toolbarVisible = true;
+            selectField(field.id, /*skipSidebarScroll=*/false, /*focusInput=*/false);
           });
 
           const resizeHandle = document.createElement("div");
@@ -3912,9 +4405,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         });
       }
 
-      // Déplacement d'un champ par glisser-déposer directement sur
-      // l'aperçu du patron. Les coordonnées sont en % de la field-zone
-      // parente, cohérentes avec le moteur de rendu (renderAllCustomFields).
       function startFieldDrag(e, fieldId) {
         const el = e.currentTarget;
         const field = fieldsConfig.find((f) => f.id === fieldId);
@@ -3928,35 +4418,121 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         const startX = field.x;
         const startY = field.y;
         let moved = false;
+        const DRAG_THRESHOLD_PX = 4; // en-deçà, on considère qu'il s'agit d'un clic, pas d'un glisser
 
         el.classList.add("dragging");
+        selectField(fieldId, /*skipSidebarScroll=*/true);
+
+        // --- Snap guides helpers ---
+        function getSnapCandidates() {
+          const candidates = [
+            { axis: "h", pct: 0   }, { axis: "h", pct: 50  }, { axis: "h", pct: 100 },
+            { axis: "v", pct: 0   }, { axis: "v", pct: 50  }, { axis: "v", pct: 100 },
+          ];
+          // Add other fields' edges as snap targets
+          fieldsConfig.forEach(f => {
+            if (f.id === fieldId) return;
+            const { w: fW, h: fH } = getVisualSize(f);
+            candidates.push({ axis: "h", pct: f.y }, { axis: "h", pct: f.y + fH / 2 }, { axis: "h", pct: f.y + fH });
+            candidates.push({ axis: "v", pct: f.x }, { axis: "v", pct: f.x + fW / 2 }, { axis: "v", pct: f.x + fW });
+          });
+          return candidates;
+        }
+
+        const SNAP_THRESHOLD = 1.5; // percent
+        function applySnap(rawX, rawY) {
+          const candidates = getSnapCandidates();
+          let snapX = rawX, snapY = rawY;
+          let guideH = null, guideV = null;
+
+          const { w: visualW, h: visualH } = getVisualSize(field);
+
+          candidates.forEach(c => {
+            if (c.axis === "h") {
+              for (const edge of [rawY, rawY + visualH / 2, rawY + visualH]) {
+                if (Math.abs(edge - c.pct) < SNAP_THRESHOLD) {
+                  snapY = c.pct - (edge - rawY);
+                  guideH = c.pct;
+                }
+              }
+            } else {
+              for (const edge of [rawX, rawX + visualW / 2, rawX + visualW]) {
+                if (Math.abs(edge - c.pct) < SNAP_THRESHOLD) {
+                  snapX = c.pct - (edge - rawX);
+                  guideV = c.pct;
+                }
+              }
+            }
+          });
+          return { snapX, snapY, guideH, guideV };
+        }
+
+        function showGuides(guideH, guideV, zone) {
+          let gh = zone.querySelector(".snap-guide-h");
+          let gv = zone.querySelector(".snap-guide-v");
+          if (!gh) { gh = document.createElement("div"); gh.className = "snap-guide-h"; zone.appendChild(gh); }
+          if (!gv) { gv = document.createElement("div"); gv.className = "snap-guide-v"; zone.appendChild(gv); }
+          gh.style.display = guideH !== null ? "block" : "none";
+          gv.style.display = guideV !== null ? "block" : "none";
+          if (guideH !== null) gh.style.top = guideH + "%";
+          if (guideV !== null) gv.style.left = guideV + "%";
+        }
+
+        function hideGuides(zone) {
+          zone.querySelectorAll(".snap-guide-h, .snap-guide-v").forEach(g => g.remove());
+        }
 
         function onMove(ev) {
+          const distPx = Math.hypot(ev.clientX - startClientX, ev.clientY - startClientY);
+          if (distPx < DRAG_THRESHOLD_PX) return; // micro-mouvement : pas encore un vrai glisser
           moved = true;
           const dxPct = ((ev.clientX - startClientX) / zoneRect.width) * 100;
           const dyPct = ((ev.clientY - startClientY) / zoneRect.height) * 100;
-          field.x = Math.max(0, Math.min(200, Math.round((startX + dxPct) * 10) / 10));
-          field.y = Math.max(0, Math.min(200, Math.round((startY + dyPct) * 10) / 10));
+          const rawX = Math.max(-50, Math.min(200, Math.round((startX + dxPct) * 10) / 10));
+          const rawY = Math.max(-50, Math.min(200, Math.round((startY + dyPct) * 10) / 10));
+          const { snapX, snapY, guideH, guideV } = applySnap(rawX, rawY);
+          // Clamp aux bords réels de la zone en utilisant la taille
+          // VISUELLE (après rotation) — sans ça, un champ pivoté à
+          // 90°/270° peut être déplacé au-delà des bords, ou au
+          // contraire ne jamais pouvoir atteindre certains coins,
+          // car les bornes étaient calculées sur field.w/field.h
+          // bruts au lieu de l'encombrement réel à l'écran.
+          const { w: visW, h: visH } = getVisualSize(field);
+          field.x = Math.max(0, Math.min(100 - visW, snapX));
+          field.y = Math.max(0, Math.min(100 - visH, snapY));
           el.style.left = field.x + "%";
           el.style.top = field.y + "%";
+          showGuides(guideH, guideV, el.parentElement);
+          updateFloatingToolbar();
         }
 
         function onUp() {
           document.removeEventListener("pointermove", onMove);
           document.removeEventListener("pointerup", onUp);
           el.classList.remove("dragging");
+          hideGuides(el.parentElement);
           if (moved) {
             saveFieldsConfig();
             syncFieldEditorInputs(fieldId);
             validateFields();
+          } else {
+            // Simple clic (pas de glisser-déposer) : on scrolle vers le
+            // champ correspondant dans le panneau latéral pour permettre
+            // une édition rapide, sans voler le focus clavier — ainsi les
+            // flèches restent immédiatement disponibles pour déplacer
+            // finement le champ (nudge) juste après l'avoir cliqué.
+            // On referme aussi la barre flottante si elle était ouverte
+            // (seul le clic droit doit la rouvrir).
+            toolbarVisible = false;
+            selectField(fieldId, /*skipSidebarScroll=*/false, /*focusInput=*/false);
           }
+          updateFloatingToolbar();
         }
 
         document.addEventListener("pointermove", onMove);
         document.addEventListener("pointerup", onUp);
       }
 
-      // Redimensionnement d'un champ via sa poignée (coin bas-droit).
       function startFieldResize(e, fieldId) {
         const handle = e.currentTarget;
         const el = handle.parentElement;
@@ -3972,14 +4548,53 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         const startH = field.h;
 
         el.classList.add("resizing");
+        selectField(fieldId, /*skipSidebarScroll=*/true);
 
         function onMove(ev) {
-          const dwPct = ((ev.clientX - startClientX) / zoneRect.width) * 100;
-          const dhPct = ((ev.clientY - startClientY) / zoneRect.height) * 100;
-          field.w = Math.max(2, Math.min(200, Math.round((startW + dwPct) * 10) / 10));
-          field.h = Math.max(2, Math.min(200, Math.round((startH + dhPct) * 10) / 10));
+          const rot = Number(field.rotation) || 0;
+          const rad = rot * Math.PI / 180;
+          const cosA = Math.cos(rad);
+          const sinA = Math.sin(rad);
+          // Mouse movement in zone-% space
+          const rawDx = ((ev.clientX - startClientX) / zoneRect.width) * 100;
+          const rawDy = ((ev.clientY - startClientY) / zoneRect.height) * 100;
+          // Project onto local (rotated) axes to get dW and dH
+          const dwPct =  rawDx * cosA + rawDy * sinA;
+          const dhPct = -rawDx * sinA + rawDy * cosA;
+
+          let newW = Math.max(2, Math.min(200, Math.round((startW + dwPct) * 10) / 10));
+          let newH = Math.max(2, Math.min(200, Math.round((startH + dhPct) * 10) / 10));
+
+          // Clamp pour empêcher le champ de dépasser le bord droit/bas
+          // de la zone. À 90°/270°, l'encombrement visuel échange
+          // largeur et hauteur (visW = field.h, visH = field.w) : la
+          // limite à appliquer doit donc être basée sur cet
+          // encombrement réel, pas sur field.w/field.h directement.
+          const isRot = (rot === 90 || rot === 270);
+          const maxVisW = 100 - field.x;
+          const maxVisH = 100 - field.y;
+          if (isRot) {
+            newH = Math.min(newH, maxVisW);
+            newW = Math.min(newW, maxVisH);
+          } else {
+            newW = Math.min(newW, maxVisW);
+            newH = Math.min(newH, maxVisH);
+          }
+
+          field.w = newW;
+          field.h = newH;
           el.style.width = field.w + "%";
           el.style.height = field.h + "%";
+
+          // Re-apply the translate compensation for the new size
+          if (rot) {
+            const cx = field.w / 2;
+            const cy = field.h / 2;
+            const rcx = cosA * cx - sinA * cy;
+            const rcy = sinA * cx + cosA * cy;
+            el.style.transform = `translate(${cx - rcx}%, ${cy - rcy}%) rotate(${rot}deg)`;
+          }
+          updateFloatingToolbar();
         }
 
         function onUp() {
@@ -4014,8 +4629,10 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         'lp7':      { label: 'Face arrière',               color: '#b45309' },
         'lp6':      { label: 'Côté gauche (ingrédients)',  color: '#166534' },
         'lp8':      { label: 'Côté droit (notice & codes)',color: '#7c3aed' },
-        'lp1':      { label: 'Rabat haut',                 color: '#be185d' },
-        'lp10':     { label: 'Rabat bas',                  color: '#9f1239' },
+        'lp1':      { label: 'Rabat haut (rect.)',          color: '#be185d' },
+        'lp1-rabat':{ label: 'Rabat haut (trapèze)',        color: '#9d174d' },
+        'lp10':     { label: 'Rabat bas (rect.)',           color: '#9f1239' },
+        'lp10-rabat':{ label: 'Rabat bas (trapèze)',        color: '#7f1d1d' },
       };
 
       // Mapping type → libellé court pour le badge
@@ -4064,10 +4681,14 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           byFace[field.face].push(field);
         });
 
-        // Détecter les débordements
+        // Détecter les débordements — on utilise la taille VISUELLE
+        // (getVisualSize) et non field.w/field.h bruts, sans quoi un
+        // champ pivoté à 90°/270° est mal évalué (faux positif ou
+        // faux négatif selon le cas).
         activeFields.forEach(field => {
-          const overflowX = (field.x + field.w) > 102; // petite tolérance de 2%
-          const overflowY = (field.y + field.h) > 102;
+          const { w: visW, h: visH } = getVisualSize(field);
+          const overflowX = (field.x + visW) > 102; // petite tolérance de 2%
+          const overflowY = (field.y + visH) > 102;
           if (overflowX || overflowY) {
             issues.push({ type: 'overflow', label: field.label, fieldId: field.id });
           }
@@ -4080,8 +4701,10 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             for (let j = i + 1; j < nonShapes.length; j++) {
               const a = nonShapes[i];
               const b = nonShapes[j];
-              const overX = a.x < (b.x + b.w) && (a.x + a.w) > b.x;
-              const overY = a.y < (b.y + b.h) && (a.y + a.h) > b.y;
+              const aSize = getVisualSize(a);
+              const bSize = getVisualSize(b);
+              const overX = a.x < (b.x + bSize.w) && (a.x + aSize.w) > b.x;
+              const overY = a.y < (b.y + bSize.h) && (a.y + aSize.h) > b.y;
               if (overX && overY) {
                 if (!issues.find(iss => iss.type === 'overlap' && iss.fieldId === a.id)) {
                   issues.push({ type: 'overlap', label: a.label, fieldId: a.id });
@@ -4166,6 +4789,13 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         groups.forEach(({ faceId, items }) => {
           const faceInfo = FACE_LABEL_MAP[faceId] || { label: 'Autre', color: '#64748b' };
 
+          // Trier les champs par ordre alphabétique de leur libellé
+          items.sort((a, b) => {
+            const labelA = (a.field.label || "").toLowerCase();
+            const labelB = (b.field.label || "").toLowerCase();
+            return labelA.localeCompare(labelB, "fr", { sensitivity: "base" });
+          });
+
           // En-tête de groupe par face
           const groupHeader = document.createElement('div');
           groupHeader.className = 'face-group-header';
@@ -4194,8 +4824,8 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
                   ${TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === field.type ? 'selected' : ''}>${o.label}</option>`).join('')}
                 </select>
               </div>
-              <div><label>X (%)</label><input type="number" data-idx="${idx}" data-prop="x" value="${field.x}" min="0" max="200" step="1" /></div>
-              <div><label>Y (%)</label><input type="number" data-idx="${idx}" data-prop="y" value="${field.y}" min="0" max="200" step="1" /></div>
+              <div><label>X (%)</label><input type="number" data-idx="${idx}" data-prop="x" value="${field.x}" min="-50" max="200" step="1" /></div>
+              <div><label>Y (%)</label><input type="number" data-idx="${idx}" data-prop="y" value="${field.y}" min="-50" max="200" step="1" /></div>
               <div><label>Largeur (%)</label><input type="number" data-idx="${idx}" data-prop="w" value="${field.w}" min="1" max="200" step="1" /></div>
               <div><label>Hauteur (%)</label><input type="number" data-idx="${idx}" data-prop="h" value="${field.h}" min="1" max="200" step="1" /></div>
               <div><label>Rotation</label>
@@ -4230,6 +4860,31 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               <div><label>Couleur secondaire</label>
                 <input type="color" data-idx="${idx}" data-prop="color2" value="${field.color2 || '#f97316'}" style="height:26px;padding:2px" />
               </div>
+              ${GEOMETRIC_SHAPE_TYPES.includes(field.shapeType) ? `
+              <div><label>Remplissage</label>
+                <select data-idx="${idx}" data-prop="fillMode">
+                  <option value="fill" ${((field.fillMode || 'fill') === 'fill') ? 'selected' : ''}>Plein</option>
+                  <option value="outline" ${field.fillMode === 'outline' ? 'selected' : ''}>Contour</option>
+                </select>
+              </div>
+              <div><label>Épaisseur du trait</label>
+                <input type="number" data-idx="${idx}" data-prop="strokeWidth" value="${field.strokeWidth || 4}" min="0.5" max="20" step="0.5" />
+              </div>` : ''}
+              ${field.shapeType === 'custom' ? `
+              <div style="grid-column: span 2;">
+                <button type="button" class="field-draw-shape-btn" data-idx="${idx}" style="width:100%; font-size:12px; padding:6px;">
+                  ✏️ ${(field.points && field.points.length >= 2) ? 'Modifier le tracé' : 'Dessiner la forme'} (${(field.points || []).length} point${(field.points || []).length > 1 ? 's' : ''}${field.closed ? ', fermée' : ''})
+                </button>
+              </div>
+              <div><label>Remplissage</label>
+                <select data-idx="${idx}" data-prop="fillMode">
+                  <option value="fill" ${((field.fillMode || 'outline') === 'fill') ? 'selected' : ''}>Plein</option>
+                  <option value="outline" ${(field.fillMode || 'outline') === 'outline' ? 'selected' : ''}>Contour</option>
+                </select>
+              </div>
+              <div><label>Épaisseur du trait</label>
+                <input type="number" data-idx="${idx}" data-prop="strokeWidth" value="${field.strokeWidth || 3}" min="0.5" max="20" step="0.5" />
+              </div>` : ''}
             `;
 
             const textGrid = `
@@ -4462,14 +5117,19 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       if (addShapeBtn) {
         addShapeBtn.addEventListener("click", () => {
+          const face = currentModeFaces()[0];
+          const dims = getFaceDimensionsPx(face);
+          const marginXPct = (10 / dims.width) * 100;
+          const marginYPct = (10 / dims.height) * 100;
+          
           const newShape = {
             id: "shape_" + Date.now(),
             label: "Zone de couleur",
-            face: currentModeFaces()[0],
-            x: 0,
-            y: 0,
-            w: 35,
-            h: 35,
+            face: face,
+            x: Math.max(0, Math.round(marginXPct)),
+            y: Math.max(0, Math.round(marginYPct)),
+            w: Math.max(5, Math.round(Math.min(35, 100 - 2 * marginXPct))),
+            h: Math.max(5, Math.round(Math.min(35, 100 - 2 * marginYPct))),
             type: "shape",
             shapeType: "diagonal-tl-br",
             color: "#1e3a8a",
@@ -4485,19 +5145,25 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           _lastAddedFieldId = newShape.id;
           renderFieldEditor();
           renderAllCustomFields();
+          selectField(newShape.id);
         });
       }
 
       if (addFieldBtn) {
         addFieldBtn.addEventListener("click", () => {
+          const face = currentModeFaces()[0];
+          const dims = getFaceDimensionsPx(face);
+          const marginXPct = (10 / dims.width) * 100;
+          const marginYPct = (10 / dims.height) * 100;
+
           const newField = {
             id: "custom_" + Date.now(),
             label: "Nouveau champ",
-            face: currentModeFaces()[0],
-            x: 10,
-            y: 10,
-            w: 40,
-            h: 15,
+            face: face,
+            x: Math.max(0, Math.round(marginXPct + 2)),
+            y: Math.max(0, Math.round(marginYPct + 2)),
+            w: Math.max(10, Math.round(Math.min(40, 100 - 2 * marginXPct - 4))),
+            h: Math.max(5, Math.round(Math.min(15, 100 - 2 * marginYPct - 4))),
             fontSize: 10,
             bold: false,
             color: "#0f172a",
@@ -4511,8 +5177,202 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           _lastAddedFieldId = newField.id;
           renderFieldEditor();
           renderAllCustomFields();
+          selectField(newField.id);
         });
       }
+
+      // ============================================================
+      // Éditeur de tracé pour les formes personnalisées ("custom") :
+      // clic pour poser des points, glisser pour les repositionner,
+      // bouton "Fermer la forme" pour transformer le tracé en polygone
+      // fermé (sinon la forme reste une ligne ouverte / polyligne).
+      // ============================================================
+      let _shapeDrawState = null; // { idx, points, closed }
+
+      function openShapeDrawer(idx) {
+        const field = fieldsConfig[idx];
+        if (!field) return;
+
+        const dims = getFaceDimensionsPx(field.face);
+        const aspect = dims.width / dims.height || 1;
+        const maxW = Math.min(window.innerWidth * 0.8, 640);
+        const maxH = Math.min(window.innerHeight * 0.65, 640);
+        let canvasW = maxW;
+        let canvasH = canvasW / aspect;
+        if (canvasH > maxH) {
+          canvasH = maxH;
+          canvasW = canvasH * aspect;
+        }
+
+        _shapeDrawState = {
+          idx,
+          points: (field.points || []).map((p) => ({ x: p.x, y: p.y })),
+          closed: !!field.closed,
+          canvasW,
+          canvasH,
+          dragIndex: null,
+        };
+
+        const overlay = document.createElement("div");
+        overlay.className = "shape-draw-overlay";
+        overlay.id = "shapeDrawOverlay";
+        overlay.innerHTML = `
+          <div class="shape-draw-panel">
+            <div class="shape-draw-header">
+              <h3>Dessiner la forme — ${escapeHtml(field.label || "Champ")}</h3>
+              <button type="button" class="shape-draw-close" id="shapeDrawCloseX">✕</button>
+            </div>
+            <p class="shape-draw-help">
+              Cliquez sur la zone pour poser des points successifs. Glissez un point pour
+              le déplacer. Utilisez « Fermer la forme » pour obtenir un polygone plein/contour
+              (minimum 3 points), ou laissez-la ouverte pour une ligne/flèche libre.
+            </p>
+            <svg id="shapeDrawSvg" class="shape-draw-canvas-wrap"
+                 width="${canvasW}" height="${canvasH}"
+                 viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+            <div class="shape-draw-footer">
+              <button type="button" class="danger" id="shapeDrawUndo">↩ Annuler dernier point</button>
+              <button type="button" class="danger" id="shapeDrawReset">🗑 Réinitialiser</button>
+              <button type="button" id="shapeDrawToggleClose">⬡ Fermer la forme</button>
+              <button type="button" id="shapeDrawCancel">Annuler</button>
+              <button type="button" class="primary" id="shapeDrawSave">✓ Enregistrer</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        renderShapeDrawSvg();
+
+        const svg = document.getElementById("shapeDrawSvg");
+        svg.addEventListener("click", onShapeDrawSvgClick);
+        svg.addEventListener("pointermove", onShapeDrawSvgPointerMove);
+        svg.addEventListener("pointerup", onShapeDrawSvgPointerUp);
+        svg.addEventListener("pointerleave", onShapeDrawSvgPointerUp);
+
+        document.getElementById("shapeDrawCloseX").addEventListener("click", closeShapeDrawer);
+        document.getElementById("shapeDrawCancel").addEventListener("click", closeShapeDrawer);
+        document.getElementById("shapeDrawUndo").addEventListener("click", () => {
+          _shapeDrawState.points.pop();
+          if (_shapeDrawState.points.length < 3) _shapeDrawState.closed = false;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawReset").addEventListener("click", () => {
+          _shapeDrawState.points = [];
+          _shapeDrawState.closed = false;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawToggleClose").addEventListener("click", () => {
+          if (_shapeDrawState.points.length < 3) {
+            alert("Il faut au moins 3 points pour fermer la forme.");
+            return;
+          }
+          _shapeDrawState.closed = !_shapeDrawState.closed;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawSave").addEventListener("click", () => {
+          const st = _shapeDrawState;
+          const target = fieldsConfig[st.idx];
+          if (target) {
+            target.points = st.points.map((p) => ({
+              x: Math.round(p.x * 10) / 10,
+              y: Math.round(p.y * 10) / 10,
+            }));
+            target.closed = st.closed;
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+          }
+          closeShapeDrawer();
+        });
+      }
+
+      function closeShapeDrawer() {
+        const overlay = document.getElementById("shapeDrawOverlay");
+        if (overlay) overlay.remove();
+        _shapeDrawState = null;
+      }
+
+      function svgPointFromEvent(evt) {
+        const svg = document.getElementById("shapeDrawSvg");
+        const rect = svg.getBoundingClientRect();
+        const x = ((evt.clientX - rect.left) / rect.width) * 100;
+        const y = ((evt.clientY - rect.top) / rect.height) * 100;
+        return {
+          x: Math.max(0, Math.min(100, x)),
+          y: Math.max(0, Math.min(100, y)),
+        };
+      }
+
+      function onShapeDrawSvgClick(evt) {
+        const st = _shapeDrawState;
+        if (!st || st.dragIndex !== null || evt.detail === 0) return;
+        // Ignore le clic qui suit immédiatement un drag (déjà géré par pointerup).
+        if (evt.target.classList && evt.target.classList.contains("shape-draw-point")) return;
+        const pt = svgPointFromEvent(evt);
+        st.points.push(pt);
+        renderShapeDrawSvg();
+      }
+
+      function onShapeDrawSvgPointerMove(evt) {
+        const st = _shapeDrawState;
+        if (!st || st.dragIndex === null) return;
+        st.points[st.dragIndex] = svgPointFromEvent(evt);
+        renderShapeDrawSvg();
+      }
+
+      function onShapeDrawSvgPointerUp() {
+        if (_shapeDrawState) _shapeDrawState.dragIndex = null;
+      }
+
+      function renderShapeDrawSvg() {
+        const st = _shapeDrawState;
+        const svg = document.getElementById("shapeDrawSvg");
+        if (!st || !svg) return;
+        svg.innerHTML = "";
+        const svgNS = "http://www.w3.org/2000/svg";
+
+        if (st.points.length >= 2) {
+          const shape = document.createElementNS(svgNS, st.closed ? "polygon" : "polyline");
+          shape.setAttribute("points", st.points.map((p) => `${p.x},${p.y}`).join(" "));
+          shape.setAttribute("fill", st.closed ? "rgba(37, 99, 235, 0.35)" : "none");
+          shape.setAttribute("stroke", "#2563eb");
+          shape.setAttribute("stroke-width", "1");
+          shape.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(shape);
+        }
+
+        st.points.forEach((p, i) => {
+          const circle = document.createElementNS(svgNS, "circle");
+          circle.setAttribute("cx", p.x);
+          circle.setAttribute("cy", p.y);
+          circle.setAttribute("r", "2");
+          circle.setAttribute("vector-effect", "non-scaling-stroke");
+          circle.classList.add("shape-draw-point");
+          if (i === 0) circle.classList.add("first-point");
+          circle.addEventListener("pointerdown", (e) => {
+            e.stopPropagation();
+            st.dragIndex = i;
+          });
+          svg.appendChild(circle);
+        });
+
+        const toggleBtn = document.getElementById("shapeDrawToggleClose");
+        if (toggleBtn) {
+          toggleBtn.textContent = st.closed ? "⬡ Rouvrir la forme" : "⬡ Fermer la forme";
+          toggleBtn.disabled = st.points.length < 3 && !st.closed;
+        }
+        const saveBtn = document.getElementById("shapeDrawSave");
+        if (saveBtn) saveBtn.disabled = st.points.length < 2;
+      }
+
+      // Délégation : le bouton "Dessiner la forme" est recréé à chaque
+      // rendu de l'éditeur de champs, on écoute donc sur le conteneur.
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".field-draw-shape-btn");
+        if (!btn) return;
+        const idx = Number(btn.dataset.idx);
+        openShapeDrawer(idx);
+      });
 
       if (resetFieldsBtn) {
         resetFieldsBtn.addEventListener("click", () => {
@@ -4637,14 +5497,22 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           renderAllCustomFields();
         } else {
           // Liquid format (Vertical)
-          // P1: Rabat Haut (Tuck Lid) — le contenu reste confiné à la
-          // zone rectangulaire visible (côté pli avec la Face Avant) ;
-          // la zone trapèze de verrouillage (pointe) reste vide.
-          // L'ordre est : orange puis bleu (le bleu est collé au pli en bas).
-          // P1 (Rabat haut) : zone visible rectangulaire côté pli —
-          // reçoit son propre field-zone comme les autres faces liquides.
-          document.getElementById("cnt-p1").innerHTML =
-            '<div class="field-zone" id="fieldzone-lp1"></div>';
+          // P1: Rabat Haut (Tuck Lid) — deux zones DISTINCTES empilées verticalement :
+          //   - lp1-rabat : zone trapèze de verrouillage (pointe vers le haut, en haut du panneau)
+          //   - lp1       : zone rectangulaire de fermeture (côté pli avec la Face Avant, en bas du panneau)
+          // La hauteur de chaque zone est calculée en % du panneau total.
+          const flapPxLiq = Number(controls.flapLength.value) * MM_TO_PX;
+          const flapRectPxLiq = controls.dimD.value * MM_TO_PX;
+          const flapTotalPxLiq = flapPxLiq + flapRectPxLiq;
+          const pctRabatLiq = (flapPxLiq / flapTotalPxLiq * 100).toFixed(2);
+          const pctRectLiq = (flapRectPxLiq / flapTotalPxLiq * 100).toFixed(2);
+
+          document.getElementById("cnt-p1").innerHTML = `
+            <div style="display:flex; flex-direction:column; width:100%; height:100%;">
+              <div class="field-zone" style="flex: 0 0 ${pctRabatLiq}%; height:${pctRabatLiq}%;" id="fieldzone-lp1-rabat"></div>
+              <div class="field-zone" style="flex: 0 0 ${pctRectLiq}%; height:${pctRectLiq}%;" id="fieldzone-lp1"></div>
+            </div>
+          `;
 
           // Front & Back panels (High Fidelity Liquid template)
           document.getElementById("cnt-p5").innerHTML =
@@ -4660,11 +5528,15 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           document.getElementById("cnt-p8").innerHTML =
             '<div class="field-zone" id="fieldzone-lp8"></div>';
 
-          // P10: Rabat Bas (Tuck Lid) — même logique, contenu confiné
-          // à la zone rectangulaire côté pli avec la Face Arrière ; la
-          // zone trapèze de verrouillage (pointe) reste vide.
-          document.getElementById("cnt-p10").innerHTML =
-            '<div class="field-zone" id="fieldzone-lp10"></div>';
+          // P10: Rabat Bas (Tuck Lid) — même logique inversée :
+          //   - lp10       : zone rectangulaire de fermeture (côté pli avec la Face Arrière, en haut)
+          //   - lp10-rabat : zone trapèze de verrouillage (pointe vers le bas, en bas du panneau)
+          document.getElementById("cnt-p10").innerHTML = `
+            <div style="display:flex; flex-direction:column; width:100%; height:100%;">
+              <div class="field-zone" style="flex: 0 0 ${pctRectLiq}%; height:${pctRectLiq}%;" id="fieldzone-lp10"></div>
+              <div class="field-zone" style="flex: 0 0 ${pctRabatLiq}%; height:${pctRabatLiq}%;" id="fieldzone-lp10-rabat"></div>
+            </div>
+          `;
 
           // P9: Glue flap (Vertical tab)
           document.getElementById("cnt-p9").innerHTML =
@@ -4711,23 +5583,24 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           controls.colAccent.value,
         );
 
-        // Update modulable typography scales
-        document.documentElement.style.setProperty(
-          "--fs-scale-title",
-          controls.fsScaleTitle.value,
-        );
-        document.documentElement.style.setProperty(
-          "--fs-scale-body",
-          controls.fsScaleBody.value,
-        );
-        document.documentElement.style.setProperty(
-          "--fs-scale-flap",
-          controls.fsScaleFlap.value,
-        );
-        document.documentElement.style.setProperty(
-          "--fs-scale-small",
-          controls.fsScaleSmall.value,
-        );
+        // Update Logo Size
+        const logoSize = controls.logoSizeSlider.value;
+        document.documentElement.style.setProperty("--logo-size", `${logoSize}px`);
+        const logoSizeVal = document.getElementById("logoSizeVal");
+        if (logoSizeVal) logoSizeVal.textContent = `${logoSize}px`;
+
+        // Affichage de la valeur courante du curseur "Longueur du rabat"
+        const flapLengthVal = document.getElementById("flapLengthVal");
+        if (flapLengthVal) flapLengthVal.textContent = `${controls.flapLength.value}mm`;
+
+        // Afficher / masquer le nom du laboratoire (redondant si déjà
+        // intégré visuellement dans l'image du logo importé)
+        const showLabName = controls.showLabName ? controls.showLabName.checked : true;
+        document.body.classList.toggle("hide-lab-name", !showLabName);
+        const labNameGroup = document.getElementById("labNameGroup");
+        if (labNameGroup) labNameGroup.style.opacity = showLabName ? "1" : "0.4";
+
+
 
         // Define CSS dynamic properties for typography scaling
         document.documentElement.style.setProperty("--box-w", `${w}px`);
@@ -4837,7 +5710,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           const flapTotal = flap + flapRectH;
           const totalW = w + d + w + d + glue;
           const totalH = flapTotal + h + flapTotal;
-          const dust = Math.min(d, flap);
+          const dust = d * 0.8;
 
           patronSheet.style.width = `${totalW}px`;
           patronSheet.style.height = `${totalH}px`;
@@ -4924,12 +5797,16 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           const pctRect = (flapRectH / flapTotal) * 100;
           const yTrap = 100 - pctRect; // % depuis le haut où débute le rectangle (rabat haut)
 
+          // Rabat Haut : base du trapèze à 100% (alignée sur le rectangle de fermeture),
+          // seule la pointe est rétrécie à 85% sur les deux côtés.
           document.getElementById("p1").style.clipPath =
             `polygon(0% 100%, 100% 100%, 100% ${yTrap}%, 85% 0%, 15% 0%, 0% ${yTrap}%)`;
           document
             .getElementById("p1")
             .style.setProperty("--flap-rect-h", `${flapRectH}px`);
 
+          // Rabat Bas : même logique inversée — base à 100% (alignée avec le rectangle),
+          // pointe à 85% en bas.
           document.getElementById("p10").style.clipPath =
             `polygon(0% 0%, 100% 0%, 100% ${pctRect}%, 85% 100%, 15% 100%, 0% ${pctRect}%)`;
           document
@@ -4966,11 +5843,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           path.setAttribute("fill", "none");
           dieLinesSvg.appendChild(path);
         };
-
-        const addRect = (x, y, rw, rh) =>
-          addPath(
-            `M ${x} ${y} L ${x + rw} ${y} L ${x + rw} ${y + rh} L ${x} ${y + rh} Z`,
-          );
 
         // Every shape below mirrors exactly the panel it outlines — plain
         // rectangles for flat panels, and the same trapezoid / notch
@@ -5073,11 +5945,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         dieLinesSvg.innerHTML = "";
         const totalW = w + d + w + d + glue;
 
-        // "flap" = longueur du rabat réglée par le curseur = longueur
-        // de la seule partie trapézoïdale (verrouillage). La partie
-        // rectangulaire (visible, contenu) a une hauteur égale à la
-        // profondeur "d" de la boîte, pour rester cohérente avec elle.
-        // flapTotal = hauteur totale de la zone rabat (rectangle + trapèze).
+        // "flap" = longueur du trapèze de verrouillage (curseur).
+        // "flapRectH" = hauteur du rectangle de fermeture = profondeur d.
+        // "flapTotal" = hauteur totale du rabat (rectangle + trapèze).
         const flapRectH = d;
         const flapTotal = flap + flapRectH;
         const totalH = flapTotal + h + flapTotal;
@@ -5099,80 +5969,72 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           dieLinesSvg.appendChild(path);
         };
 
-        // Tuck flaps — même structure que le panneau HTML :
-        // rectangle visible (côté pli, hauteur = d) + pointe trapèze
-        // (verrouillage, hauteur = flap, réglée par le curseur).
-        // Rabat Haut : pli en bas (y = flapTotal), pointe en haut (y = 0)
-        // Structure : Rectangle (flapRectH) + Trapèze (flap)
-        // Contour extérieur seulement
-        addPath(`
-          M 0 ${flapTotal}
-          L ${w} ${flapTotal}
-          L ${w} ${flapTotal - flapRectH}
-          L ${w * 0.85} 0
-          L ${w * 0.15} 0
-          L 0 ${flapTotal - flapRectH}
-          Z
-        `);
+        // --- CONTOUR EXTÉRIEUR ROUGE GLOBAL (Sirop / Flacon) ---
+        // Base du trapèze = 100% de la largeur (alignée sur le rectangle),
+        // seule la pointe est rétrécie à 85% (côtés 15%-85%).
+        let contour = "";
 
-        // Rabat Bas : pli en haut (y = flapTotal + h), pointe en bas
-        // Structure : Rectangle (flapRectH) + Trapèze (flap)
-        // Positionné sous P7 (x = w + d)
-        // Contour extérieur seulement (le pli à flapTotal + h est géré par addFold)
-        addPath(`
-          M ${w + d} ${flapTotal + h}
-          L ${w + d + w} ${flapTotal + h}
-          L ${w + d + w} ${flapTotal + h + flapRectH}
-          L ${w + d + w * 0.85} ${totalH}
-          L ${w + d + w * 0.15} ${totalH}
-          L ${w + d} ${flapTotal + h + flapRectH}
-          Z
-        `);
+        // 1. Partir du coin inférieur gauche de P1 (pli avec P5)
+        contour += `M 0 ${flapTotal} `;
 
-        // Dust flaps - top row (attachés au pli supérieur des panneaux latéraux)
+        // 2. Rabat supérieur P1 : côté gauche du rectangle, puis trapèze, puis côté droit
+        contour += `L 0 ${flapTotal - flapRectH} `;
+        contour += `L ${w * 0.15} 0 `;
+        contour += `L ${w * 0.85} 0 `;
+        contour += `L ${w} ${flapTotal - flapRectH} `;
+        contour += `L ${w} ${flapTotal} `;
+
+        // 3. Rabat poussière supérieur gauche P2
         if (dustEnabled) {
-          addPath(`
-            M ${w} ${flapTotal}
-            L ${w + d} ${flapTotal}
-            L ${w + d * 0.8} ${flapTotal - dust}
-            L ${w + d * 0.2} ${flapTotal - dust}
-            Z
-          `);
-
-          addPath(`
-            M ${w + d + w} ${flapTotal}
-            L ${w + d + w + d} ${flapTotal}
-            L ${w + d + w + d * 0.8} ${flapTotal - dust}
-            L ${w + d + w + d * 0.2} ${flapTotal - dust}
-            Z
-          `);
+          contour += `L ${w + d * 0.2} ${flapTotal - dust} `;
+          contour += `L ${w + d * 0.8} ${flapTotal - dust} `;
         }
+        contour += `L ${w + d} ${flapTotal} `;
 
-        // Main rectangular panels (Outer boundary only, internal folds are added later)
-        addPath(
-          `M 0 ${flapTotal} L 0 ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal + h} L ${w + d + w + d + glue} ${flapTotal} L 0 ${flapTotal} Z`,
-        );
+        // 4. Plate-bande au-dessus de P7
+        contour += `L ${w + d + w} ${flapTotal} `;
 
-        // Dust flaps - bottom row (attachés au pli inférieur des panneaux latéraux)
+        // 5. Rabat poussière supérieur droit P3
         if (dustEnabled) {
-          addPath(`
-            M ${w} ${flapTotal + h}
-            L ${w + d} ${flapTotal + h}
-            L ${w + d * 0.8} ${flapTotal + h + dust}
-            L ${w + d * 0.2} ${flapTotal + h + dust}
-            Z
-          `);
-
-          addPath(`
-            M ${w + d + w} ${flapTotal + h}
-            L ${w + d + w + d} ${flapTotal + h}
-            L ${w + d + w + d * 0.8} ${flapTotal + h + dust}
-            L ${w + d + w + d * 0.2} ${flapTotal + h + dust}
-            Z
-          `);
+          contour += `L ${w + d + w + d * 0.2} ${flapTotal - dust} `;
+          contour += `L ${w + d + w + d * 0.8} ${flapTotal - dust} `;
         }
+        contour += `L ${w + d + w + d} ${flapTotal} `;
 
-        // --- Lignes de PLI internes pour le mode LIQUID ---
+        // 6. Patte d'encollage P9
+        contour += `L ${w + d + w + d} ${flapTotal + h * 0.05} `;
+        contour += `L ${w + d + w + d + glue} ${flapTotal + h * 0.15} `;
+        contour += `L ${w + d + w + d + glue} ${flapTotal + h * 0.85} `;
+        contour += `L ${w + d + w + d} ${flapTotal + h * 0.95} `;
+        contour += `L ${w + d + w + d} ${flapTotal + h} `;
+
+        // 7. Rabat poussière inférieur droit P11
+        if (dustEnabled) {
+          contour += `L ${w + d + w + d * 0.8} ${flapTotal + h + dust} `;
+          contour += `L ${w + d + w + d * 0.2} ${flapTotal + h + dust} `;
+        }
+        contour += `L ${w + d + w} ${flapTotal + h} `;
+
+        // 8. Rabat inférieur P10 : rectangle puis trapèze
+        contour += `L ${w + d + w} ${flapTotal + h + flapRectH} `;
+        contour += `L ${w + d + w * 0.85} ${totalH} `;
+        contour += `L ${w + d + w * 0.15} ${totalH} `;
+        contour += `L ${w + d} ${flapTotal + h + flapRectH} `;
+        contour += `L ${w + d} ${flapTotal + h} `;
+
+        // 9. Rabat poussière inférieur gauche P4
+        if (dustEnabled) {
+          contour += `L ${w + d * 0.8} ${flapTotal + h + dust} `;
+          contour += `L ${w + d * 0.2} ${flapTotal + h + dust} `;
+        }
+        contour += `L ${w} ${flapTotal + h} `;
+
+        // 10. Fermer vers le point de départ
+        contour += `L 0 ${flapTotal + h} Z`;
+
+        addPath(contour);
+
+        // --- Lignes de PLI internes ---
         const addFold = (x1, y1, x2, y2) => {
           const fold = document.createElementNS(
             "http://www.w3.org/2000/svg",
@@ -5186,31 +6048,26 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           dieLinesSvg.appendChild(fold);
         };
 
-        // Plis verticaux entre les faces
+        // Plis verticaux entre les faces du corps
         addFold(w, flapTotal, w, flapTotal + h);
         addFold(w + d, flapTotal, w + d, flapTotal + h);
         addFold(w + d + w, flapTotal, w + d + w, flapTotal + h);
         addFold(w + d + w + d, flapTotal, w + d + w + d, flapTotal + h);
 
-        // Plis horizontaux (jonction corps / rabats)
+        // Plis horizontaux : jonctions corps / rabats
         addFold(0, flapTotal, w, flapTotal); // P5 / P1
-        addFold(w, flapTotal, w + d, flapTotal); // P6 / Dust
-        addFold(w + d, flapTotal, w + d + w, flapTotal); // P7 / Dust (vide ici car rabat bas est sur P7)
-        addFold(w + d + w, flapTotal, w + d + w + d, flapTotal); // P8 / Dust
+        if (dustEnabled) {
+          addFold(w, flapTotal, w + d, flapTotal); // P6 / P2
+          addFold(w + d + w, flapTotal, w + d + w + d, flapTotal); // P8 / P3
+          addFold(w, flapTotal + h, w + d, flapTotal + h); // P6 / P4
+          addFold(w + d + w, flapTotal + h, w + d + w + d, flapTotal + h); // P8 / P11
+        }
+        addFold(w + d, flapTotal + h, w + d + w, flapTotal + h); // P7 / P10
 
-        addFold(0, flapTotal + h, w, flapTotal + h);
-        addFold(w, flapTotal + h, w + d, flapTotal + h);
-        addFold(w + d, flapTotal + h, w + d + w, flapTotal + h);
-        addFold(w + d + w, flapTotal + h, w + d + w + d, flapTotal + h);
-
-        // Plis de la patte de fermeture (entre rectangle et pointe)
-        addFold(0, flap, w, flap); // Haut
-        addFold(
-          w + d,
-          flapTotal + h + flapRectH,
-          w + d + w,
-          flapTotal + h + flapRectH,
-        ); // Bas (P10 sous P7)
+        // Plis internes entre le rectangle de fermeture et le trapèze de verrouillage
+        // Délimitent clairement les deux zones éditables distinctes
+        addFold(0, flapTotal - flapRectH, w, flapTotal - flapRectH); // P1 : rect / trapèze
+        addFold(w + d, flapTotal + h + flapRectH, w + d + w, flapTotal + h + flapRectH); // P10 : rect / trapèze
       }
 
       // Event Listeners setup
@@ -5286,7 +6143,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       }
 
       function applyCustomFaceColors() {
-        const faces = ['p5', 'p9', 'p12', 'p7', 'p1', 'p1-rabat', 'p10', 'p10-rabat', 'lp5', 'lp7', 'lp6', 'lp8', 'lp1', 'lp10'];
+        const faces = ['p5', 'p9', 'p12', 'p7', 'p1', 'p1-rabat', 'p10', 'p10-rabat', 'lp5', 'lp7', 'lp6', 'lp8', 'lp1', 'lp1-rabat', 'lp10', 'lp10-rabat'];
         faces.forEach(f => {
           if (customFacesBg[f]) {
             document.documentElement.style.setProperty(`--bg-${f}`, customFacesBg[f]);
@@ -5335,6 +6192,33 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       let pendingPrint = false;
 
+      // Fixe la taille de la page d'impression (@page) exactement sur les
+      // dimensions réelles du patron (en mm). Sans cela, la plupart des
+      // navigateurs appliquent par défaut "Ajuster à la page" dans le
+      // dialogue d'impression, ce qui redimensionne le contenu pour qu'il
+      // rentre dans le format papier choisi (A4, etc.) et fait que les
+      // dimensions imprimées ne correspondent plus à celles saisies dans
+      // l'interface. En donnant à la page exactement la taille du patron,
+      // il n'y a plus rien à "ajuster".
+      function setPrintPageSize() {
+        const sheet = document.getElementById("patronSheet");
+        if (!sheet) return;
+        const wPx = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const hPx = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!wPx || !hPx) return;
+        const wMm = wPx / MM_TO_PX;
+        const hMm = hPx / MM_TO_PX;
+
+        let styleTag = document.getElementById("dynamicPrintPageSize");
+        if (!styleTag) {
+          styleTag = document.createElement("style");
+          styleTag.id = "dynamicPrintPageSize";
+          document.head.appendChild(styleTag);
+        }
+        styleTag.textContent =
+          `@media print { @page { size: ${wMm.toFixed(2)}mm ${hMm.toFixed(2)}mm; margin: 0; } }`;
+      }
+
       function checkAccess() {
         return localStorage.getItem(STORAGE_KEY) === "1";
       }
@@ -5352,6 +6236,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       printBtn.addEventListener("click", () => {
         if (checkAccess()) {
           sendDesignData().then(() => {
+            setPrintPageSize();
             window.print();
           });
         } else {
@@ -5403,6 +6288,292 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       updateTextBinders();
       updateGeometry();
       applyCustomFaceColors();
+
+      // ============================================================
+      //  FLOATING TOOLBAR – Barre flottante style PowerPoint
+      // ============================================================
+      (function initFloatingToolbar() {
+        function applyToSelected(updater) {
+          if (!selectedFieldId) return;
+          const field = fieldsConfig.find(f => f.id === selectedFieldId);
+          if (!field) return;
+          updater(field);
+          saveFieldsConfig();
+          renderAllCustomFields();
+          updateFloatingToolbar();
+          syncFieldEditorInputs(selectedFieldId);
+        }
+
+        document.getElementById("tbFontFamily").addEventListener("change", (e) => {
+          applyToSelected(f => { f.fontFamily = e.target.value; });
+        });
+
+        document.getElementById("tbFontSize").addEventListener("input", (e) => {
+          const sz = Math.max(4, Math.min(60, parseFloat(e.target.value) || 10));
+          applyToSelected(f => { f.fontSize = sz; });
+        });
+
+        document.getElementById("tbFontDec").addEventListener("click", () => {
+          applyToSelected(f => { f.fontSize = Math.max(4, (f.fontSize || 10) - 0.5); });
+        });
+
+        document.getElementById("tbFontInc").addEventListener("click", () => {
+          applyToSelected(f => { f.fontSize = Math.min(60, (f.fontSize || 10) + 0.5); });
+        });
+
+        document.getElementById("tbBold").addEventListener("click", () => {
+          applyToSelected(f => { f.bold = !f.bold; });
+        });
+
+        document.getElementById("tbAlignLeft").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "left"; });
+        });
+
+        document.getElementById("tbAlignCenter").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "center"; });
+        });
+
+        document.getElementById("tbAlignRight").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "right"; });
+        });
+
+        document.getElementById("tbColor").addEventListener("input", (e) => {
+          applyToSelected(f => { f.color = e.target.value; });
+        });
+
+        function duplicateSelectedField() {
+          if (!selectedFieldId) return;
+          const original = fieldsConfig.find(f => f.id === selectedFieldId);
+          if (!original) return;
+
+          const clone = JSON.parse(JSON.stringify(original));
+          clone.id = (original.type || "field") + "_" + Date.now();
+          // Léger décalage pour que la copie ne se superpose pas
+          // exactement à l'original et reste visible immédiatement.
+          const { w: visW, h: visH } = getVisualSize(clone);
+          clone.x = Math.max(0, Math.min(100 - visW, (original.x || 0) + 3));
+          clone.y = Math.max(0, Math.min(100 - visH, (original.y || 0) + 3));
+          if (clone.label) clone.label = clone.label + " (copie)";
+
+          fieldsConfig.push(clone);
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+          selectField(clone.id, /*skipSidebarScroll=*/false, /*focusInput=*/false);
+        }
+
+        document.getElementById("tbDuplicate").addEventListener("click", duplicateSelectedField);
+
+        // Raccourci clavier Ctrl/Cmd+D pour dupliquer le champ sélectionné
+        document.addEventListener("keydown", (e) => {
+          if (!selectedFieldId) return;
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+            const activeTag = document.activeElement && document.activeElement.tagName;
+            if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+            e.preventDefault();
+            duplicateSelectedField();
+          }
+        });
+
+        // Raccourci clavier Ctrl/Cmd+Z (annuler) et Ctrl/Cmd+Maj+Z ou
+        // Ctrl/Cmd+Y (rétablir) pour l'historique des champs personnalisés.
+        // Fonctionne même sans champ sélectionné ; ignoré si le focus est
+        // dans un champ de saisie texte pour laisser l'annulation native
+        // du navigateur gérer le texte en cours d'édition.
+        document.addEventListener("keydown", (e) => {
+          if (!(e.ctrlKey || e.metaKey)) return;
+          const key = e.key.toLowerCase();
+          if (key !== "z" && key !== "y") return;
+          const activeTag = document.activeElement && document.activeElement.tagName;
+          if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+          e.preventDefault();
+          if (key === "y" || (key === "z" && e.shiftKey)) {
+            redoFieldChange();
+          } else {
+            undoFieldChange();
+          }
+        });
+
+        document.getElementById("tbDelete").addEventListener("click", () => {
+          if (!selectedFieldId) return;
+          if (!confirm("Supprimer ce champ ?")) return;
+          fieldsConfig = fieldsConfig.filter(f => f.id !== selectedFieldId);
+          deselectField();
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+
+        // Clic sur la zone de travail (fond) → désélectionner
+        document.getElementById("patronSheet").addEventListener("pointerdown", (e) => {
+          if (!e.target.closest(".custom-field")) {
+            deselectField();
+          }
+        });
+
+        // Déplacement au clavier (nudge) du champ sélectionné : flèches
+        // pour ajuster finement la position (Maj = pas plus large),
+        // Suppr/Retour arrière pour effacer, Échap pour désélectionner.
+        // Ignoré si le focus est dans un champ de saisie (texte, nombre...)
+        // pour ne pas interférer avec la frappe normale.
+        document.addEventListener("keydown", (e) => {
+          if (!selectedFieldId) return;
+          const activeTag = document.activeElement && document.activeElement.tagName;
+          if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+
+          if (e.key === "Escape") {
+            deselectField();
+            return;
+          }
+
+          if (e.key === "Delete" || e.key === "Backspace") {
+            e.preventDefault();
+            if (!confirm("Supprimer ce champ ?")) return;
+            fieldsConfig = fieldsConfig.filter(f => f.id !== selectedFieldId);
+            deselectField();
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+            return;
+          }
+
+          const STEP = e.shiftKey ? 1 : 0.1; // en % ; Maj = déplacement plus large
+          let dx = 0, dy = 0;
+          switch (e.key) {
+            case "ArrowLeft": dx = -STEP; break;
+            case "ArrowRight": dx = STEP; break;
+            case "ArrowUp": dy = -STEP; break;
+            case "ArrowDown": dy = STEP; break;
+            default: return;
+          }
+          e.preventDefault();
+
+          const field = fieldsConfig.find(f => f.id === selectedFieldId);
+          if (!field) return;
+          const { w: visW, h: visH } = getVisualSize(field);
+          field.x = Math.max(0, Math.min(100 - visW, Math.round((field.x + dx) * 10) / 10));
+          field.y = Math.max(0, Math.min(100 - visH, Math.round((field.y + dy) * 10) / 10));
+
+          const el = document.querySelector(`.custom-field[data-field-id="${selectedFieldId}"]`);
+          if (el) {
+            el.style.left = field.x + "%";
+            el.style.top = field.y + "%";
+          }
+          saveFieldsConfig();
+          syncFieldEditorInputs(selectedFieldId);
+          updateFloatingToolbar();
+        });
+
+        // Suivi du défilement de la zone de travail pour maintenir le panneau flottant ancré
+        const workspaceEl = document.querySelector(".workspace");
+        if (workspaceEl) {
+          workspaceEl.addEventListener("scroll", () => {
+            if (selectedFieldId) {
+              updateFloatingToolbar();
+            }
+          });
+        }
+      })();
+
+      // ============================================================
+      //  HEADER DROPDOWN – Menu ⋯
+      // ============================================================
+      (function initHeaderDropdown() {
+        const dropBtn = document.getElementById("menuDropdownBtn");
+        const dropMenu = document.getElementById("headerDropdown");
+        if (!dropBtn || !dropMenu) return;
+
+        dropBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = dropMenu.classList.toggle("show");
+          dropBtn.setAttribute("aria-expanded", String(isOpen));
+        });
+
+        // Fermer si clic ailleurs
+        document.addEventListener("click", () => {
+          dropMenu.classList.remove("show");
+          dropBtn.setAttribute("aria-expanded", "false");
+        });
+
+        // Actions du menu (délégation)
+        dropMenu.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-action]");
+          if (!btn) return;
+          e.preventDefault();
+          const action = btn.dataset.action;
+          dropMenu.classList.remove("show");
+
+          switch (action) {
+            case "undo": {
+              undoFieldChange();
+              break;
+            }
+            case "redo": {
+              redoFieldChange();
+              break;
+            }
+            case "export-json": {
+              const blob = new Blob([JSON.stringify(fieldsConfig, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = "fields_config.json"; a.click();
+              URL.revokeObjectURL(url);
+              break;
+            }
+            case "import-json": {
+              const input = document.createElement("input");
+              input.type = "file"; input.accept = ".json";
+              input.addEventListener("change", () => {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const data = JSON.parse(reader.result);
+                    if (Array.isArray(data)) {
+                      fieldsConfig = data;
+                      saveFieldsConfig();
+                      renderFieldEditor();
+                      renderAllCustomFields();
+                    } else {
+                      alert("Fichier JSON invalide (doit être un tableau de champs).");
+                    }
+                  } catch {
+                    alert("Impossible de lire le fichier JSON.");
+                  }
+                };
+                reader.readAsText(file);
+              });
+              input.click();
+              break;
+            }
+            case "reset-all": {
+              if (!confirm("Réinitialiser TOUTES les données ? Cette action est irréversible.")) break;
+              localStorage.clear();
+              location.reload();
+              break;
+            }
+            case "toggle-legend": {
+              const footer = document.getElementById("retractableFooter");
+              if (footer) footer.classList.toggle("expanded");
+              break;
+            }
+          }
+        });
+      })();
+
+      // ============================================================
+      //  FOOTER RETRACTABLE – Pied de page accordéon
+      // ============================================================
+      (function initRetractableFooter() {
+        const footer = document.getElementById("retractableFooter");
+        const footerHeader = document.getElementById("footerHeader");
+        if (!footerHeader || !footer) return;
+        footerHeader.addEventListener("click", () => {
+          footer.classList.toggle("expanded");
+        });
+      })();
+
     </script>
 
     <!-- === Gate d'accès (identification obligatoire) === -->
@@ -5485,6 +6656,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             // Utiliser la fonction globale définie dans le script principal
             if (typeof sendDesignData === "function") {
               sendDesignData().then(() => {
+                if (typeof setPrintPageSize === "function") setPrintPageSize();
                 window.print();
               });
             }
