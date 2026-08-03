@@ -13,6 +13,8 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet" />
+    <!-- html2canvas : capture fidèle du DOM pour export PNG haute qualité -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -996,6 +998,15 @@
           cursor: default !important;
           outline: none !important;
         }
+        /* Ne jamais imprimer les artefacts d'édition. */
+        .custom-field.inline-editing {
+          outline: none !important;
+          background: none !important;
+          box-shadow: none !important;
+        }
+        .inline-edit-hint {
+          display: none !important;
+        }
         .main-layout {
           display: block !important;
           height: auto !important;
@@ -1109,6 +1120,58 @@
         outline: 2px solid #2563eb;
         z-index: 60 !important;
         opacity: 0.9;
+      }
+
+      /* --- Édition directe du texte dans la maquette --- */
+      .custom-field.inline-editing {
+        outline: 2px solid #2563eb;
+        outline-offset: 1px;
+        background: rgba(37, 99, 235, 0.05);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        cursor: text;
+        user-select: text;
+        -webkit-user-select: text;
+        z-index: 62 !important;
+      }
+      .custom-field.inline-editing:hover {
+        outline: 2px solid #2563eb;
+      }
+      /* La poignée gênerait la sélection du texte au coin bas-droit. */
+      .custom-field.inline-editing .field-resize-handle {
+        display: none !important;
+      }
+
+      .inline-edit-hint {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%) translateY(8px);
+        background: #0f172a;
+        color: #e2e8f0;
+        font-size: 12px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35);
+        z-index: 900;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        white-space: nowrap;
+      }
+      .inline-edit-hint.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .inline-edit-hint kbd {
+        background: #334155;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        border: 1px solid #475569;
+      }
+      .inline-edit-hint-var {
+        color: #fbbf24;
       }
 
       /* Poignée de redimensionnement (coin bas-droit) — apparaît au
@@ -1448,6 +1511,23 @@
         pointer-events: none;
       }
 
+      /* Infobulle live de position/taille pendant glisser-déposer et
+         redimensionnement d'un champ personnalisé */
+      .drag-coord-tooltip {
+        position: absolute;
+        background: rgba(15, 23, 42, 0.92);
+        color: #f1f5f9;
+        font-size: 10px;
+        font-weight: 700;
+        font-family: monospace;
+        padding: 3px 7px;
+        border-radius: 4px;
+        white-space: nowrap;
+        z-index: 1001;
+        pointer-events: none;
+        transform: translate(-50%, -130%);
+      }
+
       /* Floating Contextual Toolbar */
       .floating-toolbar {
         position: absolute;
@@ -1778,6 +1858,124 @@
         color: #fca5a5;
       }
       .shape-draw-footer button.danger:hover { background: #7f1d1d; }
+
+      /* === Améliorations ergonomie (UI/UX) === */
+      /* Barre globale (réduire / déplier tout) dans la sidebar */
+      .sidebar-global-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .sidebar-global-bar .sb-title {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .sidebar-global-bar .sb-actions { display: flex; gap: 6px; }
+      .sidebar-global-bar button {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+      .sidebar-global-bar button:hover { background: #334155; color: #fff; }
+
+      /* Sections repliables (accordéon) */
+      .sidebar-section { margin-bottom: 8px; }
+      .sidebar-section > h2 {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #94a3b8;
+        transition: color 0.15s;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 8px;
+      }
+      .sidebar-section > h2:hover { color: #e2e8f0; }
+      .sidebar-section > h2 .caret {
+        display: inline-flex;
+        font-size: 10px;
+        color: #64748b;
+        transition: transform 0.2s ease;
+      }
+      .sidebar-section.collapsed > h2 .caret { transform: rotate(-90deg); }
+      .sidebar-section.collapsed > .section-body { display: none; }
+      .section-body { display: flex; flex-direction: column; gap: 20px; padding-top: 4px; }
+
+      /* Pastille d'état dans le header */
+      .status-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 12px;
+        color: #cbd5e1;
+        white-space: nowrap;
+      }
+      .status-chip .chip-mode {
+        font-weight: 800;
+        color: #fff;
+        background: #2563eb;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+      .status-chip .chip-dim {
+        color: #94a3b8;
+        font-family: "Space Mono", monospace;
+      }
+      .status-chip .chip-count { color: #94a3b8; }
+
+      /* Bannière d'aide première utilisation */
+      .firstrun-hint {
+        position: fixed;
+        left: 50%;
+        bottom: 56px;
+        transform: translateX(-50%);
+        background: rgba(30, 41, 59, 0.97);
+        border: 1px solid #475569;
+        border-radius: 12px;
+        padding: 14px 18px;
+        max-width: 540px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        z-index: 300;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #e2e8f0;
+      }
+      .firstrun-hint.hidden { display: none; }
+      .firstrun-hint .hint-icon { font-size: 20px; line-height: 1; }
+      .firstrun-hint ul { margin: 4px 0 0; padding-left: 16px; }
+      .firstrun-hint li { margin-bottom: 2px; }
+      .firstrun-hint button {
+        background: #2563eb;
+        border: none;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+        align-self: center;
+      }
+      .firstrun-hint button:hover { background: #1d4ed8; }
     </style>
   </head>
   <body>
@@ -1809,7 +2007,7 @@
         </p>
         <p class="gate-status" id="gateStatus">Envoi en cours...</p>
         <button type="submit" class="action-btn" id="gateSubmitBtn">
-          Accéder à l'outil
+          Continuer l'impression
         </button>
       </form>
     </div>
@@ -1831,6 +2029,8 @@
           <h1>Packaging par <strong>IDO</strong></h1>
         </div>
       </div>
+
+      <div id="statusChip" class="status-chip"></div>
 
       <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
         <button
@@ -1882,6 +2082,7 @@
             <a href="#" id="redoAction" data-action="redo">↪️ Rétablir (Ctrl+Maj+Z)</a>
             <hr style="border: 0; border-top: 1px solid #334155; margin: 4px 0;" />
             <a href="#" id="exportJsonAction" data-action="export-json">📤 Exporter le gabarit (JSON)</a>
+            <a href="#" id="exportPngAction" data-action="export-png">🖼️ Exporter le patron (PNG)</a>
             <a href="#" id="importJsonAction" data-action="import-json">📥 Importer un gabarit (JSON)</a>
             <hr style="border: 0; border-top: 1px solid #334155; margin: 4px 0;" />
             <a href="#" id="resetAllAction" data-action="reset-all" style="color: #f87171;">⚠️ Réinitialiser tous les champs</a>
@@ -1891,9 +2092,32 @@
       </div>
     </header>
 
+    <div class="firstrun-hint" id="firstrunHint">
+      <span class="hint-icon">💡</span>
+      <div>
+        <strong>Bien démarrer</strong>
+        <ul>
+          <li>Choisissez le type d'étui (Comprimés / Sirop) puis les dimensions (mm).</li>
+          <li>Ajoutez ou déplacez les <em>champs</em> directement sur le patron (glisser-déposer).</li>
+          <li><strong>Clic droit</strong> sur un champ pour la mise en forme (police, couleur…).</li>
+          <li>Imprimez ou exportez en PDF via le bouton 🖨️.</li>
+        </ul>
+      </div>
+      <button type="button" id="firstrunClose">Compris</button>
+    </div>
+
+
+
     <div class="main-layout">
       <!-- Sidebar Panel -->
       <div class="sidebar">
+        <div class="sidebar-global-bar">
+          <span class="sb-title">Panneau de réglages</span>
+          <span class="sb-actions">
+            <button type="button" id="collapseAllBtn">Réduire tout</button>
+            <button type="button" id="expandAllBtn">Déplier tout</button>
+          </span>
+        </div>
         <h2>Modèle de gabarit</h2>
         <fieldset>
           <legend>Sélection</legend>
@@ -2121,98 +2345,6 @@
           </div>
         </fieldset>
 
-        <div style="display: none">
-        <h2>Textes des Panneaux [obsolète — remplacé par les champs personnalisés]</h2>
-        <fieldset>
-          <legend>Identité</legend>
-          <div class="input-group">
-            <label>Nom du Produit</label>
-            <input type="text" id="txtProduct" value="Paracétamol" />
-          </div>
-          <div class="input-group">
-            <label>DCI / Dosage</label>
-            <input type="text" id="txtDosage" value="paracétamol 500 mg" />
-          </div>
-          <div class="input-group">
-            <label>Contenance</label>
-            <input type="text" id="txtQty" value="20 comprimés" />
-          </div>
-        </fieldset>
-
-
-
-        <fieldset style="display: none">
-          <legend>Comprimé — Composition (Flanc) [obsolète]</legend>
-          <div class="input-group">
-            <label
-              >Texte de composition (option "Composition / Posologie")</label
-            >
-            <textarea id="txtComposition2" rows="3">
-Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.</textarea
-            >
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Indications & Posologie</legend>
-          <div class="input-group">
-            <label>Texte (une ligne = un point de la liste)</label>
-            <textarea id="txtIndications" rows="3">
-Traitement symptomatique de la douleur et/ou de la fièvre.&#10;Adulte : 1 à 2 comprimés toutes les 4 à 6 heures.&#10;Ne pas dépasser 3 g par jour.</textarea
-            >
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Codes, Dates & Réglementaire</legend>
-          <div class="input-group">
-            <label>Code-barres (10 chiffres)</label>
-            <input type="text" id="txtBarcode" value="1234567890" />
-          </div>
-          <div class="input-group">
-            <label>Réglementaire</label>
-            <input
-              type="text"
-              id="txtRegInfo"
-              value="Mfg.Lic.No : 123456 / MA No : 9876543" />
-          </div>
-          <div class="input-group">
-            <label>Date de fabrication</label>
-            <input type="text" id="txtMfgDate" value="MM/AAAA" />
-          </div>
-          <div class="input-group">
-            <label>Date d'expiration</label>
-            <input type="text" id="txtExpDate" value="MM/AAAA" />
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Sirop — Côté Gauche (P6)</legend>
-          <div class="input-group">
-            <label>Texte descriptif (Face avant / arrière)</label>
-            <textarea id="txtLiquidDescription" rows="3">
-Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.</textarea
-            >
-          </div>
-          <div class="input-group">
-            <label>Table de composition (une ligne = "Nom: valeur")</label>
-            <textarea id="txtLiquidComposition" rows="6">
-Paracétamol: 24 mg
-Saccharose: 0.3 g
-Propylène Glycol: 0.1 ml
-Sorbitol: 0.15 g
-Arôme fraise: Q.S.
-Eau purifiée: Q.S.P 1 ml</textarea
-            >
-          </div>
-          <div class="input-group">
-            <label>Précautions</label>
-            <textarea id="txtLiquidPrecautions" rows="2">
-Tenir hors de la portée et de la vue des enfants. Conserver à une température ne dépassant pas 30°C.</textarea
-            >
-          </div>
-        </fieldset>
-        </div>
       </div>
 
       <!-- Workspace Preview -->
@@ -2253,8 +2385,35 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group">
+            <button id="tbEditText" title="Éditer le texte dans la maquette (F2 ou double-clic)" class="tb-btn">✎</button>
+            <button id="tbFitContent" title="Ajuster la taille au contenu" class="tb-btn">▣</button>
             <button id="tbDuplicate" title="Dupliquer le champ (Ctrl/Cmd+D)" class="tb-btn">⧉</button>
             <button id="tbDelete" title="Supprimer le champ" class="tb-btn tb-delete-btn">✕</button>
+          </div>
+        </div>
+
+        <div id="groupToolbar" class="floating-toolbar group-toolbar">
+          <div class="toolbar-group">
+            <button id="grpAlignLeft" title="Aligner à gauche" class="tb-btn">⊢</button>
+            <button id="grpAlignCenterH" title="Centrer horizontalement" class="tb-btn">⊣⊢</button>
+            <button id="grpAlignRight" title="Aligner à droite" class="tb-btn">⊣</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <button id="grpAlignTop" title="Aligner en haut" class="tb-btn">⊤</button>
+            <button id="grpAlignCenterV" title="Centrer verticalement" class="tb-btn">⊥⊤</button>
+            <button id="grpAlignBottom" title="Aligner en bas" class="tb-btn">⊥</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <button id="grpDistributeH" title="Distribuer horizontalement (3+ champs)" class="tb-btn">↔</button>
+            <button id="grpDistributeV" title="Distribuer verticalement (3+ champs)" class="tb-btn">↕</button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-group">
+            <button id="grpFitContent" title="Ajuster chaque champ à son contenu" class="tb-btn">▣</button>
+            <button id="grpDuplicate" title="Dupliquer le groupe (Ctrl/Cmd+D)" class="tb-btn">⧉</button>
+            <button id="grpDelete" title="Supprimer le groupe" class="tb-btn tb-delete-btn">✕</button>
           </div>
         </div>
 
@@ -2420,10 +2579,55 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       // Selection state for PowerPoint-style custom fields
       let selectedFieldId = null;
+      // Sélection multiple additionnelle (Maj+clic). Ne contient jamais
+      // selectedFieldId lui-même — l'ensemble complet sélectionné est
+      // { selectedFieldId } ∪ groupSelection, accessible via getSelectedIds().
+      let groupSelection = new Set();
       // La barre d'outils flottante ne s'affiche qu'à la demande (clic
       // droit sur un champ), pour ne pas masquer le contenu à chaque
       // simple clic de sélection.
       let toolbarVisible = false;
+
+      function getSelectedIds() {
+        const ids = [];
+        if (selectedFieldId) ids.push(selectedFieldId);
+        groupSelection.forEach(id => { if (id !== selectedFieldId) ids.push(id); });
+        return ids;
+      }
+
+      function refreshSelectionVisuals() {
+        const ids = getSelectedIds();
+        document.querySelectorAll(".custom-field").forEach(el => {
+          el.classList.toggle("selected", ids.includes(el.dataset.fieldId));
+        });
+      }
+
+      // Maj+clic sur un champ : l'ajoute ou le retire de la sélection
+      // groupée, sans démarrer de glisser-déposer.
+      function toggleGroupSelection(fieldId) {
+        if (!selectedFieldId) {
+          selectField(fieldId, /*skipSidebarScroll=*/true, /*focusInput=*/false);
+          return;
+        }
+        if (fieldId === selectedFieldId) {
+          if (groupSelection.size > 0) {
+            const next = groupSelection.values().next().value;
+            groupSelection.delete(next);
+            selectedFieldId = next;
+          } else {
+            deselectField();
+            return;
+          }
+        } else if (groupSelection.has(fieldId)) {
+          groupSelection.delete(fieldId);
+        } else {
+          groupSelection.add(fieldId);
+        }
+        toolbarVisible = false;
+        refreshSelectionVisuals();
+        updateGroupToolbar();
+        updateFloatingToolbar();
+      }
 
       function getFaceDimensionsPx(faceId) {
         const type = controls.boxType.value;
@@ -2473,6 +2677,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       function selectField(fieldId, skipSidebarScroll = false, focusInput = true) {
         selectedFieldId = fieldId;
+        groupSelection = new Set();
         
         // Add visual outline class on target
         document.querySelectorAll(".custom-field").forEach(el => {
@@ -2482,6 +2687,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             el.classList.remove("selected");
           }
         });
+
+        const groupToolbarEl = document.getElementById("groupToolbar");
+        if (groupToolbarEl) groupToolbarEl.classList.remove("show");
 
         // Show toolbar
         updateFloatingToolbar();
@@ -2520,16 +2728,19 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       function deselectField() {
         selectedFieldId = null;
+        groupSelection = new Set();
         toolbarVisible = false;
         document.querySelectorAll(".custom-field").forEach(el => el.classList.remove("selected"));
         const toolbar = document.getElementById("floatingToolbar");
         if (toolbar) toolbar.classList.remove("show");
+        const groupToolbar = document.getElementById("groupToolbar");
+        if (groupToolbar) groupToolbar.classList.remove("show");
       }
 
       function updateFloatingToolbar() {
         const toolbar = document.getElementById("floatingToolbar");
         if (!toolbar) return;
-        if (!selectedFieldId || !toolbarVisible) {
+        if (!selectedFieldId || !toolbarVisible || getSelectedIds().length > 1) {
           toolbar.classList.remove("show");
           return;
         }
@@ -2580,6 +2791,11 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         document.getElementById("tbAlignRight").classList.toggle("active", field.align === "right");
         
         document.getElementById("tbColor").value = field.color || "#000000";
+
+        // Le bouton d'édition directe n'a de sens que pour les types dont
+        // le contenu est du texte affiché tel quel.
+        const tbEdit = document.getElementById("tbEditText");
+        if (tbEdit) tbEdit.style.display = canEditInline(field) ? "" : "none";
       }
 
       // Controls Selection
@@ -2590,21 +2806,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         dimD: document.getElementById("dimD"),
         colPrimary: document.getElementById("colPrimary"),
         colAccent: document.getElementById("colAccent"),
-        txtProduct: document.getElementById("txtProduct"),
-        txtDosage: document.getElementById("txtDosage"),
-        txtQty: document.getElementById("txtQty"),
         txtLabName: document.getElementById("txtLabName"),
         showLabName: document.getElementById("showLabName"),
         txtSlogan: document.getElementById("txtSlogan"),
-        txtComposition2: document.getElementById("txtComposition2"),
-        txtIndications: document.getElementById("txtIndications"),
-        txtBarcode: document.getElementById("txtBarcode"),
-        txtRegInfo: document.getElementById("txtRegInfo"),
-        txtMfgDate: document.getElementById("txtMfgDate"),
-        txtExpDate: document.getElementById("txtExpDate"),
-        txtLiquidDescription: document.getElementById("txtLiquidDescription"),
-        txtLiquidComposition: document.getElementById("txtLiquidComposition"),
-        txtLiquidPrecautions: document.getElementById("txtLiquidPrecautions"),
         flapLength: document.getElementById("flapLength"),
         dustFlapsEnabled: document.getElementById("dustFlapsEnabled"),
         logoSizeSlider: document.getElementById("logoSizeSlider"),
@@ -2748,14 +2952,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         controls.dimD.value = preset.dimD;
         controls.colPrimary.value = preset.colPrimary;
         controls.colAccent.value = preset.colAccent;
-        controls.txtProduct.value = preset.txtProduct;
-        controls.txtDosage.value = preset.txtDosage;
-        controls.txtQty.value = preset.txtQty;
-        controls.txtComposition2.value = preset.txtComposition2;
-        controls.txtIndications.value = preset.txtIndications;
-        controls.txtLiquidDescription.value = preset.txtLiquidDescription;
-        controls.txtLiquidComposition.value = preset.txtLiquidComposition;
-        controls.txtLiquidPrecautions.value = preset.txtLiquidPrecautions;
 
         updateTextBinders();
         updateGeometry();
@@ -3145,10 +3341,15 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             id: "rabat_gauche_trapeze",
             label: "Repère rabat gauche (trapèze)",
             face: "p1-rabat",
-            x: 10,
-            y: 20,
-            w: 80,
-            h: 60,
+            // Champ pivoté à 90° sur un rabat ÉTROIT : à cet angle la
+            // largeur visuelle vaut h/aspect. Avec un aspect ≈ 0,47, un h
+            // de 60 % exigerait 128 % de largeur — impossible. On garde
+            // donc une boîte locale haute et fine, recadrée au besoin par
+            // fitFieldIntoFace() une fois l aspect reel connu.
+            x: 30,
+            y: 5,
+            w: 90,
+            h: 18,
             fontSize: 7,
             bold: true,
             color: "#94a3b8",
@@ -3162,10 +3363,15 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             id: "rabat_droit_trapeze",
             label: "Repère rabat droit (trapèze)",
             face: "p10-rabat",
-            x: 10,
-            y: 20,
-            w: 80,
-            h: 60,
+            // Champ pivoté à 90° sur un rabat ÉTROIT : à cet angle la
+            // largeur visuelle vaut h/aspect. Avec un aspect ≈ 0,47, un h
+            // de 60 % exigerait 128 % de largeur — impossible. On garde
+            // donc une boîte locale haute et fine, recadrée au besoin par
+            // fitFieldIntoFace() une fois l aspect reel connu.
+            x: 30,
+            y: 5,
+            w: 90,
+            h: 18,
             fontSize: 7,
             bold: true,
             color: "#94a3b8",
@@ -3741,25 +3947,194 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       // par face (voir currentModeFaces()) garantit qu'un mode ne voit et
       // ne réinitialise jamais que ses propres champs.
       function defaultFieldsConfig() {
-        return [...defaultTabletFieldsConfig(), ...defaultLiquidFieldsConfig()];
+        return [
+          ...defaultTabletFieldsConfig(),
+          ...defaultLiquidFieldsConfig(),
+        ];
       }
+
+      // Recadre un champ pour que son AABB tienne dans sa face.
+      // Indispensable pour les champs pivotés posés sur une face étroite :
+      // à 90°, la largeur visuelle vaut h/aspect — sur un rabat étroit
+      // (aspect ≈ 0,47) un h de 60 % réclamerait 128 % de largeur, ce qui
+      // est géométriquement impossible. On réduit alors la boîte locale
+      // (à ratio constant) puis on ramène l'origine dans la face.
+      function fitFieldIntoFace(field) {
+        const f = { ...field };
+        let vis = getVisualSize(f);
+        const maxW = 100,
+          maxH = 100;
+        if (vis.w > maxW || vis.h > maxH) {
+          const k = Math.min(maxW / vis.w, maxH / vis.h);
+          f.w = Math.round(f.w * k * 10) / 10;
+          f.h = Math.round(f.h * k * 10) / 10;
+          vis = getVisualSize(f);
+        }
+        f.x = Math.round(Math.max(0, Math.min(100 - vis.w, f.x)) * 10) / 10;
+        f.y = Math.round(Math.max(0, Math.min(100 - vis.h, f.y)) * 10) / 10;
+        return f;
+      }
+
+      // ==================================================================
+      // MIGRATION DU SCHÉMA DES CHAMPS
+      // ==================================================================
+      // v1 → v2 : x/y désignaient le coin de la boîte LOCALE, avec une
+      // compensation de rotation erronée (translate en % résolu sur la
+      // taille de l'élément au lieu de celle du parent). Ils désignent
+      // désormais le coin de l'AABB.
+      //
+      // Sans migration, toute maquette contenant un champ pivoté « sauterait »
+      // au premier chargement de cette version. On recalcule donc x/y pour
+      // que l'utilisateur retrouve sa mise en page à l'identique.
+      //
+      // ⚠️ L'ancien rendu dépendait du ratio px de la face (le % de transform
+      // se résolvait sur la taille en px de l'élément). Cette migration
+      // reproduit ce calcul en utilisant le ratio d'aspect réel de la face
+      // quand il est connu ; à défaut elle suppose une face carrée. Les
+      // champs NON pivotés (l'immense majorité) sont exacts dans tous les cas.
+      const FIELDS_SCHEMA_VERSION = 2;
+
+      // Reproduit fidèlement l'ANCIEN rendu (buggé) pour en déduire le
+      // coin de l'AABB réellement affiché à l'écran, puis l'adopte comme
+      // nouveau x/y. L'utilisateur retrouve ainsi sa maquette à l'identique.
+      //
+      // Ancien code : transform-origin:top left, puis
+      //   translate(dxOld%, dyOld%) rotate(rot)
+      // où dxOld/dyOld étaient CALCULÉS en % de la face mais INTERPRÉTÉS
+      // par le navigateur en % de l'élément — d'où le décalage.
+      function migrateFieldsV1toV2(fields) {
+        return fields.map((f) => {
+          const rot = normalizeRotation(f.rotation);
+          if (!rot) return f; // champs non pivotés : x/y déjà corrects
+
+          const w = Number(f.w) || 0;
+          const h = Number(f.h) || 0;
+          const x = Number(f.x) || 0;
+          const y = Number(f.y) || 0;
+          const r = getFaceAspect(f.face) || 1; // largeurFace / hauteurFace
+
+          // On raisonne en unités « px » normalisées : largeur face = r,
+          // hauteur face = 1. Un % de largeur vaut donc r/100 px.
+          const wPx = (w / 100) * r;
+          const hPx = h / 100;
+          const xPx = (x / 100) * r;
+          const yPx = y / 100;
+
+          const rad = (rot * Math.PI) / 180;
+          const cos = Math.cos(rad);
+          const sin = Math.sin(rad);
+
+          // Valeurs de translate produites par l'ancien code (en %).
+          const dxOldPct = w / 2 - ((cos * w) / 2 - (sin * h) / 2);
+          const dyOldPct = h / 2 - ((sin * w) / 2 + (cos * h) / 2);
+          // Interprétés par CSS en % de l'ÉLÉMENT → en px :
+          const txPx = (dxOldPct / 100) * wPx;
+          const tyPx = (dyOldPct / 100) * hPx;
+
+          // Origine de rotation = coin haut-gauche, après translation.
+          const originX = xPx + txPx;
+          const originY = yPx + tyPx;
+
+          // AABB des 4 coins tournés autour de cette origine.
+          let minX = Infinity, minY = Infinity;
+          for (const [ox, oy] of [[0, 0], [wPx, 0], [wPx, hPx], [0, hPx]]) {
+            minX = Math.min(minX, originX + ox * cos - oy * sin);
+            minY = Math.min(minY, originY + ox * sin + oy * cos);
+          }
+
+          return {
+            ...f,
+            x: Math.round((minX / r) * 1000) / 10, // px → % de largeur
+            y: Math.round(minY * 1000) / 10,       // px → % de hauteur
+          };
+        });
+      }
+
+      // Nombre de champs pivotés migrés : sert à avertir l'utilisateur
+      // que ces champs méritent une vérification visuelle.
+      let _fieldsMigrationApplied = 0;
+      // La migration a besoin des rapports d'aspect des faces, donc du DOM
+      // rendu. Or loadFieldsConfig() s'exécute bien avant le premier
+      // updateGeometry(). On mémorise donc le travail à faire et on
+      // l'exécute après le premier rendu (voir runPendingFieldsMigration).
+      let _pendingFieldsMigration = false;
+      // Idem pour le recadrage des presets (champs pivotés sur faces
+      // étroites), qui dépend lui aussi des rapports d'aspect.
+      let _pendingDefaultsNormalize = false;
 
       function loadFieldsConfig() {
         try {
           const raw = localStorage.getItem(FIELDS_STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length) return parsed;
+            // Format v2 : { version, fields }. Format v1 : tableau nu.
+            if (Array.isArray(parsed) && parsed.length) {
+              // Format v1 : tableau nu → migration différée.
+              _pendingFieldsMigration = true;
+              return parsed;
+            }
+            if (
+              parsed &&
+              Array.isArray(parsed.fields) &&
+              parsed.fields.length
+            ) {
+              if (Number(parsed.version) < FIELDS_SCHEMA_VERSION) {
+                _pendingFieldsMigration = true;
+              }
+              return parsed.fields;
+            }
           }
         } catch (e) {
           console.error("Lecture des champs échouée :", e);
         }
+        // Aucune sauvegarde : on part des presets. Ils sont désormais
+        // AUTEURÉS dans le repère v2 (pas de migration à leur appliquer),
+        // mais leurs champs pivotés doivent être recadrés une fois les
+        // rapports d'aspect connus (voir _pendingDefaultsNormalize).
+        _pendingDefaultsNormalize = true;
         return defaultFieldsConfig();
+      }
+
+      // Exécute la migration une fois les faces rendues (rapports d'aspect
+      // mesurables). Idempotent : le drapeau est consommé.
+      function runPendingFieldsMigration() {
+        // Presets neufs : pas de migration de repère, mais un recadrage
+        // des champs pivotés dont l'AABB dépasse leur face étroite.
+        if (_pendingDefaultsNormalize) {
+          _pendingDefaultsNormalize = false;
+          fieldsConfig = fieldsConfig.map((f) =>
+            normalizeRotation(f.rotation) ? fitFieldIntoFace(f) : f,
+          );
+          persistFieldsConfig();
+          return;
+        }
+        if (!_pendingFieldsMigration) return;
+        _pendingFieldsMigration = false;
+        _fieldsMigrationApplied = fieldsConfig.filter(
+          (f) => normalizeRotation(f && f.rotation) !== 0,
+        ).length;
+        // Migration du repère, PUIS recadrage : une maquette ancienne peut
+        // contenir un champ pivoté qui débordait déjà sous l'ancien rendu.
+        fieldsConfig = migrateFieldsV1toV2(fieldsConfig).map((f) =>
+          normalizeRotation(f.rotation) ? fitFieldIntoFace(f) : f,
+        );
+        persistFieldsConfig();
+        if (_fieldsMigrationApplied > 0) {
+          console.info(
+            `[maquette] ${_fieldsMigrationApplied} champ(s) pivoté(s) migré(s) vers le repère AABB (schéma v${FIELDS_SCHEMA_VERSION}).`,
+          );
+        }
       }
 
       function persistFieldsConfig() {
         try {
-          localStorage.setItem(FIELDS_STORAGE_KEY, JSON.stringify(fieldsConfig));
+          localStorage.setItem(
+            FIELDS_STORAGE_KEY,
+            JSON.stringify({
+              version: FIELDS_SCHEMA_VERSION,
+              fields: fieldsConfig,
+            }),
+          );
         } catch (e) {
           console.error("Sauvegarde des champs échouée :", e);
         }
@@ -3829,6 +4204,76 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       function saveFieldsConfig() {
         persistFieldsConfig();
         scheduleHistorySnapshot();
+      }
+
+      // Applique les réglages globaux importés depuis un gabarit v2 :
+      // dimensions, couleurs, logo, slogan, rabats, couleurs de face…
+      // Cette fonction restaure fidèlement l'état complet de l'outil,
+      // ce qui manquait dans l'export v1 (champs uniquement).
+      function applyImportedSettings(settings) {
+        if (!settings) return;
+        // Type de boîte
+        if (settings.boxType) {
+          controls.boxType.value = settings.boxType;
+          applyModeVisibility(settings.boxType);
+        }
+        // Dimensions (mm)
+        if (settings.dimW) controls.dimW.value = settings.dimW;
+        if (settings.dimH) controls.dimH.value = settings.dimH;
+        if (settings.dimD) controls.dimD.value = settings.dimD;
+        // Rabat de verrouillage (mm)
+        if (settings.flapLength) controls.flapLength.value = settings.flapLength;
+        // Rabats poussière
+        if (settings.dustFlapsEnabled !== undefined) controls.dustFlapsEnabled.checked = settings.dustFlapsEnabled;
+        // Couleurs
+        if (settings.colPrimary) {
+          controls.colPrimary.value = settings.colPrimary;
+          document.documentElement.style.setProperty('--primary', settings.colPrimary);
+        }
+        if (settings.colAccent) {
+          controls.colAccent.value = settings.colAccent;
+          document.documentElement.style.setProperty('--accent', settings.colAccent);
+        }
+        // Laboratoire / Slogan
+        if (settings.txtLabName) controls.txtLabName.value = settings.txtLabName;
+        if (settings.txtSlogan) controls.txtSlogan.value = settings.txtSlogan;
+        if (settings.showLabName !== undefined) {
+          controls.showLabName.checked = settings.showLabName;
+          const labNameGroup = document.getElementById('labNameGroup');
+          if (labNameGroup) labNameGroup.style.opacity = settings.showLabName ? '1' : '0.4';
+          document.body.classList.toggle('hide-lab-name', !settings.showLabName);
+        }
+        // Taille du logo
+        if (settings.logoSize) {
+          controls.logoSizeSlider.value = settings.logoSize;
+          document.documentElement.style.setProperty('--logo-size', settings.logoSize + 'px');
+          const logoSizeVal = document.getElementById('logoSizeVal');
+          if (logoSizeVal) logoSizeVal.textContent = settings.logoSize + 'px';
+        }
+        // Logo personnalisé (image importée)
+        if (settings.customLogoUrl) {
+          customLogoUrl = settings.customLogoUrl;
+        } else {
+          customLogoUrl = null;
+          logoUpload.value = '';
+        }
+        // Couleurs de fond des faces
+        if (settings.customFacesBg) {
+          customFacesBg = settings.customFacesBg;
+          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+        }
+        // Rafraîchir les pickers et la géométrie pour refléter les
+        // nouveaux réglages dans l'interface et le rendu du patron.
+        populateDefaultFieldPicker();
+        populateResetFacePicker();
+        populateFaceColorPicker();
+        updateTextBinders();
+        updateGeometry();
+        applyCustomFaceColors();
+        updateStatusChip();
+        // Afficher la valeur courante du curseur rabat
+        const flapLengthVal = document.getElementById('flapLengthVal');
+        if (flapLengthVal) flapLengthVal.textContent = controls.flapLength.value + 'mm';
       }
 
       let fieldsConfig = loadFieldsConfig();
@@ -4221,22 +4666,279 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         return isLiquidMode() ? LIQUID_FIELD_FACES : TABLET_FIELD_FACES;
       }
 
-      // Renvoie la taille visuelle réelle d'un champ (en % du parent),
-      // en tenant compte de la rotation. À 90°/270°, l'encombrement
-      // visuel sur l'écran échange largeur et hauteur : c'est CETTE
-      // taille qu'il faut utiliser pour toute limite/alignement/
-      // validation de débordement — jamais field.w/field.h bruts.
-      // Centralisé ici pour éviter que la conversion soit oubliée à
-      // un endroit (source du bug « objets qui sortent de la zone »).
+      // ==================================================================
+      // GÉOMÉTRIE DES CHAMPS — SOURCE DE VÉRITÉ UNIQUE
+      // ==================================================================
+      // CONVENTION (schéma v2) :
+      //   • field.x / field.y = coin HAUT-GAUCHE de la boîte englobante
+      //     VISUELLE (AABB, axis-aligned bounding box), en % de la face.
+      //     Autrement dit : « ce que je vois à l'écran commence bien à
+      //     X %, Y % », quelle que soit la rotation.
+      //   • field.w / field.h = dimensions LOCALES (avant rotation), en %
+      //     de la face. Ce sont elles qui gouvernent le flux du texte
+      //     (retour à la ligne), d'où leur conservation en repère local.
+      //
+      // Toute la géométrie passe par getVisualSize() et getFieldPlacement()
+      // afin qu'aucun appelant ne puisse « oublier » la conversion — c'est
+      // précisément cet oubli qui produisait le décalage après rotation.
+      // ==================================================================
+
+      // Normalise un angle dans [0, 360[.
+      function normalizeRotation(rot) {
+        return (((Number(rot) || 0) % 360) + 360) % 360;
+      }
+
+      // --- Rapport d'aspect des faces -----------------------------------
+      // POINT CRITIQUE : field.w est un % de la LARGEUR de la face et
+      // field.h un % de sa HAUTEUR — deux échelles de pixels différentes.
+      // Or une rotation s'opère dans l'espace des PIXELS. On ne peut donc
+      // pas écrire « largeur visuelle = field.h » à 90° : c'est faux dès
+      // que la face n'est pas carrée (cas de la quasi-totalité des faces
+      // ici, ex. 252×168). Il faut le rapport d'aspect r = largeur/hauteur.
+      const _faceAspectCache = new Map();
+
+      function getFaceAspect(faceId) {
+        if (_faceAspectCache.has(faceId)) return _faceAspectCache.get(faceId);
+        const zone = document.getElementById("fieldzone-" + faceId);
+        let r = 1;
+        if (zone && zone.offsetHeight > 0 && zone.offsetWidth > 0) {
+          r = zone.offsetWidth / zone.offsetHeight;
+          _faceAspectCache.set(faceId, r);
+        }
+        return r;
+      }
+
+      // À appeler dès que la géométrie du patron change (dimensions,
+      // mode, longueur de rabat) : les faces sont redimensionnées, donc
+      // les rapports d'aspect mémorisés deviennent obsolètes.
+      function invalidateFaceAspectCache() {
+        _faceAspectCache.clear();
+      }
+
+      // Dimensions de l'AABB d'un champ, en % de la face.
+      // Formule générale, valable pour TOUT angle et TOUT rapport d'aspect.
+      //   aabbW% = w·|cos| + h·|sin|/r
+      //   aabbH% = w·|sin|·r + h·|cos|      avec r = largeurFace/hauteurFace
+      // (à 90° on retrouve bien aabbW% = h/r et aabbH% = w·r)
       function getVisualSize(field) {
-        const isRot = field.rotation === 90 || field.rotation === 270;
+        const rot = normalizeRotation(field.rotation);
+        if (!rot) return { w: field.w, h: field.h };
+        const rad = (rot * Math.PI) / 180;
+        const c = Math.abs(Math.cos(rad));
+        const s = Math.abs(Math.sin(rad));
+        const r = getFaceAspect(field.face) || 1;
         return {
-          w: isRot ? field.h : field.w,
-          h: isRot ? field.w : field.h,
+          w: field.w * c + (field.h * s) / r,
+          h: field.w * s * r + field.h * c,
         };
       }
 
+      // Style de placement d'un champ pour que son AABB commence
+      // exactement à (field.x, field.y).
+      //
+      // left/top ciblent le coin de l'AABB ; width/height restent la boîte
+      // locale ; le translate recentre la boîte locale à l'intérieur de
+      // l'AABB. Avec transform-origin:center la rotation ne déplace pas le
+      // centre : il ne reste que le demi-écart AABB/locale à compenser.
+      //
+      // ⚠️ Le décalage est exprimé en PIXELS et non en pourcentage : en CSS,
+      // translate(X%) se résout sur la taille de l'ÉLÉMENT, pas du parent —
+      // ambiguïté qui était la cause racine du bug de positionnement.
+      // zoneW / zoneH sont les dimensions de la face en px NON zoomées
+      // (utiliser offsetWidth/offsetHeight, insensibles au scale() parent).
+      function getFieldPlacement(field, zoneW, zoneH) {
+        const rot = normalizeRotation(field.rotation);
+        const placement = {
+          left: field.x,
+          top: field.y,
+          width: field.w,
+          height: field.h,
+          transformOrigin: "center center",
+          transform: "",
+        };
+        if (!rot) return placement;
+
+        // Tout le calcul se fait en PIXELS : c'est le seul espace où la
+        // rotation est isotrope (voir la note sur le rapport d'aspect).
+        const wPx = (field.w / 100) * zoneW;
+        const hPx = (field.h / 100) * zoneH;
+        const rad = (rot * Math.PI) / 180;
+        const c = Math.abs(Math.cos(rad));
+        const s = Math.abs(Math.sin(rad));
+        const visWpx = wPx * c + hPx * s;
+        const visHpx = wPx * s + hPx * c;
+
+        const dx = (visWpx - wPx) / 2;
+        const dy = (visHpx - hPx) / 2;
+        placement.transform = `translate(${dx.toFixed(3)}px, ${dy.toFixed(3)}px) rotate(${rot}deg)`;
+        return placement;
+      }
+
+      // Applique le placement sur un élément DOM déjà rendu.
+      // Centralisé pour que rendu initial, glisser-déposer et
+      // redimensionnement partagent rigoureusement le même calcul.
+      function applyFieldPlacement(el, field) {
+        const zone = el.parentElement;
+        // offsetWidth/offsetHeight : dimensions de mise en page, non
+        // affectées par le transform:scale() du plan de travail (zoom).
+        const zoneW = zone ? zone.offsetWidth : 0;
+        const zoneH = zone ? zone.offsetHeight : 0;
+        const p = getFieldPlacement(field, zoneW, zoneH);
+        el.style.left = p.left + "%";
+        el.style.top = p.top + "%";
+        el.style.width = p.width + "%";
+        el.style.height = p.height + "%";
+        el.style.transformOrigin = p.transformOrigin;
+        el.style.transform = p.transform;
+
+        // Contre-rotation de la poignée : sans cela, à 90° elle apparaît
+        // visuellement en bas-GAUCHE et le curseur nwse-resize ment.
+        const handle = el.querySelector(".field-resize-handle");
+        if (handle) {
+          const rot = normalizeRotation(field.rotation);
+          handle.style.transform = rot ? `rotate(${-rot}deg)` : "";
+        }
+      }
+
+      // --- Ajuster un champ à son contenu ("fit to content") ---
+      // Ne s'applique qu'aux types dont la taille naturelle est
+      // significative visuellement (texte, braille, pictogramme,
+      // tableau). Les codes-barres/datamatrix, images, logos et formes
+      // libres n'ont pas de "taille de contenu" pertinente (graphique
+      // décoratif ou image importée) et sont donc exclus.
+      // --- Édition directe dans la zone visuelle (WYSIWYG) ---
+      // Types dont le contenu EST le texte affiché tel quel : l'aller-retour
+      // DOM → modèle y est trivial et non ambigu.
+      // Exclus volontairement :
+      //   • shape / logo / image : aucun texte à éditer ;
+      //   • barcode / datamatrix : le contenu est une donnée ENCODÉE —
+      //     l'éditer en place montrerait le graphique, pas la donnée ;
+      //   • braille : le rendu est une translittération, pas la source ;
+      //   • table : mini-langage « Nom : valeur » rendu en <div> structurés,
+      //     la resérialisation demande un traitement dédié (phase 2).
+      const INLINE_EDITABLE_TYPES = new Set([undefined, "text", "pictogram"]);
+
+      function canEditInline(field) {
+        return !!field && INLINE_EDITABLE_TYPES.has(field.type);
+      }
+
+      const FIT_TO_CONTENT_TYPES = new Set([undefined, "text", "braille", "pictogram", "table"]);
+
+      function canFitToContent(field) {
+        return FIT_TO_CONTENT_TYPES.has(field.type);
+      }
+
+      function measureNaturalContentSize(fieldId) {
+        const liveEl = document.querySelector(`.custom-field[data-field-id="${fieldId}"]`);
+        if (!liveEl) return null;
+        const clone = liveEl.cloneNode(true);
+        clone.classList.remove("selected", "dragging", "resizing");
+        clone.style.position = "absolute";
+        clone.style.visibility = "hidden";
+        clone.style.pointerEvents = "none";
+        clone.style.left = "-9999px";
+        clone.style.top = "-9999px";
+        clone.style.width = "auto";
+        clone.style.height = "auto";
+        clone.style.maxWidth = "none";
+        clone.style.maxHeight = "none";
+        clone.style.overflow = "visible";
+        clone.style.transform = "none";
+
+        // Neutraliser les dimensions en % héritées des sous-éléments
+        // (barres décoratives, tableaux...) pour que la mesure reflète
+        // la taille naturelle du contenu, pas celle imposée par le
+        // cadre actuel du champ.
+        clone.querySelectorAll("*").forEach((child) => {
+          if (child.style.width === "100%") child.style.width = "";
+          if (child.style.height === "100%" || child.style.height === "70%") child.style.height = "";
+        });
+        const tableEl = clone.querySelector(".liquid-composition-table");
+        if (tableEl) tableEl.style.width = "auto";
+
+        document.body.appendChild(clone);
+        const w = clone.scrollWidth;
+        const h = clone.scrollHeight;
+        document.body.removeChild(clone);
+        if (!w || !h) return null;
+        return { w, h };
+      }
+
+      // Ajuste field.w/field.h à la taille naturelle de son contenu.
+      // Retourne true si l'ajustement a pu être effectué.
+      function fitFieldToContent(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field || !canFitToContent(field)) return false;
+
+        const liveEl = document.querySelector(`.custom-field[data-field-id="${fieldId}"]`);
+        if (!liveEl) return false;
+        const zone = liveEl.parentElement;
+        const zoneRect = zone.getBoundingClientRect();
+        if (!zoneRect.width || !zoneRect.height) return false;
+
+        const size = measureNaturalContentSize(fieldId);
+        if (!size) return false;
+
+        // zoneRect est mesuré à l'écran, donc affecté par le zoom
+        // d'affichage courant ; on le neutralise pour retrouver la
+        // taille réelle (1x) et rester cohérent avec le clone de
+        // mesure (rendu hors zoom, dans <body>).
+        const realZoneW = zoneRect.width / (zoomLevel || 1);
+        const realZoneH = zoneRect.height / (zoomLevel || 1);
+
+        const PAD_PX = 3; // petite marge de confort pour ne pas rogner le contenu
+        let newWPct = ((size.w + PAD_PX) / realZoneW) * 100;
+        let newHPct = ((size.h + PAD_PX) / realZoneH) * 100;
+
+        newWPct = Math.max(2, Math.min(100 - field.x, Math.round(newWPct * 10) / 10));
+        newHPct = Math.max(2, Math.min(100 - field.y, Math.round(newHPct * 10) / 10));
+
+        field.w = newWPct;
+        field.h = newHPct;
+        return true;
+      }
+
+      // Ajuste le champ sélectionné (ou tous les champs de la sélection
+      // groupée) à leur contenu. Les types non pris en charge sont
+      // ignorés et signalés une fois à la fin, plutôt que bloquer les
+      // autres champs de la sélection.
+      function fitSelectionToContent() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+        let fitted = 0;
+        let skipped = 0;
+        ids.forEach((id) => {
+          if (fitFieldToContent(id)) fitted++;
+          else skipped++;
+        });
+        if (fitted > 0) {
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+          refreshSelectionVisuals();
+          updateFloatingToolbar();
+          updateGroupToolbar();
+          validateFields();
+        }
+        if (skipped > 0) {
+          alert(
+            fitted > 0
+              ? `${fitted} champ(s) ajusté(s). ${skipped} champ(s) ignoré(s) (type sans contenu ajustable : code-barres, image, logo ou forme libre).`
+              : `Aucun champ ajustable dans la sélection (type sans contenu ajustable : code-barres, image, logo ou forme libre).`,
+          );
+        }
+      }
+
       function renderAllCustomFields() {
+        // Garde-fou : reconstruire le DOM pendant une édition inline
+        // détruirait l'élément édité et donc le curseur. Tout appel
+        // concurrent (slider de police, changement de mode, validation…)
+        // valide d'abord la saisie en cours, puis le rendu a lieu via
+        // exitInlineEdit → renderAllCustomFields.
+        if (inlineEditFieldId) {
+          exitInlineEdit(true);
+          return;
+        }
         ALL_FIELD_FACES.forEach((faceId) => {
           const zone = document.getElementById("fieldzone-" + faceId);
           if (zone) zone.innerHTML = "";
@@ -4264,10 +4966,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
             el.classList.add("selected");
           }
           el.dataset.fieldId = field.id;
-          el.style.left = field.x + "%";
-          el.style.top = field.y + "%";
-          el.style.width = field.w + "%";
-          el.style.height = field.h + "%";
+          // Position/taille/rotation : appliquées plus bas via
+          // applyFieldPlacement(), une fois l'élément inséré dans le DOM
+          // (le calcul a besoin des dimensions réelles de la zone parente).
           el.style.textAlign = field.align || "left";
           el.style.fontSize = (field.fontSize || 10) + "px";
           el.style.fontWeight = field.bold ? "800" : "400";
@@ -4275,32 +4976,6 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           if (field.fontFamily) {
             el.style.fontFamily = field.fontFamily;
           }
-          const rot = Number(field.rotation) || 0;
-          if (rot) {
-            // Use top-left origin with translate compensation so that
-            // the visual center of the rotated element stays at the
-            // same position as the un-rotated center.  This keeps
-            // left/top coordinates meaningful and avoids clipping.
-            const wPct = field.w;
-            const hPct = field.h;
-            // Compensation in % of parent: shift by half-size, rotate,
-            // then shift back — expressed as a single translate pair.
-            const rad = rot * Math.PI / 180;
-            const cos = Math.cos(rad);
-            const sin = Math.sin(rad);
-            // After rotating around top-left, the center moves from
-            // (w/2, h/2) to (cos*w/2 - sin*h/2, sin*w/2 + cos*h/2).
-            // We need to translate so the center goes back to (w/2, h/2).
-            const cx = wPct / 2;
-            const cy = hPct / 2;
-            const rcx = cos * cx - sin * cy;
-            const rcy = sin * cx + cos * cy;
-            const dx = cx - rcx; // in % of parent
-            const dy = cy - rcy;
-            el.style.transformOrigin = "top left";
-            el.style.transform = `translate(${dx}%, ${dy}%) rotate(${rot}deg)`;
-          }
-
           if (field.type === "barcode") {
             el.innerHTML = `
               <div class="field-barcode-graphic"></div>
@@ -4360,8 +5035,33 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           // l'éditeur restent synchronisés en temps réel.
           el.addEventListener("pointerdown", (e) => {
             if (e.button !== 0) return; // clic gauche uniquement
+            // En édition : laisser le clic placer le curseur nativement,
+            // sinon chaque clic dans le texte déplacerait le champ.
+            if (inlineEditFieldId === field.id) {
+              e.stopPropagation();
+              return;
+            }
+            if (e.shiftKey) {
+              // Maj+clic : ajoute/retire le champ de la sélection groupée,
+              // sans démarrer de glisser-déposer.
+              e.preventDefault();
+              e.stopPropagation();
+              toggleGroupSelection(field.id);
+              return;
+            }
             startFieldDrag(e, field.id);
           });
+
+          // Double-clic : édition directe du texte dans la maquette.
+          if (canEditInline(field)) {
+            el.style.cursor = "move";
+            el.title = "Double-cliquez pour éditer le texte";
+            el.addEventListener("dblclick", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              enterInlineEdit(field.id);
+            });
+          }
 
           // Clic droit : sélectionne le champ ET ouvre la barre d'outils
           // flottante (police, taille, couleur...). Le clic gauche se
@@ -4383,6 +5083,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           el.appendChild(resizeHandle);
 
           zone.appendChild(el);
+          // Placement APRÈS insertion : getFieldPlacement a besoin des
+          // dimensions réelles (offsetWidth/Height) de la zone parente.
+          applyFieldPlacement(el, field);
         });
         // Validation chevauchements/débordements après chaque rendu
         validateFields();
@@ -4403,6 +5106,185 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           const input = row.querySelector(`[data-prop="${prop}"]`);
           if (input) input.value = field[prop];
         });
+      }
+
+      function showCoordTooltip(zone, clientX, clientY, text) {
+        const zRect = zone.getBoundingClientRect();
+        let tip = zone.querySelector(".drag-coord-tooltip");
+        if (!tip) { tip = document.createElement("div"); tip.className = "drag-coord-tooltip"; zone.appendChild(tip); }
+        tip.textContent = text;
+        tip.style.left = (clientX - zRect.left) + "px";
+        tip.style.top = (clientY - zRect.top) + "px";
+      }
+
+      function hideCoordTooltip(zone) {
+        const tip = zone.querySelector(".drag-coord-tooltip");
+        if (tip) tip.remove();
+      }
+
+      function getGroupFields() {
+        return getSelectedIds().map(id => fieldsConfig.find(f => f.id === id)).filter(Boolean);
+      }
+
+      function applyGroupChange(mutator) {
+        const fields = getGroupFields();
+        if (fields.length < 2) return;
+        mutator(fields);
+        saveFieldsConfig();
+        renderAllCustomFields();
+        refreshSelectionVisuals();
+        renderFieldEditor();
+        updateGroupToolbar();
+        validateFields();
+      }
+
+      function alignGroup(mode) {
+        applyGroupChange(fields => {
+          const sizes = fields.map(f => { const v = getVisualSize(f); return { f, w: v.w, h: v.h }; });
+          switch (mode) {
+            case "left": {
+              const minX = Math.min(...sizes.map(s => s.f.x));
+              sizes.forEach(s => s.f.x = minX);
+              break;
+            }
+            case "right": {
+              const maxRight = Math.max(...sizes.map(s => s.f.x + s.w));
+              sizes.forEach(s => s.f.x = Math.max(0, maxRight - s.w));
+              break;
+            }
+            case "center-h": {
+              const minX = Math.min(...sizes.map(s => s.f.x));
+              const maxRight = Math.max(...sizes.map(s => s.f.x + s.w));
+              const center = (minX + maxRight) / 2;
+              sizes.forEach(s => s.f.x = Math.max(0, center - s.w / 2));
+              break;
+            }
+            case "top": {
+              const minY = Math.min(...sizes.map(s => s.f.y));
+              sizes.forEach(s => s.f.y = minY);
+              break;
+            }
+            case "bottom": {
+              const maxBottom = Math.max(...sizes.map(s => s.f.y + s.h));
+              sizes.forEach(s => s.f.y = Math.max(0, maxBottom - s.h));
+              break;
+            }
+            case "center-v": {
+              const minY = Math.min(...sizes.map(s => s.f.y));
+              const maxBottom = Math.max(...sizes.map(s => s.f.y + s.h));
+              const center = (minY + maxBottom) / 2;
+              sizes.forEach(s => s.f.y = Math.max(0, center - s.h / 2));
+              break;
+            }
+          }
+          sizes.forEach(s => {
+            s.f.x = Math.round(s.f.x * 10) / 10;
+            s.f.y = Math.round(s.f.y * 10) / 10;
+          });
+        });
+      }
+
+      function distributeGroup(axis) {
+        applyGroupChange(fields => {
+          if (fields.length < 3) return; // distribuer n'a de sens qu'à partir de 3 éléments
+          const sizes = fields.map(f => { const v = getVisualSize(f); return { f, w: v.w, h: v.h }; });
+          if (axis === "h") {
+            sizes.sort((a, b) => a.f.x - b.f.x);
+            const first = sizes[0], last = sizes[sizes.length - 1];
+            const totalW = sizes.reduce((sum, s) => sum + s.w, 0);
+            const span = (last.f.x + last.w) - first.f.x;
+            const gap = (span - totalW) / (sizes.length - 1);
+            let cursor = first.f.x + first.w;
+            for (let i = 1; i < sizes.length - 1; i++) {
+              cursor += gap;
+              sizes[i].f.x = Math.round(cursor * 10) / 10;
+              cursor += sizes[i].w;
+            }
+          } else {
+            sizes.sort((a, b) => a.f.y - b.f.y);
+            const first = sizes[0], last = sizes[sizes.length - 1];
+            const totalH = sizes.reduce((sum, s) => sum + s.h, 0);
+            const span = (last.f.y + last.h) - first.f.y;
+            const gap = (span - totalH) / (sizes.length - 1);
+            let cursor = first.f.y + first.h;
+            for (let i = 1; i < sizes.length - 1; i++) {
+              cursor += gap;
+              sizes[i].f.y = Math.round(cursor * 10) / 10;
+              cursor += sizes[i].h;
+            }
+          }
+        });
+      }
+
+      function duplicateGroup() {
+        const fields = getGroupFields();
+        if (fields.length === 0) return;
+        const newIds = [];
+        fields.forEach(original => {
+          const clone = JSON.parse(JSON.stringify(original));
+          clone.id = (original.type || "field") + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+          const { w: visW, h: visH } = getVisualSize(clone);
+          clone.x = Math.max(0, Math.min(100 - visW, (original.x || 0) + 3));
+          clone.y = Math.max(0, Math.min(100 - visH, (original.y || 0) + 3));
+          if (clone.label) clone.label = clone.label + " (copie)";
+          fieldsConfig.push(clone);
+          newIds.push(clone.id);
+        });
+        saveFieldsConfig();
+        renderFieldEditor();
+        renderAllCustomFields();
+        selectedFieldId = newIds[newIds.length - 1];
+        groupSelection = new Set(newIds.slice(0, -1));
+        refreshSelectionVisuals();
+        updateGroupToolbar();
+      }
+
+      function deleteGroup() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (!confirm(`Supprimer ces ${ids.length} champs ?`)) return;
+        fieldsConfig = fieldsConfig.filter(f => !ids.includes(f.id));
+        deselectField();
+        saveFieldsConfig();
+        renderFieldEditor();
+        renderAllCustomFields();
+      }
+
+      function updateGroupToolbar() {
+        const groupToolbar = document.getElementById("groupToolbar");
+        if (!groupToolbar) return;
+        const ids = getSelectedIds();
+        if (ids.length < 2) {
+          groupToolbar.classList.remove("show");
+          return;
+        }
+        const els = ids
+          .map(id => document.querySelector(`.custom-field[data-field-id="${id}"]`))
+          .filter(Boolean);
+        if (els.length < 2) {
+          groupToolbar.classList.remove("show");
+          return;
+        }
+        const workspaceEl = document.querySelector(".workspace");
+        const workspaceRect = workspaceEl.getBoundingClientRect();
+        let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity;
+        els.forEach(el => {
+          const r = el.getBoundingClientRect();
+          minLeft = Math.min(minLeft, r.left);
+          minTop = Math.min(minTop, r.top);
+          maxRight = Math.max(maxRight, r.right);
+        });
+        const TOOLBAR_OFFSET = 70;
+        const left = minLeft - workspaceRect.left + workspaceEl.scrollLeft + (maxRight - minLeft) / 2;
+        let top = minTop - workspaceRect.top + workspaceEl.scrollTop - TOOLBAR_OFFSET;
+        if (top < workspaceEl.scrollTop + 10) {
+          top = minTop - workspaceRect.top + workspaceEl.scrollTop + 15;
+        }
+        groupToolbar.style.left = left + "px";
+        groupToolbar.style.top = top + "px";
+        groupToolbar.classList.add("show");
+        const singleToolbar = document.getElementById("floatingToolbar");
+        if (singleToolbar) singleToolbar.classList.remove("show");
       }
 
       function startFieldDrag(e, fieldId) {
@@ -4500,9 +5382,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           const { w: visW, h: visH } = getVisualSize(field);
           field.x = Math.max(0, Math.min(100 - visW, snapX));
           field.y = Math.max(0, Math.min(100 - visH, snapY));
-          el.style.left = field.x + "%";
-          el.style.top = field.y + "%";
+          applyFieldPlacement(el, field);
           showGuides(guideH, guideV, el.parentElement);
+          showCoordTooltip(el.parentElement, ev.clientX, ev.clientY, `X: ${field.x.toFixed(1)}%  Y: ${field.y.toFixed(1)}%`);
           updateFloatingToolbar();
         }
 
@@ -4511,6 +5393,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           document.removeEventListener("pointerup", onUp);
           el.classList.remove("dragging");
           hideGuides(el.parentElement);
+          hideCoordTooltip(el.parentElement);
           if (moved) {
             saveFieldsConfig();
             syncFieldEditorInputs(fieldId);
@@ -4565,35 +5448,24 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           let newW = Math.max(2, Math.min(200, Math.round((startW + dwPct) * 10) / 10));
           let newH = Math.max(2, Math.min(200, Math.round((startH + dhPct) * 10) / 10));
 
-          // Clamp pour empêcher le champ de dépasser le bord droit/bas
-          // de la zone. À 90°/270°, l'encombrement visuel échange
-          // largeur et hauteur (visW = field.h, visH = field.w) : la
-          // limite à appliquer doit donc être basée sur cet
-          // encombrement réel, pas sur field.w/field.h directement.
-          const isRot = (rot === 90 || rot === 270);
-          const maxVisW = 100 - field.x;
-          const maxVisH = 100 - field.y;
-          if (isRot) {
-            newH = Math.min(newH, maxVisW);
-            newW = Math.min(newW, maxVisH);
-          } else {
-            newW = Math.min(newW, maxVisW);
-            newH = Math.min(newH, maxVisH);
+          // Clamp générique fondé sur l'AABB : on réduit w/h (en
+          // conservant le ratio) jusqu'à ce que la boîte englobante
+          // visuelle tienne dans la face depuis (x, y). Valable pour
+          // TOUT angle, contrairement à l'ancien cas particulier 90/270
+          // qui écrasait un seul axe.
+          const vis = getVisualSize({ ...field, w: newW, h: newH });
+          const kx = vis.w > 0 ? (100 - field.x) / vis.w : 1;
+          const ky = vis.h > 0 ? (100 - field.y) / vis.h : 1;
+          const k = Math.min(1, kx, ky);
+          if (k < 1) {
+            newW = Math.max(2, Math.round(newW * k * 10) / 10);
+            newH = Math.max(2, Math.round(newH * k * 10) / 10);
           }
 
           field.w = newW;
           field.h = newH;
-          el.style.width = field.w + "%";
-          el.style.height = field.h + "%";
-
-          // Re-apply the translate compensation for the new size
-          if (rot) {
-            const cx = field.w / 2;
-            const cy = field.h / 2;
-            const rcx = cosA * cx - sinA * cy;
-            const rcy = sinA * cx + cosA * cy;
-            el.style.transform = `translate(${cx - rcx}%, ${cy - rcy}%) rotate(${rot}deg)`;
-          }
+          applyFieldPlacement(el, field);
+          showCoordTooltip(el.parentElement, ev.clientX, ev.clientY, `L: ${field.w.toFixed(1)}%  H: ${field.h.toFixed(1)}%`);
           updateFloatingToolbar();
         }
 
@@ -4601,6 +5473,7 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           document.removeEventListener("pointermove", onMove);
           document.removeEventListener("pointerup", onUp);
           el.classList.remove("resizing");
+          hideCoordTooltip(el.parentElement);
           saveFieldsConfig();
           syncFieldEditorInputs(fieldId);
           validateFields();
@@ -4608,6 +5481,256 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
         document.addEventListener("pointermove", onMove);
         document.addEventListener("pointerup", onUp);
+      }
+
+      // ==================================================================
+      // ÉDITION DIRECTE DU TEXTE DANS LA ZONE VISUELLE
+      // ==================================================================
+      // Approche : contenteditable sur l'élément DÉJÀ rendu, plutôt qu'un
+      // <textarea> superposé. Le texte conserve ainsi sa police, sa taille,
+      // sa couleur, son alignement ET sa rotation réels ; un overlay devrait
+      // répliquer toute cette géométrie (y compris le transform), ce qui
+      // redoublerait la surface de bug qu'on vient justement de corriger.
+      let inlineEditFieldId = null;
+
+      // Firefox ne supporte pas encore "plaintext-only" : on teste puis on
+      // se rabat sur "true" + interception du collage (voir onInlinePaste).
+      let _plaintextOnlySupported = null;
+      function supportsPlaintextOnly() {
+        if (_plaintextOnlySupported !== null) return _plaintextOnlySupported;
+        const probe = document.createElement("div");
+        probe.setAttribute("contenteditable", "plaintext-only");
+        _plaintextOnlySupported =
+          probe.contentEditable === "plaintext-only";
+        return _plaintextOnlySupported;
+      }
+
+      // Un champ est-il en cours d'édition de texte (natif ou inline) ?
+      // Les handlers clavier globaux doivent s'effacer dans ce cas :
+      // sans cela les flèches déplaceraient le champ au lieu de bouger le
+      // curseur, et Suppr proposerait de supprimer le champ en pleine frappe.
+      function isTextEntryFocused() {
+        // Une édition inline en cours suffit : on ne dépend pas de
+        // isContentEditable, dont le support est inégal selon les moteurs.
+        if (inlineEditFieldId) return true;
+        const a = document.activeElement;
+        if (!a) return false;
+        if (
+          a.tagName === "INPUT" ||
+          a.tagName === "TEXTAREA" ||
+          a.tagName === "SELECT"
+        ) {
+          return true;
+        }
+        if (a.isContentEditable === true) return true;
+        // Repli : attribut explicite, y compris sur un ancêtre.
+        return !!(a.closest && a.closest('[contenteditable="true"], [contenteditable="plaintext-only"]'));
+      }
+
+      function enterInlineEdit(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field || !canEditInline(field)) return;
+        if (inlineEditFieldId === fieldId) return;
+
+        // Fermer une édition précédente AVANT de chercher l'élément :
+        // exitInlineEdit() déclenche renderAllCustomFields(), qui détruit
+        // et reconstruit tout le DOM des champs. Un élément capturé avant
+        // cet appel serait DÉTACHÉ — on lui poserait contenteditable sans
+        // effet visible, et l'édition semblerait « ne plus fonctionner ».
+        if (inlineEditFieldId) exitInlineEdit(true);
+
+        // Requête APRÈS la reconstruction : on tient le nœud réellement
+        // affiché.
+        const el = document.querySelector(
+          `.custom-field[data-field-id="${fieldId}"]`,
+        );
+        if (!el) return;
+
+        inlineEditFieldId = fieldId;
+        selectField(fieldId, /*skipSidebarScroll=*/ true);
+
+        // On édite la valeur BRUTE : le contenu peut renfermer les
+        // variables COMPANY NAME / YOUR SLOGAN HERE, substituées seulement
+        // à l'affichage. Éditer la valeur substituée les figerait en dur.
+        el.dataset.rawBefore = field.content || "";
+        el.textContent = field.content || "";
+
+        el.contentEditable = supportsPlaintextOnly()
+          ? "plaintext-only"
+          : "true";
+        el.spellcheck = false;
+        el.classList.add("inline-editing");
+        // Laisser voir le texte qui dépasse pendant la frappe.
+        el.style.overflow = "visible";
+
+        // Sélectionner tout : la première frappe remplace, comme dans les
+        // outils de PAO ; Ctrl+A ou un clic replacent le curseur.
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.focus({ preventScroll: true });
+
+        el.addEventListener("input", onInlineInput);
+        el.addEventListener("keydown", onInlineKeydown);
+        el.addEventListener("paste", onInlinePaste);
+        el.addEventListener("blur", onInlineBlur);
+
+        showInlineEditHint(field);
+      }
+
+      function exitInlineEdit(commit = true) {
+        if (!inlineEditFieldId) return;
+        const fieldId = inlineEditFieldId;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        const el = document.querySelector(
+          `.custom-field[data-field-id="${fieldId}"]`,
+        );
+        // Remis à null AVANT le re-rendu : renderAllCustomFields() refuse
+        // de s'exécuter tant qu'une édition est en cours (garde-fou).
+        inlineEditFieldId = null;
+
+        if (el) {
+          el.removeEventListener("input", onInlineInput);
+          el.removeEventListener("keydown", onInlineKeydown);
+          el.removeEventListener("paste", onInlinePaste);
+          el.removeEventListener("blur", onInlineBlur);
+          el.contentEditable = "false";
+          el.classList.remove("inline-editing");
+          el.style.overflow = "";
+          if (field && !commit) {
+            field.content = el.dataset.rawBefore || "";
+          }
+          delete el.dataset.rawBefore;
+        }
+        hideInlineEditHint();
+
+        // Persister DANS LES DEUX CAS : la frappe a déjà écrit le contenu
+        // intermédiaire en localStorage (onInlineInput), donc une annulation
+        // doit réécrire la valeur d'origine — sinon le texte abandonné
+        // survivrait au rechargement de la page.
+        saveFieldsConfig();
+        // Re-rendu complet : réapplique les variables dynamiques et la
+        // validation ; resynchronise le <textarea> de la barre latérale.
+        renderAllCustomFields();
+        renderFieldEditor();
+        selectField(fieldId, /*skipSidebarScroll=*/ true);
+      }
+
+      function onInlineInput(e) {
+        const field = fieldsConfig.find((f) => f.id === inlineEditFieldId);
+        if (!field) return;
+        // innerText préserve les sauts de ligne visuels ; repli sur
+        // textContent pour les moteurs qui ne l'implémentent pas.
+        // On normalise les espaces insécables que certains navigateurs
+        // insèrent en fin de ligne pendant la frappe.
+        const el = e.currentTarget;
+        const raw = el.innerText != null ? el.innerText : el.textContent;
+        field.content = String(raw || "").replace(/\u00a0/g, " ");
+        saveFieldsConfig();
+        syncFieldEditorContent(field.id);
+        // ⚠️ NE PAS appeler renderAllCustomFields() ici : il reconstruit
+        // tout le DOM et détruirait l'élément en cours d'édition, donc le
+        // curseur, à CHAQUE caractère. Seul le modèle est mis à jour ;
+        // le re-rendu a lieu à la sortie d'édition.
+        validateFields();
+      }
+
+      function onInlineKeydown(e) {
+        // Ne pas laisser les raccourcis globaux (nudge, suppression,
+        // undo du champ, duplication…) intercepter la frappe.
+        e.stopPropagation();
+
+        if (e.key === "Escape") {
+          e.preventDefault();
+          exitInlineEdit(/*commit=*/ false);
+          return;
+        }
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          exitInlineEdit(true);
+          return;
+        }
+        if (e.key === "Tab") {
+          // Valider puis passer au champ éditable suivant de la même face.
+          e.preventDefault();
+          const field = fieldsConfig.find((f) => f.id === inlineEditFieldId);
+          const face = field && field.face;
+          const siblings = fieldsConfig.filter(
+            (f) => f.face === face && canEditInline(f),
+          );
+          const i = siblings.findIndex((f) => f.id === inlineEditFieldId);
+          exitInlineEdit(true);
+          if (siblings.length > 1 && i >= 0) {
+            const step = e.shiftKey ? -1 : 1;
+            const next =
+              siblings[(i + step + siblings.length) % siblings.length];
+            if (next) enterInlineEdit(next.id);
+          }
+          return;
+        }
+        // Entrée simple = saut de ligne (les champs sont multi-lignes,
+        // cf. white-space:pre-wrap) : comportement natif conservé.
+        // Ctrl+Z / Ctrl+Y : on laisse l'annulation NATIVE du navigateur
+        // agir sur le texte (stopPropagation ci-dessus empêche déjà
+        // undoFieldChange de défaire le champ entier).
+      }
+
+      function onInlinePaste(e) {
+        // En repli contenteditable="true" (Firefox), un collage depuis un
+        // traitement de texte injecterait du HTML. On force le texte brut.
+        if (supportsPlaintextOnly()) return;
+        e.preventDefault();
+        const txt = (e.clipboardData || window.clipboardData).getData(
+          "text/plain",
+        );
+        document.execCommand("insertText", false, txt);
+      }
+
+      function onInlineBlur() {
+        // Perte de focus (clic ailleurs) = validation.
+        exitInlineEdit(true);
+      }
+
+      // Met à jour le <textarea> « Contenu » de la barre latérale pendant
+      // la frappe, sans reconstruire le panneau (ce qui volerait le focus).
+      function syncFieldEditorContent(fieldId) {
+        const row = document.querySelector(
+          `#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`,
+        );
+        if (!row) return;
+        const ta = row.querySelector('[data-prop="content"]');
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (ta && field && ta.value !== field.content) {
+          ta.value = field.content || "";
+        }
+      }
+
+      // Bandeau d'aide affiché pendant l'édition.
+      function showInlineEditHint(field) {
+        let hint = document.getElementById("inlineEditHint");
+        if (!hint) {
+          hint = document.createElement("div");
+          hint.id = "inlineEditHint";
+          hint.className = "inline-edit-hint";
+          document.body.appendChild(hint);
+        }
+        const hasVar = /COMPANY NAME|YOUR SLOGAN HERE/.test(
+          field.content || "",
+        );
+        hint.innerHTML =
+          "✎ <b>Édition directe</b> — <kbd>Échap</kbd> annuler · " +
+          "<kbd>Ctrl</kbd>+<kbd>Entrée</kbd> valider · <kbd>Tab</kbd> champ suivant" +
+          (hasVar
+            ? ' <span class="inline-edit-hint-var">· ce champ contient une variable dynamique</span>'
+            : "");
+        hint.classList.add("show");
+      }
+
+      function hideInlineEditHint() {
+        const hint = document.getElementById("inlineEditHint");
+        if (hint) hint.classList.remove("show");
       }
 
       // Identifiant du dernier champ ajouté — permet d'ouvrir
@@ -4999,6 +6122,17 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               value = Number(value);
             }
             fieldsConfig[idx][prop] = value;
+            // Changer la rotation (ou la face) modifie l'encombrement
+            // visuel : un champ qui tenait à 0° peut déborder à 90° sur une
+            // face étroite. On le recadre pour qu'il reste toujours visible
+            // et manipulable — « réinitialisation des axes » après rotation.
+            if (prop === "rotation" || prop === "face") {
+              Object.assign(
+                fieldsConfig[idx],
+                fitFieldIntoFace(fieldsConfig[idx]),
+              );
+              syncFieldEditorInputs(fieldsConfig[idx].id);
+            }
             saveFieldsConfig();
             if (prop === "label") return;
             if (prop === "type") {
@@ -5068,6 +6202,8 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           });
         });
       }
+
+      updateStatusChip();
 
       const addFieldBtn = document.getElementById("addFieldBtn");
       const addShapeBtn = document.getElementById("addShapeBtn");
@@ -5416,13 +6552,37 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       if (exportFieldsBtn) {
         exportFieldsBtn.addEventListener("click", () => {
-          const blob = new Blob([JSON.stringify(fieldsConfig, null, 2)], {
+          // Export complet du gabarit : champs + tous les réglages
+          // globaux (dimensions, couleurs, logo, slogan, rabats…)
+          // pour une restauration fidèle à l'import.
+          const fullExport = {
+            version: 2,
+            schemaVersion: FIELDS_SCHEMA_VERSION,
+            fields: fieldsConfig,
+            settings: {
+              boxType: controls.boxType.value,
+              dimW: Number(controls.dimW.value),
+              dimH: Number(controls.dimH.value),
+              dimD: Number(controls.dimD.value),
+              flapLength: Number(controls.flapLength.value),
+              dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+              colPrimary: controls.colPrimary.value,
+              colAccent: controls.colAccent.value,
+              txtLabName: controls.txtLabName.value,
+              txtSlogan: controls.txtSlogan.value,
+              showLabName: controls.showLabName.checked,
+              logoSize: Number(controls.logoSizeSlider.value),
+              customLogoUrl: customLogoUrl || null,
+              customFacesBg: customFacesBg,
+            },
+          };
+          const blob = new Blob([JSON.stringify(fullExport, null, 2)], {
             type: "application/json",
           });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = "gabarit-champs.json";
+          a.download = "gabarit-complet.json";
           a.click();
           URL.revokeObjectURL(url);
         });
@@ -5442,13 +6602,33 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           reader.onload = () => {
             try {
               const parsed = JSON.parse(reader.result);
+              // NB : « v1/v2 » ci-dessous désigne le format du FICHIER
+              // (tableau nu vs gabarit complet), à ne pas confondre avec
+              // schemaVersion qui décrit la convention GÉOMÉTRIQUE des
+              // champs. Un gabarit exporté avant la correction des axes
+              // doit être migré, quel que soit son format de fichier.
+              const needsGeomMigration = (obj) =>
+                Number(obj && obj.schemaVersion) < FIELDS_SCHEMA_VERSION ||
+                !(obj && obj.schemaVersion);
               if (Array.isArray(parsed)) {
-                fieldsConfig = parsed;
+                // Format v1 (ancien) : tableau de champs uniquement
+                fieldsConfig = migrateFieldsV1toV2(parsed);
                 saveFieldsConfig();
                 renderFieldEditor();
                 renderAllCustomFields();
+              } else if (parsed && parsed.fields && Array.isArray(parsed.fields)) {
+                // Format v2 (nouveau) : champs + réglages globaux
+                fieldsConfig = needsGeomMigration(parsed)
+                  ? migrateFieldsV1toV2(parsed.fields)
+                  : parsed.fields;
+                saveFieldsConfig();
+                if (parsed.settings) {
+                  applyImportedSettings(parsed.settings);
+                }
+                renderFieldEditor();
+                renderAllCustomFields();
               } else {
-                alert("Fichier JSON invalide : un tableau de champs est attendu.");
+                alert("Fichier JSON invalide : un tableau de champs ou un gabarit complet est attendu.");
               }
             } catch (err) {
               alert("Impossible de lire ce fichier JSON.");
@@ -5563,6 +6743,10 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       }
 
       function updateGeometry() {
+        // Les faces vont être redimensionnées : les rapports d'aspect
+        // mémorisés sont périmés (ils conditionnent tout le calcul de
+        // rotation, cf. getVisualSize).
+        invalidateFaceAspectCache();
         const type = controls.boxType.value;
         const scale = MM_TO_PX;
 
@@ -5819,6 +7003,25 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         if (typeof applyCustomFaceColors === 'function') {
           applyCustomFaceColors();
         }
+        // Les panneaux viennent d'être redimensionnés : tout placement
+        // calculé AVANT (ex. renderAllCustomFields appelé par
+        // updateTextBinders lors d'un changement de mode) repose sur des
+        // rapports d'aspect périmés. On purge le cache et on replace les
+        // champs déjà rendus — sans reconstruire le DOM, donc sans
+        // interrompre une éventuelle édition en cours.
+        invalidateFaceAspectCache();
+        repositionRenderedFields();
+        updateStatusChip();
+      }
+
+      // Réapplique le placement de tous les champs actuellement rendus.
+      // Peu coûteux (aucune reconstruction) et sans effet sur l'édition.
+      function repositionRenderedFields() {
+        if (typeof fieldsConfig === "undefined") return;
+        document.querySelectorAll(".custom-field").forEach((el) => {
+          const field = fieldsConfig.find((f) => f.id === el.dataset.fieldId);
+          if (field) applyFieldPlacement(el, field);
+        });
       }
 
       function drawTabletDieLines(w, h, d, flap, glue, dustEnabled = true) {
@@ -6080,18 +7283,18 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
 
       toggleLabelsBtn.addEventListener("click", () => {
         const isHidden = boxGrid.classList.toggle("hide-labels");
-        toggleLabelsBtn.textContent = isHidden
-          ? "Afficher Zones"
-          : "Masquer Zones";
-        toggleLabelsBtn.classList.toggle("secondary-btn");
+        toggleLabelsBtn.classList.toggle("secondary-btn", isHidden);
+        toggleLabelsBtn.title = isHidden
+          ? "Afficher les zones de texte (👁️)"
+          : "Masquer les zones de texte (👁️)";
       });
 
       toggleMarginsBtn.addEventListener("click", () => {
         const show = boxGrid.classList.toggle("show-margins");
-        toggleMarginsBtn.textContent = show
-          ? "Masquer Marges"
-          : "Marges Perdues";
-        toggleMarginsBtn.classList.toggle("secondary-btn");
+        toggleMarginsBtn.classList.toggle("secondary-btn", !show);
+        toggleMarginsBtn.title = show
+          ? "Masquer les marges perdues (⛶)"
+          : "Afficher les marges perdues (⛶)";
       });
 
       // --- Gestion de la couleur personnalisée des faces ---
@@ -6248,10 +7451,23 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       async function sendDesignData() {
         if (!window.emailjs || EMAILJS_PUBLIC_KEY === "TON_PUBLIC_KEY") return;
 
+        // Produit / dosage réels lus depuis les champs personnalisés
+        // actifs (le panneau de texte historique a été remplacé par le
+        // système de champs) — sinon l'e-mail d'impression aurait envoyé
+        // des valeurs périmées.
+        const modeFaces = currentModeFaces();
+        const activeFields = fieldsConfig.filter((f) => modeFaces.includes(f.face));
+        const pickContent = (...ids) => {
+          for (const id of ids) {
+            const f = activeFields.find((x) => x.id === id);
+            if (f && f.content) return String(f.content);
+          }
+          return "";
+        };
         const designInfo = {
           type: controls.boxType.value,
-          produit: controls.txtProduct.value,
-          dosage: controls.txtDosage.value,
+          produit: pickContent("denomination", "liq_denomination"),
+          dosage: pickContent("dci", "liq_dci_dosage"),
           dimensions: `${controls.dimW.value}x${controls.dimH.value}x${controls.dimD.value}`,
           labo: controls.txtLabName.value,
           timestamp: new Date().toLocaleString("fr-FR"),
@@ -6278,6 +7494,18 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         }
       }
 
+      // Redimensionnement de la fenêtre : les faces peuvent changer de
+      // taille, donc de rapport d'aspect. On repositionne les champs
+      // pivotés pour éviter toute dérive (debounce léger).
+      let _resizeReplaceTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(_resizeReplaceTimer);
+        _resizeReplaceTimer = setTimeout(() => {
+          invalidateFaceAspectCache();
+          repositionRenderedFields();
+        }, 120);
+      });
+
       // Initial triggers
       applyZoom();
       applyModeVisibility(controls.boxType.value);
@@ -6287,6 +7515,12 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
       renderFieldEditor();
       updateTextBinders();
       updateGeometry();
+      // Les faces existent désormais : leurs rapports d'aspect sont
+      // mesurables, la migration du repère peut s'exécuter puis être
+      // reflétée par un nouveau rendu.
+      runPendingFieldsMigration();
+      renderAllCustomFields();
+      renderFieldEditor();
       applyCustomFaceColors();
 
       // ============================================================
@@ -6362,18 +7596,40 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           selectField(clone.id, /*skipSidebarScroll=*/false, /*focusInput=*/false);
         }
 
+        document.getElementById("tbFitContent").addEventListener("click", fitSelectionToContent);
+        document.getElementById("tbEditText").addEventListener("click", () => {
+          if (selectedFieldId) enterInlineEdit(selectedFieldId);
+        });
         document.getElementById("tbDuplicate").addEventListener("click", duplicateSelectedField);
 
-        // Raccourci clavier Ctrl/Cmd+D pour dupliquer le champ sélectionné
+        // Raccourci clavier Ctrl/Cmd+D pour dupliquer le champ (ou le
+        // groupe) sélectionné
         document.addEventListener("keydown", (e) => {
           if (!selectedFieldId) return;
           if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
-            const activeTag = document.activeElement && document.activeElement.tagName;
-            if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+            // Inclut les zones contenteditable (edition directe dans la maquette).
+            if (isTextEntryFocused()) return;
             e.preventDefault();
-            duplicateSelectedField();
+            if (getSelectedIds().length > 1) {
+              duplicateGroup();
+            } else {
+              duplicateSelectedField();
+            }
           }
         });
+
+        // --- Barre d'outils de la sélection groupée ---
+        document.getElementById("grpAlignLeft").addEventListener("click", () => alignGroup("left"));
+        document.getElementById("grpAlignCenterH").addEventListener("click", () => alignGroup("center-h"));
+        document.getElementById("grpAlignRight").addEventListener("click", () => alignGroup("right"));
+        document.getElementById("grpAlignTop").addEventListener("click", () => alignGroup("top"));
+        document.getElementById("grpAlignCenterV").addEventListener("click", () => alignGroup("center-v"));
+        document.getElementById("grpAlignBottom").addEventListener("click", () => alignGroup("bottom"));
+        document.getElementById("grpDistributeH").addEventListener("click", () => distributeGroup("h"));
+        document.getElementById("grpDistributeV").addEventListener("click", () => distributeGroup("v"));
+        document.getElementById("grpFitContent").addEventListener("click", fitSelectionToContent);
+        document.getElementById("grpDuplicate").addEventListener("click", duplicateGroup);
+        document.getElementById("grpDelete").addEventListener("click", deleteGroup);
 
         // Raccourci clavier Ctrl/Cmd+Z (annuler) et Ctrl/Cmd+Maj+Z ou
         // Ctrl/Cmd+Y (rétablir) pour l'historique des champs personnalisés.
@@ -6384,8 +7640,8 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           if (!(e.ctrlKey || e.metaKey)) return;
           const key = e.key.toLowerCase();
           if (key !== "z" && key !== "y") return;
-          const activeTag = document.activeElement && document.activeElement.tagName;
-          if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+          // Inclut les zones contenteditable (edition directe dans la maquette).
+          if (isTextEntryFocused()) return;
           e.preventDefault();
           if (key === "y" || (key === "z" && e.shiftKey)) {
             redoFieldChange();
@@ -6411,23 +7667,39 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           }
         });
 
-        // Déplacement au clavier (nudge) du champ sélectionné : flèches
-        // pour ajuster finement la position (Maj = pas plus large),
-        // Suppr/Retour arrière pour effacer, Échap pour désélectionner.
-        // Ignoré si le focus est dans un champ de saisie (texte, nombre...)
-        // pour ne pas interférer avec la frappe normale.
+        // Déplacement au clavier (nudge) du champ (ou du groupe)
+        // sélectionné : flèches pour ajuster finement la position
+        // (Maj = pas plus large), Suppr/Retour arrière pour effacer,
+        // Échap pour désélectionner. Ignoré si le focus est dans un
+        // champ de saisie (texte, nombre...) pour ne pas interférer
+        // avec la frappe normale.
         document.addEventListener("keydown", (e) => {
           if (!selectedFieldId) return;
-          const activeTag = document.activeElement && document.activeElement.tagName;
-          if (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT") return;
+          // Inclut les zones contenteditable (edition directe dans la maquette).
+          if (isTextEntryFocused()) return;
 
           if (e.key === "Escape") {
             deselectField();
             return;
           }
 
+          // F2 ou Entrée : ouvrir l'édition directe du champ sélectionné
+          // (conventions habituelles des tableurs et outils de PAO).
+          if (e.key === "F2" || e.key === "Enter") {
+            const field = fieldsConfig.find((f) => f.id === selectedFieldId);
+            if (canEditInline(field) && getSelectedIds().length === 1) {
+              e.preventDefault();
+              enterInlineEdit(selectedFieldId);
+              return;
+            }
+          }
+
           if (e.key === "Delete" || e.key === "Backspace") {
             e.preventDefault();
+            if (getSelectedIds().length > 1) {
+              deleteGroup();
+              return;
+            }
             if (!confirm("Supprimer ce champ ?")) return;
             fieldsConfig = fieldsConfig.filter(f => f.id !== selectedFieldId);
             deselectField();
@@ -6448,21 +7720,23 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           }
           e.preventDefault();
 
-          const field = fieldsConfig.find(f => f.id === selectedFieldId);
-          if (!field) return;
-          const { w: visW, h: visH } = getVisualSize(field);
-          field.x = Math.max(0, Math.min(100 - visW, Math.round((field.x + dx) * 10) / 10));
-          field.y = Math.max(0, Math.min(100 - visH, Math.round((field.y + dy) * 10) / 10));
-
-          const el = document.querySelector(`.custom-field[data-field-id="${selectedFieldId}"]`);
-          if (el) {
-            el.style.left = field.x + "%";
-            el.style.top = field.y + "%";
-          }
+          // Déplace tous les champs de la sélection (un seul en mode
+          // normal, plusieurs si un groupe est actif) ensemble.
+          getSelectedIds().forEach(id => {
+            const field = fieldsConfig.find(f => f.id === id);
+            if (!field) return;
+            const { w: visW, h: visH } = getVisualSize(field);
+            field.x = Math.max(0, Math.min(100 - visW, Math.round((field.x + dx) * 10) / 10));
+            field.y = Math.max(0, Math.min(100 - visH, Math.round((field.y + dy) * 10) / 10));
+            const el = document.querySelector(`.custom-field[data-field-id="${id}"]`);
+            if (el) applyFieldPlacement(el, field);
+          });
           saveFieldsConfig();
           syncFieldEditorInputs(selectedFieldId);
           updateFloatingToolbar();
+          updateGroupToolbar();
         });
+
 
         // Suivi du défilement de la zone de travail pour maintenir le panneau flottant ancré
         const workspaceEl = document.querySelector(".workspace");
@@ -6470,10 +7744,701 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
           workspaceEl.addEventListener("scroll", () => {
             if (selectedFieldId) {
               updateFloatingToolbar();
+              updateGroupToolbar();
             }
           });
         }
       })();
+
+      // ============================================================
+      //  EXPORT PNG DU PATRON
+      //  Capture fidèle du DOM via html2canvas (même rendu que le
+      //  navigateur et l'export PDF), puis téléchargement en PNG
+      //  haute résolution (×3 ≈ 288 DPI).  En fallback, si
+      //  html2canvas n'est pas chargé, on utilise la reconstruction
+      //  SVG (moins fidèle : polices différentes, résolution ×2).
+      // ============================================================
+
+      // Rendu SVG d'un champ de type « forme » (viewBox 0 0 100 100
+      // étiré ensuite sur la boîte du champ). Approche fidèle mais
+      // simplifiée pour quelques familles de formes.
+      function buildShapeSvg(f, x, y, w, h) {
+        const st = f.shapeType || "rectangle";
+        const c = f.color || "#1e3a8a";
+        const c2 = f.color2 || "#f97316";
+        const fillMode = f.fillMode || "fill";
+        const sw = f.strokeWidth || 4;
+        const fill = fillMode === "outline" ? "none" : c;
+        const stroke = fillMode === "outline" ? c : "none";
+
+        const POLYS = {
+          "triangle": [[50,2],[98,98],[2,98]],
+          "triangle-inverted": [[2,2],[98,2],[50,98]],
+          "right-triangle": [[2,2],[2,98],[98,98]],
+          "diamond": [[50,2],[98,50],[50,98],[2,50]],
+          "pentagon": [[50,3],[97,38],[79,96],[21,96],[3,38]],
+          "hexagon": [[25,4],[75,4],[98,50],[75,96],[25,96],[2,50]],
+          "star": [[50,2],[61,38],[98,38],[68,60],[79,96],[50,72],[21,96],[32,60],[2,38],[39,38]],
+          "arrow-right": [[10,35],[60,35],[60,15],[95,50],[60,85],[60,65],[10,65]],
+          "arrow-left": [[90,35],[40,35],[40,15],[5,50],[40,85],[40,65],[90,65]],
+          "arrow-up": [[35,10],[35,60],[15,60],[50,95],[85,60],[65,60],[65,10]],
+          "arrow-down": [[35,90],[35,40],[15,40],[50,5],[85,40],[65,40],[65,90]],
+          "chevron-right": [[20,15],[50,50],[20,85],[40,85],[70,50],[40,15]]
+        };
+        const LINES = {
+          "line-horizontal": [10,50,90,50],
+          "line-vertical": [50,10,50,90],
+          "line-diagonal": [10,10,90,90]
+        };
+        function polyPts(pts) { return pts.map(p => `${p[0]},${p[1]}`).join(" "); }
+
+        let inner = "";
+        if (st === "circle" || st === "pill") {
+          inner = `<ellipse cx="50" cy="50" rx="48" ry="48" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+        } else if (st === "rounded-rectangle") {
+          inner = `<rect x="3" y="3" width="94" height="94" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+        } else if (st === "rectangle") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${fill}"/>`;
+        } else if (POLYS[st]) {
+          inner = `<polygon points="${polyPts(POLYS[st])}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+        } else if (LINES[st]) {
+          const L = LINES[st];
+          inner = `<line x1="${L[0]}" y1="${L[1]}" x2="${L[2]}" y2="${L[3]}" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>`;
+        } else if (st === "ring") {
+          inner = `<ellipse cx="50" cy="50" rx="44" ry="44" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
+        } else if (st === "outline-frame" || st === "outline-frame-rounded") {
+          const rx = st === "outline-frame-rounded" ? 10 : 0;
+          inner = `<rect x="3" y="3" width="94" height="94" rx="${rx}" fill="none" stroke="${c}" stroke-width="${sw}"/>`;
+        } else if (st === "double-frame") {
+          inner = `<rect x="3" y="3" width="94" height="94" fill="none" stroke="${c}" stroke-width="${sw}"/><rect x="9" y="9" width="82" height="82" fill="none" stroke="${c2}" stroke-width="2"/>`;
+        } else if (st === "diagonal-tl-br") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><polygon points="100,0 100,100 0,100" fill="${c2}"/>`;
+        } else if (st === "diagonal-tr-bl") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><polygon points="0,0 100,0 0,100" fill="${c2}"/>`;
+        } else if (st === "split-horizontal") {
+          inner = `<rect x="2" y="2" width="96" height="48" fill="${c}"/><rect x="2" y="50" width="96" height="48" fill="${c2}"/>`;
+        } else if (st === "split-vertical") {
+          inner = `<rect x="2" y="2" width="48" height="96" fill="${c}"/><rect x="50" y="2" width="48" height="96" fill="${c2}"/>`;
+        } else if (st === "corner-accent-tr") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><polygon points="100,0 100,45 55,0" fill="${c2}"/>`;
+        } else if (st === "curve-wave") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><path d="M0,55 C30,40 70,70 100,50 L100,100 L0,100 Z" fill="${c2}"/>`;
+        } else if (st === "gradient-linear" || st === "gradient-horizontal") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><polygon points="100,0 100,100 0,100" fill="${c2}"/>`;
+        } else if (st === "gradient-vertical") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><polygon points="0,100 100,100 100,0" fill="${c2}"/>`;
+        } else if (st === "gradient-radial") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/><circle cx="30" cy="30" r="70" fill="${c2}"/>`;
+        } else if (st === "stripes-diagonal" || st === "stripes-horizontal") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/>`;
+          const horiz = st === "stripes-horizontal";
+          for (let i = 0; i < 10; i++) {
+            const p = 6 + i * 10;
+            inner += horiz
+              ? `<rect x="2" y="${p}" width="96" height="5" fill="${c2}"/>`
+              : `<rect x="${p}" y="2" width="5" height="96" fill="${c2}"/>`;
+          }
+        } else if (st === "dots-pattern" || st === "grid-pattern") {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/>`;
+          if (st === "dots-pattern") {
+            for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+              inner += `<circle cx="${12 + i * 20}" cy="${12 + j * 20}" r="4" fill="${c2}"/>`;
+            }
+          } else {
+            for (let i = 1; i < 5; i++) {
+              inner += `<line x1="${2 + i * 19}" y1="2" x2="${2 + i * 19}" y2="98" stroke="${c2}" stroke-width="1.5"/>`;
+              inner += `<line x1="2" y1="${2 + i * 19}" x2="98" y2="${2 + i * 19}" stroke="${c2}" stroke-width="1.5"/>`;
+            }
+          }
+        } else if (st === "custom") {
+          if (f.points && f.points.length >= 2) {
+            const pts = f.points.map(p => `${p.x},${p.y}`).join(" ");
+            inner = f.closed
+              ? `<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`
+              : `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+          } else {
+            inner = `<rect x="2" y="2" width="96" height="96" fill="${c}"/>`;
+          }
+        } else {
+          inner = `<rect x="2" y="2" width="96" height="96" fill="${fill}"/>`;
+        }
+        return `<svg x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" viewBox="0 0 100 100" preserveAspectRatio="none">${inner}</svg>`;
+      }
+
+      // Rendu SVG d'un champ de type « logo ».
+      function buildLogoSvg(f, x, y, w, h) {
+        const c = f.color || "#1e3a8a";
+        const c2 = f.color2 || "#f97316";
+        const showText = f.content !== "logo-only" && f.content !== "icon-only";
+        const sizePx = Math.min(h * 0.8, w * 0.5, 40);
+        let inner = "";
+        const ix = x + 2, iy = y + (h - sizePx) / 2;
+        if (customLogoUrl) {
+          inner += `<image x="${ix.toFixed(2)}" y="${iy.toFixed(2)}" width="${sizePx.toFixed(2)}" height="${sizePx.toFixed(2)}" href="${customLogoUrl}" xlink:href="${customLogoUrl}" preserveAspectRatio="xMidYMid meet"/>`;
+        } else {
+          inner += `<svg x="${ix.toFixed(2)}" y="${iy.toFixed(2)}" width="${sizePx.toFixed(2)}" height="${sizePx.toFixed(2)}" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="${c}"/><path d="M30 50H70M50 30V70" stroke="${c2}" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="50" r="10" fill="#ffffff"/></svg>`;
+        }
+        if (showText) {
+          const tx = ix + sizePx + 4;
+          const name = f.content ? f.content : controls.txtLabName.value;
+          const slogan = controls.txtSlogan.value;
+          const nf = Math.max(6, f.fontSize || 10);
+          inner += `<text x="${tx.toFixed(2)}" y="${(y + h / 2 - nf * 0.3).toFixed(2)}" font-family="Arial, sans-serif" font-size="${nf}" font-weight="800" fill="${c}">${escapeHtml(name)}</text>`;
+          inner += `<text x="${tx.toFixed(2)}" y="${(y + h / 2 + nf * 0.9).toFixed(2)}" font-family="Arial, sans-serif" font-size="${(nf * 0.7).toFixed(1)}" font-weight="700" fill="${c2}">${escapeHtml(slogan)}</text>`;
+        }
+        return inner;
+      }
+
+      // Rendu SVG d'un champ quelconque (boîte x/y/w/h en px patron).
+      // --- Outils partagés pour l'export PNG ---
+      let _pngClipDefs = [];
+      let _pngClipSeq = 0;
+      let _pngMeasureCtx = null;
+      function pngMeasure(text, fontSpec) {
+        try {
+          if (!_pngMeasureCtx) _pngMeasureCtx = document.createElement("canvas").getContext("2d");
+          _pngMeasureCtx.font = fontSpec;
+          return _pngMeasureCtx.measureText(text).width;
+        } catch (e) {
+          // Repli (environnement sans canvas, ex. jsdom) : estimation grossière
+          const m = String(fontSpec).match(/(\d+(?:\.\d+)?)px/);
+          const px = m ? parseFloat(m[1]) : 12;
+          return String(text).length * px * 0.55;
+        }
+      }
+      // Découpe le texte en lignes tenant dans maxWidth (retours à la
+      // ligne explicites préservés, mots longs coupés caractère par
+      // caractère) — reproduit le comportement white-space:pre-wrap.
+      function pngWrap(text, maxWidth, fontSpec) {
+        const out = [];
+        String(text).split("\n").forEach(para => {
+          if (para === "") { out.push(""); return; }
+          const words = para.split(/\s+/).filter(Boolean);
+          let line = "";
+          const addWord = (word) => {
+            if (pngMeasure(word, fontSpec) > maxWidth) {
+              if (line) { out.push(line); line = ""; }
+              let chunk = "";
+              for (const ch of word) {
+                if (chunk && pngMeasure(chunk + ch, fontSpec) > maxWidth) { out.push(chunk); chunk = ""; }
+                chunk += ch;
+              }
+              line = chunk;
+              return;
+            }
+            const test = line ? line + " " + word : word;
+            if (line && pngMeasure(test, fontSpec) > maxWidth) { out.push(line); line = word; }
+            else line = test;
+          };
+          words.forEach(addWord);
+          out.push(line);
+        });
+        return out.length ? out : [""];
+      }
+
+      // aabbX/Y/W/H proviennent de getBoundingClientRect() : c'est donc la
+      // boîte englobante VISUELLE (après rotation). Or le contenu doit être
+      // mis en page dans la boîte LOCALE (avant rotation) — sinon le texte
+      // est replié sur la mauvaise largeur — puis pivoté autour du centre,
+      // exactement comme le fait le DOM. Sans cette reconstruction, l'aperçu
+      // écran et le PNG exporté divergent dès qu'un champ est pivoté.
+      function fieldToSvg(f, aabbX, aabbY, aabbW, aabbH) {
+        const rot = normalizeRotation(f.rotation);
+        // Centre de l'AABB = centre de la boîte locale (transform-origin:center).
+        const cx = aabbX + aabbW / 2, cy = aabbY + aabbH / 2;
+        let x = aabbX, y = aabbY, w = aabbW, h = aabbH;
+        if (rot) {
+          const vis = getVisualSize(f);
+          // Reconstruit les dimensions locales en px SVG à partir du ratio
+          // local/AABB calculé sur le modèle (indépendant des unités).
+          w = vis.w > 0 ? (f.w / vis.w) * aabbW : aabbW;
+          h = vis.h > 0 ? (f.h / vis.h) * aabbH : aabbH;
+          x = cx - w / 2;
+          y = cy - h / 2;
+        }
+        const c = f.color || "#0f172a";
+        const fs = f.fontSize || 10;
+        const content = String(f.content || "")
+          .replace(/COMPANY NAME/g, controls.txtLabName.value)
+          .replace(/YOUR SLOGAN HERE/g, controls.txtSlogan.value);
+        const align = f.align || "left";
+        const fw = f.bold ? 800 : 400;
+        const fontSpec = `${fw} ${fs}px Arial, Helvetica, sans-serif`;
+        const monoSpec = `${fw} ${fs}px "Courier New", monospace`;
+
+        const anchorX = align === "center" ? x + w / 2 : (align === "right" ? x + w - 2 : x + 2);
+        const textAnchor = align === "center" ? "middle" : (align === "right" ? "end" : "start");
+        const rotAttr = rot ? ` transform="rotate(${rot} ${cx.toFixed(2)} ${cy.toFixed(2)})"` : "";
+        let inner = "";
+
+        // Clip par champ — équivalent à overflow:hidden du DOM, empêche
+        // tout débordement du contenu hors de la zone du champ.
+        _pngClipSeq++;
+        const clipId = "pngclip" + _pngClipSeq;
+        _pngClipDefs.push(`<clipPath id="${clipId}"><rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"/></clipPath>`);
+
+        if (f.type === "barcode") {
+          let bars = "";
+          let bx = x + 2;
+          let seed = 0;
+          const s = content || "1234567890123";
+          for (let i = 0; i < s.length; i++) seed = (seed * 31 + s.charCodeAt(i)) >>> 0;
+          const n = 38;
+          const bw = (w - 4) / n;
+          for (let i = 0; i < n; i++) {
+            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+            const on = (seed >>> 16) % 2 === 0;
+            const lw = on ? bw * (0.5 + ((seed >>> 8) % 3) / 4) : bw * 0.3;
+            if (on) bars += `<rect x="${bx.toFixed(2)}" y="${(y + 2).toFixed(2)}" width="${lw.toFixed(2)}" height="${(h * 0.6).toFixed(2)}" fill="#000000"/>`;
+            bx += bw;
+          }
+          const numY = y + h * 0.62 + fs * 0.9;
+          inner = bars + `<text x="${anchorX.toFixed(2)}" y="${numY.toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${(fs * 0.7).toFixed(1)}" font-weight="${fw}" fill="${c}">${escapeHtml(content)}</text>`;
+        } else if (f.type === "datamatrix") {
+          const size = 12, cw = w / size, ch = h / size;
+          let cells = "";
+          let seed = 0;
+          for (let i = 0; i < content.length; i++) seed = (seed * 31 + content.charCodeAt(i)) >>> 0;
+          for (let i = 0; i < size * size; i++) {
+            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+            if ((seed >>> 16) % 2 === 0) {
+              const gx = i % size, gy = Math.floor(i / size);
+              cells += `<rect x="${(x + gx * cw).toFixed(2)}" y="${(y + gy * ch).toFixed(2)}" width="${cw.toFixed(2)}" height="${ch.toFixed(2)}" fill="${c}"/>`;
+            }
+          }
+          inner = cells;
+        } else if (f.type === "braille") {
+          const bText = toBraille(content);
+          const bFont = `${fw} ${fs}px "Courier New", monospace`;
+          const lines = pngWrap(bText, w - 4, bFont);
+          let t = "";
+          lines.forEach((ln, i) => {
+            t += `<tspan x="${anchorX.toFixed(2)}" dy="${i === 0 ? fs : fs * 1.2}">${escapeHtml(ln)}</tspan>`;
+          });
+          inner = `<text y="${(y + 2).toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${fs}" fill="${c}">${t}</text>`
+            + `<text x="${anchorX.toFixed(2)}" y="${(y + 2 + lines.length * fs * 1.2 + fs * 0.55).toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${(fs * 0.55).toFixed(1)}" fill="#64748b">${escapeHtml(content)}</text>`;
+        } else if (f.type === "pictogram") {
+          const r = Math.min(w, h) / 2 * 0.92;
+          const lines = pngWrap(content, Math.min(w, h) * 0.86, fontSpec);
+          const n = lines.length;
+          let t = "";
+          lines.forEach((ln, i) => {
+            t += `<tspan x="${cx.toFixed(2)}" dy="${i === 0 ? (-(n - 1) * fs * 0.5) : fs}">${escapeHtml(ln)}</tspan>`;
+          });
+          inner = `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="none" stroke="${c}" stroke-width="3"/>`
+            + `<text y="${cy.toFixed(2)}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${t}</text>`;
+        } else if (f.type === "table") {
+          const rows = content.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
+            const idx = line.indexOf(":");
+            return { name: idx >= 0 ? line.slice(0, idx).trim() : line, val: idx >= 0 ? line.slice(idx + 1).trim() : "" };
+          });
+          let t = "";
+          const lh = fs * 1.25;
+          const halfW = Math.max(4, (w / 2) - 6);
+          rows.forEach((row, i) => {
+            const ty = y + fs + i * lh;
+            const nm = pngWrap(row.name, halfW, fontSpec)[0] || "";
+            const vl = pngWrap(row.val, halfW, fontSpec)[0] || "";
+            t += `<text x="${(x + 2).toFixed(2)}" y="${ty.toFixed(2)}" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${escapeHtml(nm)}</text>`;
+            t += `<text x="${(x + w - 2).toFixed(2)}" y="${ty.toFixed(2)}" text-anchor="end" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${escapeHtml(vl)}</text>`;
+          });
+          inner = t;
+        } else if (f.type === "shape") {
+          inner = buildShapeSvg(f, x, y, w, h);
+        } else if (f.type === "logo") {
+          inner = buildLogoSvg(f, x, y, w, h);
+        } else if (f.type === "image") {
+          if (f.src && f.src.indexOf("data:") === 0) {
+            const fit = f.fit || "contain";
+            const par = fit === "fill" ? "none" : (fit === "cover" ? "xMidYMid slice" : "xMidYMid meet");
+            inner = `<image x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" href="${f.src}" xlink:href="${f.src}" preserveAspectRatio="${par}"/>`;
+          } else {
+            inner = `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="none" stroke="#94a3b8" stroke-dasharray="3 2"/><text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#94a3b8">Image</text>`;
+          }
+        } else {
+          const lines = pngWrap(content, w - 4, fontSpec);
+          let t = "";
+          lines.forEach((ln, i) => {
+            const dy = i === 0 ? fs : fs * 1.2;
+            t += `<tspan x="${anchorX.toFixed(2)}" dy="${dy.toFixed(2)}">${escapeHtml(ln)}</tspan>`;
+          });
+          inner = `<text y="${(y + 2).toFixed(2)}" text-anchor="${textAnchor}" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${t}</text>`;
+        }
+        return `<g clip-path="url(#${clipId})"${rotAttr}>${inner}</g>`;
+      }
+
+      // Export PNG du patron — capture fidèle du DOM (html2canvas).
+      function exportPatronPNG() {
+        const sheet = patronSheet;
+        if (!sheet) return;
+        const W = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const H = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!W || !H) {
+          alert("Le patron n'est pas encore dimensionné. Veuillez patienter ou ajuster une dimension.");
+          return;
+        }
+
+        // --- Approche html2canvas (fidèle au rendu réel / PDF) ---
+        if (typeof html2canvas === 'function') {
+          // Sauvegarder l'état actuel pour le restaurer après capture
+          const savedZoom = zoomLevel;
+          const wasLabelsHidden = boxGrid.classList.contains('hide-labels');
+          const wasMarginsShown = boxGrid.classList.contains('show-margins');
+          const hadSelectedField = selectedFieldId;
+
+          // Préparer la capture : masquer les surcouches UI et
+          // réinitialiser le zoom à 1 pour des dimensions exactes.
+          setZoom(1);
+
+          // Masquer les labels de panneaux (comme en impression PDF)
+          boxGrid.classList.add('hide-labels');
+
+          // Masquer les marges de sécurité
+          boxGrid.classList.remove('show-margins');
+
+          // Désélectionner les champs (supprime outline/toolbar)
+          deselectField();
+
+          // Masquer les poignées de redimensionnement
+          document.querySelectorAll('.field-resize-handle').forEach(h => {
+            h.style.display = 'none';
+          });
+
+          // Supprimer les animations de validation (overflow/overlap)
+          document.querySelectorAll('.custom-field.field-overflow, .custom-field.field-overlap').forEach(el => {
+            el.classList.remove('field-overflow', 'field-overlap');
+          });
+
+          // Retirer les tooltips de coordonnées
+          document.querySelectorAll('.drag-coord-tooltip').forEach(el => el.remove());
+
+          // Masquer la toolbar flottante
+          const toolbar = document.getElementById('floatingToolbar');
+          if (toolbar) toolbar.classList.remove('show');
+          const grpToolbar = document.getElementById('groupToolbar');
+          if (grpToolbar) grpToolbar.classList.remove('show');
+
+          // Résolution : scale ×3 ≈ 288 DPI (96 × 3). Pour 300 DPI
+          // exacts, on pourrait utiliser ×3.125, mais ×3 donne déjà
+          // une qualité d'impression excellente sans fichier excessif.
+          const PNG_SCALE = 3;
+
+          html2canvas(sheet, {
+            scale: PNG_SCALE,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: Math.round(W),
+            height: Math.round(H),
+            windowWidth: Math.round(W),
+            windowHeight: Math.round(H),
+            onclone: function(clonedDoc) {
+              // Sur le clone, nettoyer le contexte parent (workspace)
+              // pour que le patron soit capturé sans padding ni
+              // background gris, puis retirer le zoom et forcer les
+              // styles d'impression pour maximiser la fidélité au
+              // rendu PDF.
+              const clonedWorkspace = clonedDoc.querySelector('.workspace');
+              if (clonedWorkspace) {
+                clonedWorkspace.style.padding = '0';
+                clonedWorkspace.style.background = '#ffffff';
+                clonedWorkspace.style.overflow = 'visible';
+                clonedWorkspace.style.display = 'block';
+                clonedWorkspace.style.position = 'relative';
+              }
+              const clonedSheet = clonedDoc.getElementById('patronSheet');
+              if (clonedSheet) {
+                clonedSheet.style.transform = 'none';
+                clonedSheet.style.padding = '0';
+                clonedSheet.style.margin = '0';
+                clonedSheet.style.border = 'none';
+                clonedSheet.style.position = 'relative';
+              }
+              // Masquer les éléments UI sur le clone
+              const clonedBoxGrid = clonedDoc.getElementById('boxGrid');
+              if (clonedBoxGrid) clonedBoxGrid.classList.add('hide-labels');
+              // Forcer les couleurs d'impression exactes (comme @media print)
+              clonedDoc.querySelectorAll('.panel').forEach(p => {
+                p.style.colorAdjust = 'exact';
+                p.style.webkitPrintColorAdjust = 'exact';
+                p.style.printColorAdjust = 'exact';
+              });
+
+              // *** CORRECTION DÉBORDEMENT RABATS ***
+              // html2canvas (1.4.1) ne respecte pas clip-path
+              // CSS (polygon) sur les panneaux trapézoïdaux :
+              // le contenu déborde visuellement au-delà de la
+              // zone trapézoïdale du rabat de verrouillage.
+              //
+              // Solution : remplacer chaque clip-path CSS par
+              // un <svg><clipPath> avec clipPathUnits=
+              // "objectBoundingBox" (coordonnées normalisées
+              // 0→1, indépendantes de la taille réelle du
+              // panneau). html2canvas rasterise correctement
+              // les clip-path SVG de ce type.
+              //
+              // Conversion : les % du polygon CSS (ex: 85%)
+              // deviennent 0.85 dans objectBoundingBox.
+              // Les valeurs "100%" → 1, "0%" → 0, etc.
+              const clipPanels = ['p1', 'p2', 'p3', 'p4', 'p9', 'p10', 'p11', 'p13'];
+              clipPanels.forEach(id => {
+                const el = clonedDoc.getElementById(id);
+                if (!el) return;
+                if (clonedDoc.defaultView && clonedDoc.defaultView.getComputedStyle(el).display === 'none') return;
+                const cpStyle = el.style.clipPath;
+                if (!cpStyle) return;
+                // Extraire les coordonnées du polygon CSS
+                const match = cpStyle.match(/polygon\s*\(([^)]+)\)/i);
+                if (!match) return;
+                const rawPts = match[1].trim();
+                // Convertir les % en valeurs normalisées (0→1)
+                // pour clipPathUnits="objectBoundingBox".
+                // Ex : "85%" → 0.85, "0%" → 0, "100%" → 1
+                const ptPairs = rawPts.split(/\s*,\s*/).map(pair => {
+                  const parts = pair.trim().split(/\s+/);
+                  return parts.map(v => {
+                    if (v.includes('%')) return parseFloat(v) / 100;
+                    // Valeurs non-pct (ex: px) — on les ignore
+                    // car objectBoundingBox ne les supporte pas ;
+                    // on les traite comme 0 ou 1 selon le contexte.
+                    const num = parseFloat(v);
+                    return num <= 0 ? 0 : (num >= 100 ? 1 : num / 100);
+                  });
+                });
+                const svgPts = ptPairs.map(p => `${p[0].toFixed(4)},${p[1].toFixed(4)}`).join(' ');
+                const clipId = 'pngclip_panel_' + id;
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const svgEl = clonedDoc.createElementNS(svgNS, 'svg');
+                svgEl.setAttribute('width', '0');
+                svgEl.setAttribute('height', '0');
+                svgEl.style.position = 'absolute';
+                svgEl.style.pointerEvents = 'none';
+                svgEl.style.overflow = 'hidden';
+                const defs = clonedDoc.createElementNS(svgNS, 'defs');
+                const clipPathEl = clonedDoc.createElementNS(svgNS, 'clipPath');
+                clipPathEl.setAttribute('id', clipId);
+                // objectBoundingBox : les coordonnées du polygon
+                // sont exprimées en fractions (0→1) de la boîte
+                // englobante de l'élément clippé — exactement ce
+                // que nous avons calculé ci-dessus.
+                clipPathEl.setAttribute('clipPathUnits', 'objectBoundingBox');
+                const poly = clonedDoc.createElementNS(svgNS, 'polygon');
+                poly.setAttribute('points', svgPts);
+                clipPathEl.appendChild(poly);
+                defs.appendChild(clipPathEl);
+                svgEl.appendChild(defs);
+                el.appendChild(svgEl);
+                // Remplacer clip-path CSS par clip-path SVG (url)
+                el.style.clipPath = `url(#${clipId})`;
+                el.style.overflow = 'hidden';
+                el.style.border = 'none';
+              });
+
+              // Masquer les poignées de resize sur le clone
+              clonedDoc.querySelectorAll('.field-resize-handle').forEach(h => {
+                h.style.display = 'none';
+              });
+              // Masquer les labels de panneaux
+              clonedDoc.querySelectorAll('.panel-label').forEach(l => {
+                l.style.display = 'none';
+              });
+              // Masquer les marges de sécurité sur le clone
+              clonedDoc.querySelectorAll('.safe-margin').forEach(m => {
+                m.style.display = 'none';
+              });
+              // Masquer la toolbar flottante et les guides sur le clone
+              const clonedToolbar = clonedDoc.getElementById('floatingToolbar');
+              if (clonedToolbar) clonedToolbar.classList.remove('show');
+              const clonedGrpToolbar = clonedDoc.getElementById('groupToolbar');
+              if (clonedGrpToolbar) clonedGrpToolbar.classList.remove('show');
+              // Supprimer les outlines de sélection / validation sur le clone
+              clonedDoc.querySelectorAll('.custom-field.selected, .custom-field.field-overflow, .custom-field.field-overlap').forEach(el => {
+                el.classList.remove('selected', 'field-overflow', 'field-overlap');
+                el.style.outline = 'none';
+              });
+            }
+          }).then(function(canvas) {
+            // Restaurer l'état initial
+            setZoom(savedZoom);
+            if (!wasLabelsHidden) boxGrid.classList.remove('hide-labels');
+            if (wasMarginsShown) boxGrid.classList.add('show-margins');
+            document.querySelectorAll('.field-resize-handle').forEach(h => {
+              h.style.display = '';
+            });
+            validateFields();
+
+            // Télécharger le PNG
+            try {
+              canvas.toBlob(function(blob) {
+                if (!blob) { alert("Export PNG impossible (image vide)."); return; }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'patron.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+              }, 'image/png');
+            } catch (err) {
+              alert("Export PNG impossible : " + (err && err.message ? err.message : err));
+            }
+          }).catch(function(err) {
+            // Restaurer l'état même en cas d'erreur
+            setZoom(savedZoom);
+            if (!wasLabelsHidden) boxGrid.classList.remove('hide-labels');
+            if (wasMarginsShown) boxGrid.classList.add('show-margins');
+            document.querySelectorAll('.field-resize-handle').forEach(h => {
+              h.style.display = '';
+            });
+            validateFields();
+            // Fallback vers l'approche SVG si html2canvas échoue
+            console.warn("html2canvas a échoué, fallback SVG :", err);
+            exportPatronPNG_SVG_Fallback();
+          });
+          return; // html2canvas est asynchrone, on ne continue pas
+        }
+
+        // --- Fallback : reconstruction SVG (si html2canvas absent) ---
+        exportPatronPNG_SVG_Fallback();
+      }
+
+      // Fallback SVG — reconstruction du patron en SVG pur puis
+      // rastérisation via <canvas>. Moins fidèle (polices Arial
+      // au lieu de Plus Jakarta Sans) mais fonctionne sans
+      // dépendance externe. Résolution ×4 pour compenser la
+      // perte de fidélité typographique.
+      function exportPatronPNG_SVG_Fallback() {
+        const sheet = patronSheet;
+        if (!sheet) return;
+        const W = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const H = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!W || !H) {
+          alert("Le patron n'est pas encore dimensionné. Veuillez patienter ou ajuster une dimension.");
+          return;
+        }
+        const zoom = zoomLevel || 1;
+        const type = controls.boxType.value;
+        const scale = MM_TO_PX;
+        const d = controls.dimD.value * scale;
+        const flap = Number(controls.flapLength.value) * scale;
+        const newFlap = flap + d;
+        const pctRabat = (flap / newFlap) * 100;
+        const pctCote = (d / newFlap) * 100;
+        const flapRectH = d;
+        const flapTotal = flap + flapRectH;
+        const pctRect = (flapRectH / flapTotal) * 100;
+
+        const pr = sheet.getBoundingClientRect();
+        function boxOf(el) {
+          const er = el.getBoundingClientRect();
+          return {
+            left: (er.left - pr.left) / zoom,
+            top: (er.top - pr.top) / zoom,
+            width: er.width / zoom,
+            height: er.height / zoom,
+          };
+        }
+        function panelClipPoly(id) {
+          if (type === "tablet") {
+            switch (id) {
+              case "p1": return [[100,0],[100,100],[pctRabat,100],[0,85],[0,15],[pctRabat,0]];
+              case "p10": return [[0,0],[0,100],[pctCote,100],[100,85],[100,15],[pctCote,0]];
+              case "p2": return [[5,0],[95,0],[85,100],[15,100]];
+              case "p3": return [[100,0],[100,100],[20,80],[20,0]];
+              case "p4": return [[0,0],[0,100],[80,80],[80,0]];
+              case "p11": return [[100,0],[100,100],[20,100],[20,20]];
+              case "p13": return [[0,0],[100,0],[80,100],[20,100]];
+              default: return null;
+            }
+          } else {
+            switch (id) {
+              case "p1": return [[0,100],[100,100],[100,pctRect],[85,0],[15,0],[0,pctRect]];
+              case "p10": return [[0,0],[100,0],[100,pctRect],[85,100],[15,100],[0,pctRect]];
+              case "p2": return [[20,0],[80,0],[100,100],[0,100]];
+              case "p3": return [[20,0],[80,0],[100,100],[0,100]];
+              case "p4": return [[0,0],[100,0],[80,100],[20,100]];
+              case "p11": return [[0,0],[100,0],[80,100],[20,100]];
+              case "p9": return [[0,5],[0,95],[100,85],[100,15]];
+              default: return null;
+            }
+          }
+        }
+        function polyToPath(poly, b) {
+          if (!poly) return `M${b.left} ${b.top} H${b.left + b.width} V${b.top + b.height} H${b.left} Z`;
+          const pts = poly.map(p => `${(b.left + p[0] / 100 * b.width).toFixed(2)} ${(b.top + p[1] / 100 * b.height).toFixed(2)}`);
+          return "M" + pts.join(" L") + " Z";
+        }
+        function computedFill(el) {
+          const c = window.getComputedStyle(el).backgroundColor;
+          if (!c || c === "transparent" || c === "rgba(0, 0, 0, 0)") return "#ffffff";
+          return c;
+        }
+
+        const parts = [];
+        _pngClipDefs = [];
+        _pngClipSeq = 0;
+        parts.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`);
+
+        // Panneaux (fonds de couleur)
+        ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13"].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (window.getComputedStyle(el).display === "none") return;
+          const b = boxOf(el);
+          if (!b.width || !b.height) return;
+          parts.push(`<path d="${polyToPath(panelClipPoly(id), b)}" fill="${computedFill(el)}"/>`);
+        });
+
+        // Champs personnalisés (z-order : formes d'abord)
+        const modeFaces = currentModeFaces();
+        const ordered = fieldsConfig
+          .filter(f => modeFaces.includes(f.face))
+          .slice()
+          .sort((a, b) => (a.type === "shape" ? 0 : 1) - (b.type === "shape" ? 0 : 1));
+        ordered.forEach(f => {
+          const el = document.querySelector(`.custom-field[data-field-id="${f.id}"]`);
+          if (!el) return;
+          const b = boxOf(el);
+          if (!b.width || !b.height) return;
+          parts.push(fieldToSvg(f, b.left, b.top, b.width, b.height));
+        });
+
+        // Lignes de coupe / pliage (au-dessus de tout)
+        parts.push(`<g>${dieLinesSvg.innerHTML}</g>`);
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>${_pngClipDefs.join("")}</defs>${parts.join("")}</svg>`;
+
+        const scale2 = 4; // ×4 pour compenser la perte de fidélité (polices Arial vs Plus Jakarta Sans)
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(W * scale2));
+          canvas.height = Math.max(1, Math.round(H * scale2));
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          try {
+            canvas.toBlob(function (blob) {
+              if (!blob) { alert("Export PNG impossible (image vide)."); return; }
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "patron.png";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+            }, "image/png");
+          } catch (err) {
+            alert("Export PNG impossible : " + (err && err.message ? err.message : err));
+          }
+        };
+        img.onerror = function () { alert("Export PNG impossible (SVG invalide)."); };
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+      }
 
       // ============================================================
       //  HEADER DROPDOWN – Menu ⋯
@@ -6513,11 +8478,36 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
               break;
             }
             case "export-json": {
-              const blob = new Blob([JSON.stringify(fieldsConfig, null, 2)], { type: "application/json" });
+              // Export complet du gabarit (v2) — champs + réglages
+              const fullExport = {
+                version: 2,
+                schemaVersion: FIELDS_SCHEMA_VERSION,
+                fields: fieldsConfig,
+                settings: {
+                  boxType: controls.boxType.value,
+                  dimW: Number(controls.dimW.value),
+                  dimH: Number(controls.dimH.value),
+                  dimD: Number(controls.dimD.value),
+                  flapLength: Number(controls.flapLength.value),
+                  dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+                  colPrimary: controls.colPrimary.value,
+                  colAccent: controls.colAccent.value,
+                  txtLabName: controls.txtLabName.value,
+                  txtSlogan: controls.txtSlogan.value,
+                  showLabName: controls.showLabName.checked,
+                  logoSize: Number(controls.logoSizeSlider.value),
+                  customLogoUrl: customLogoUrl || null,
+                  customFacesBg: customFacesBg,
+                },
+              };
+              const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" });
               const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url; a.download = "fields_config.json"; a.click();
+              const a = document.createElement("a"); a.href = url; a.download = "gabarit-complet.json"; a.click();
               URL.revokeObjectURL(url);
+              break;
+            }
+            case "export-png": {
+              exportPatronPNG();
               break;
             }
             case "import-json": {
@@ -6531,12 +8521,22 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
                   try {
                     const data = JSON.parse(reader.result);
                     if (Array.isArray(data)) {
+                      // Format v1 (ancien) : tableau de champs uniquement
                       fieldsConfig = data;
                       saveFieldsConfig();
                       renderFieldEditor();
                       renderAllCustomFields();
+                    } else if (data && data.fields && Array.isArray(data.fields)) {
+                      // Format v2 (nouveau) : champs + réglages globaux
+                      fieldsConfig = data.fields;
+                      saveFieldsConfig();
+                      if (data.settings) {
+                        applyImportedSettings(data.settings);
+                      }
+                      renderFieldEditor();
+                      renderAllCustomFields();
                     } else {
-                      alert("Fichier JSON invalide (doit être un tableau de champs).");
+                      alert("Fichier JSON invalide (doit être un tableau de champs ou un gabarit complet).");
                     }
                   } catch {
                     alert("Impossible de lire le fichier JSON.");
@@ -6574,9 +8574,91 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         });
       })();
 
-    </script>
+          /* ===== Améliorations UI/UX (accordéon sidebar, pastille d'état, aide) ===== */
+      function updateStatusChip() {
+        const chip = document.getElementById("statusChip");
+        if (!chip) return;
+        const type = controls.boxType.value;
+        const modeLabel = type === "tablet" ? "Comprimés" : "Sirop / Flacon";
+        const w = controls.dimW.value, h = controls.dimH.value, d = controls.dimD.value;
+        const modeFaces = currentModeFaces();
+        const count = fieldsConfig.filter((f) => modeFaces.includes(f.face)).length;
+        chip.innerHTML =
+          '<span class="chip-mode">' + modeLabel + "</span>" +
+          '<span class="chip-dim">' + w + " x " + h + " x " + d + " mm</span>" +
+          '<span class="chip-count">' + count + " champ(s)</span>";
+      }
 
-    <!-- === Gate d'accès (identification obligatoire) === -->
+      (function initSidebarAccordion() {
+        const sidebar = document.querySelector(".sidebar");
+        if (!sidebar) return;
+        const SECTIONS_KEY = "packaging_sidebar_sections_v1";
+        let collapsed = {};
+        try { collapsed = JSON.parse(localStorage.getItem(SECTIONS_KEY) || "{}"); } catch (e) {}
+        const children = Array.from(sidebar.children);
+        let current = null;
+        children.forEach((ch) => {
+          if (ch.tagName === "H2") {
+            current = document.createElement("div");
+            current.className = "sidebar-section";
+            const caret = document.createElement("span");
+            caret.className = "caret";
+            caret.textContent = "▼";
+            ch.prepend(caret);
+            const body = document.createElement("div");
+            body.className = "section-body";
+            current.appendChild(ch);
+            current.appendChild(body);
+            sidebar.appendChild(current);
+            const title = (ch.textContent || "").replace("▼", "").trim();
+            if (collapsed[title]) current.classList.add("collapsed");
+            ch.addEventListener("click", () => {
+              // Important : utiliser le parent de ce <h2> précis
+              // (ch.parentElement) et non la variable « current » partagée,
+              // sinon tous les en-têtes basculeraient la DERNIÈRE section
+              // (piège de fermeture JS : current est réaffecté à chaque
+              // itération et capturé par référence).
+              ch.parentElement.classList.toggle("collapsed");
+              saveState();
+            });
+          } else if (current) {
+            current.querySelector(".section-body").appendChild(ch);
+          }
+        });
+        function saveState() {
+          const state = {};
+          document.querySelectorAll(".sidebar-section > h2").forEach((h) => {
+            const t = (h.textContent || "").replace("▼", "").trim();
+            if (h.parentElement.classList.contains("collapsed")) state[t] = true;
+          });
+          localStorage.setItem(SECTIONS_KEY, JSON.stringify(state));
+        }
+        const collapseAll = document.getElementById("collapseAllBtn");
+        const expandAll = document.getElementById("expandAllBtn");
+        if (collapseAll) collapseAll.addEventListener("click", () => {
+          document.querySelectorAll(".sidebar-section").forEach((s) => s.classList.add("collapsed"));
+          saveState();
+        });
+        if (expandAll) expandAll.addEventListener("click", () => {
+          document.querySelectorAll(".sidebar-section").forEach((s) => s.classList.remove("collapsed"));
+          saveState();
+        });
+      })();
+
+      (function initFirstRunHint() {
+        const hint = document.getElementById("firstrunHint");
+        if (!hint) return;
+        if (localStorage.getItem("packaging_hint_dismissed") === "1") hint.classList.add("hidden");
+        const close = document.getElementById("firstrunClose");
+        if (close) close.addEventListener("click", () => {
+          hint.classList.add("hidden");
+          localStorage.setItem("packaging_hint_dismissed", "1");
+        });
+      })();
+
+      updateStatusChip();
+
+    </script><!-- === Gate d'accès (identification obligatoire) === -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
       // Rendre les fonctions globales pour être appelées depuis le script principal
@@ -6594,10 +8676,9 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         const statusEl = document.getElementById("gateStatus");
         const submitBtn = document.getElementById("gateSubmitBtn");
 
-        // On ne masque plus l'overlay au chargement si non authentifié
-        // car il est masqué par défaut dans le HTML ou on laisse le flux gérer.
-        // Mais ici, l'overlay est visible par défaut dans le style.
-        // On va le masquer par défaut et l'afficher au besoin.
+        // Masqué par défaut (aussi via la classe « hidden » dans le HTML) :
+        // il n'apparaît qu'au moment de l'impression / export si l'accès
+        // n'a pas encore été accordé, puis reste mémorisé.
         overlay.classList.add("hidden");
 
         if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
@@ -6664,5 +8745,8 @@ Tenir hors de la portée et de la vue des enfants. Conserver à une température
         });
       })();
     </script>
-  </body>
+
+  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a204feb24dc84bcb',t:'MTc4NDkxNzgxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2244d04cb61a8ed',t:'MTc4NTI0NjA4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+ody>
 </html>
