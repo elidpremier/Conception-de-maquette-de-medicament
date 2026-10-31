@@ -1,0 +1,13 @@
+{
+  "name": "conception-de-maquette-de-medicament",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Générateur statique de patrons de boîtes pharmaceutiques",
+  "scripts": {
+    "test": "node tests/smoke.mjs",
+    "lint": "node tests/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -112,24 +112,52 @@ Le fichier `index.html` est autonome : toute la logique (géométrie du patron, 
 
 ## 🧪 Tests
 
-Une suite de non-régression couvre la géométrie du patron et l'éditeur de champs (**101 assertions**, exécutées dans un vrai navigateur).
+Le dépôt contient un contrôle de fumée reproductible qui vérifie la structure
+HTML, l'absence des injections Cloudflare, la présence du consentement et la
+syntaxe de tous les scripts embarqués.
 
 ```bash
-npm install playwright jsdom
-npx playwright install chromium
-npx playwright install-deps chromium   # Linux : bibliothèques système
-bash tests/run-all.sh
+npm test
+npm run lint
 ```
 
-> Le test de non-régression pixel (`13`) requiert en plus `python3` avec Pillow et numpy.
-
-Elle vérifie notamment que la position calculée de chaque champ correspond au **pixel réellement peint** par le navigateur, y compris après rotation, et que le rainage à 0 reproduit le patron d'origine sans aucun écart. Voir `tests/README.md` pour le détail.
+Les scénarios Playwright avancés décrits dans les anciennes versions de cette
+documentation ne sont pas inclus dans le dépôt actuel.
 
 ---
 
 ## 🔐 Accès à l'impression
 
-Une brève identification (email, prénom, nom) est demandée avant l'impression/export du patron.
+Une identification (email obligatoire, prénom et nom facultatifs) ainsi qu'un
+consentement distinct sont demandés avant l'impression. Cette porte est un
+formulaire de contact et **ne constitue pas une authentification** : la valeur
+`localStorage` qui mémorise l'accès peut être modifiée par l'utilisateur.
+
+EmailJS est désactivé par défaut. Pour l'activer dans un déploiement, injectez
+avant les scripts de l'application :
+
+```html
+<script>
+  window.PACKAGING_EMAIL_CONFIG = {
+    publicKey: "...",
+    serviceId: "...",
+    templateId: "...",
+    notifyEmail: "..."
+  };
+</script>
+```
+
+Les coordonnées saisies ne sont pas enregistrées dans `localStorage`. Consultez
+[SECURITY.md](./SECURITY.md) pour les limites et recommandations de production.
+
+## Confidentialité
+
+L'outil collecte une adresse email pour traiter une demande d'impression, avec
+consentement explicite. La transmission dépend de la configuration EmailJS du
+déploiement ; sans configuration, aucune notification n'est envoyée. Pour un
+usage professionnel ou une authentification réelle, un backend doit gérer la
+validation, la conservation, le retrait du consentement et la limitation de
+débit.
 
 ---
 

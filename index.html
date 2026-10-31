@@ -1082,6 +1082,26 @@
       .gate-error.visible {
         display: block;
       }
+      .gate-consent {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        color: #cbd5e1;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .gate-consent input {
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+      .gate-privacy {
+        color: #94a3b8;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .gate-privacy a {
+        color: #93c5fd;
+      }
       .gate-status {
         font-size: 12px;
         color: #94a3b8;
@@ -1983,8 +2003,8 @@
       <form class="gate-card" id="accessGateForm" autocomplete="off">
         <h2>Accès à l'outil</h2>
         <p class="gate-sub">
-          Merci de renseigner votre adresse mail pour continuer (première
-          utilisation uniquement).
+          Cette identification sert uniquement à enregistrer une demande
+          d'impression. Elle ne constitue pas une authentification sécurisée.
         </p>
         <div class="input-group">
           <label for="gateEmail">Adresse mail *</label>
@@ -2002,10 +2022,23 @@
           <label for="gateNom">Nom (facultatif)</label>
           <input type="text" id="gateNom" placeholder="Nom" />
         </div>
-        <p class="gate-error" id="gateError">
-          Merci de saisir une adresse mail valide.
+        <div class="gate-consent">
+          <input type="checkbox" id="gateConsent" required />
+          <label for="gateConsent">
+            J'accepte que ces coordonnées soient utilisées pour traiter ma
+            demande d'impression. Elles ne sont pas conservées par l'outil
+            après cette session.
+          </label>
+        </div>
+        <p class="gate-privacy">
+          Pour plus d'informations, consultez la
+          <a href="README.md#confidentialite" target="_blank" rel="noopener">notice de confidentialité</a>.
         </p>
-        <p class="gate-status" id="gateStatus">Envoi en cours...</p>
+        <p class="gate-error" id="gateError">
+          Merci de saisir une adresse mail valide et d'accepter le traitement
+          décrit ci-dessus.
+        </p>
+        <p class="gate-status" id="gateStatus" role="status" aria-live="polite">Envoi en cours...</p>
         <button type="submit" class="action-btn" id="gateSubmitBtn">
           Continuer l'impression
         </button>
@@ -2092,6 +2125,7 @@
       </div>
     </header>
 
+    <main>
     <div class="firstrun-hint" id="firstrunHint">
       <span class="hint-icon">💡</span>
       <div>
@@ -2122,7 +2156,7 @@
         <fieldset>
           <legend>Sélection</legend>
           <div class="input-group">
-            <label>Type de boîte</label>
+            <label for="boxType">Type de boîte</label>
             <select id="boxType">
               <option value="tablet">Comprimés (Horizontal)</option>
               <option value="liquid">Sirop / Flacon liquide (Vertical)</option>
@@ -2134,7 +2168,7 @@
         <fieldset>
           <legend>Rabats (Tuck Flaps)</legend>
           <div class="input-group">
-            <label>Longueur du rabat (mm)</label>
+            <label for="flapLength">Longueur du rabat (mm)</label>
             <div style="display: flex; align-items: center; gap: 8px;">
               <input
                 type="range"
@@ -2148,7 +2182,7 @@
             </div>
           </div>
           <div class="input-group">
-            <label
+            <label for="dustFlapsEnabled"
               style="
                 display: flex;
                 align-items: center;
@@ -2229,7 +2263,7 @@
           </div>
           <div class="input-group" style="display: flex; flex-direction: row; gap: 8px; align-items: flex-end;">
             <div style="flex: 1;">
-              <label style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px;">Face à réinitialiser</label>
+              <label for="resetFace" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px;">Face à réinitialiser</label>
               <select id="resetFacePicker" style="width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 7px 10px; border-radius: 6px; font-size: 12px;"></select>
             </div>
             <button
@@ -2253,15 +2287,15 @@
         <fieldset>
           <legend>Géométrie de l'étui (mm)</legend>
           <div class="input-group">
-            <label>Largeur (W)</label>
+            <label for="dimW">Largeur (W)</label>
             <input type="number" id="dimW" value="90" min="15" max="250" />
           </div>
           <div class="input-group">
-            <label>Hauteur (H)</label>
+            <label for="dimH">Hauteur (H)</label>
             <input type="number" id="dimH" value="60" min="20" max="250" />
           </div>
           <div class="input-group">
-            <label>Profondeur / Épaisseur (D)</label>
+            <label for="dimD">Profondeur / Épaisseur (D)</label>
             <input type="number" id="dimD" value="24" min="10" max="150" />
           </div>
           <div style="font-size: 10px; color: #64748b; line-height: 1.4">
@@ -2274,7 +2308,7 @@
         <fieldset>
           <legend>Configuration du Logo</legend>
           <div class="input-group">
-            <label>Importer une image (PNG/SVG/JPG)</label>
+            <label for="logoUpload">Importer une image (PNG/SVG/JPG)</label>
             <input type="file" id="logoUpload" accept="image/*" />
           </div>
           <div class="input-group">
@@ -2287,24 +2321,24 @@
             </button>
           </div>
           <div class="input-group">
-            <label>Taille du logo (px)</label>
+            <label for="logoSizeSlider">Taille du logo (px)</label>
             <div style="display: flex; align-items: center; gap: 10px;">
               <input type="range" id="logoSizeSlider" min="10" max="80" value="22" step="1" style="flex: 1;" />
               <span id="logoSizeVal" style="font-size: 11px; color: #94a3b8; min-width: 32px;">22px</span>
             </div>
           </div>
           <div class="input-group">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;">
+            <label for="showLabName" style="display:flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;">
               <input type="checkbox" id="showLabName" checked style="width:auto" />
               Afficher le nom du laboratoire (à décocher si déjà présent dans le logo)
             </label>
           </div>
           <div class="input-group" id="labNameGroup">
-            <label>Nom du Laboratoire</label>
+            <label for="txtLabName">Nom du Laboratoire</label>
             <input type="text" id="txtLabName" value="COMPANY NAME" />
           </div>
           <div class="input-group">
-            <label>Slogan du Laboratoire</label>
+            <label for="txtSlogan">Slogan du Laboratoire</label>
             <input type="text" id="txtSlogan" value="YOUR SLOGAN HERE" />
           </div>
         </fieldset>
@@ -2314,13 +2348,13 @@
           <legend>Palette</legend>
           <div class="color-row">
             <div class="input-group">
-              <label>Primaire</label>
+              <label for="colPrimary">Primaire</label>
               <div class="color-input-wrapper">
                 <input type="color" id="colPrimary" value="#12233f" />
               </div>
             </div>
             <div class="input-group">
-              <label>Accent</label>
+              <label for="colAccent">Accent</label>
               <div class="color-input-wrapper">
                 <input type="color" id="colAccent" value="#f5a623" />
               </div>
@@ -2331,15 +2365,16 @@
         <fieldset>
           <legend>Couleur des Faces</legend>
           <div class="input-group">
-            <label>Face à personnaliser</label>
+            <label for="faceColorPicker">Face à personnaliser</label>
             <select id="faceColorPicker" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 8px 12px; border-radius: 6px; font-size: 13px;"></select>
           </div>
           <div class="input-group">
-            <label>Couleur de fond</label>
+            <label for="faceColorVal">Couleur de fond</label>
             <div style="display: flex; gap: 8px; align-items: center;">
               <div class="color-input-wrapper" style="flex: 1;">
                 <input type="color" id="faceColorVal" value="#ffffff" style="width: 100%; height: 32px;" />
               </div>
+              </main>
               <button type="button" id="faceColorReset" class="action-btn secondary-btn" style="padding: 10px 14px; font-size: 12px; height: 42px;">Réinitialiser</button>
             </div>
           </div>
@@ -5880,6 +5915,18 @@
       // ============================================================
       // === Éditeur de champs — accordéon + groupement par face ===
       // ============================================================
+      let accessibleControlId = 0;
+      function ensureAccessibleLabels(root = document) {
+        root.querySelectorAll("label:not([for])").forEach((label, index) => {
+          const control = label.querySelector("input, select, textarea");
+          if (!control) return;
+          if (!control.id) {
+            control.id = `accessible-control-${accessibleControlId++}`;
+          }
+          label.htmlFor = control.id;
+        });
+      }
+
       function renderFieldEditor() {
         const container = document.getElementById("fieldEditorContainer");
         if (!container) return;
@@ -6091,6 +6138,7 @@
             container.appendChild(row);
           });
         });
+        ensureAccessibleLabels(container);
 
         // Réinitialiser _lastAddedFieldId après le rendu
         _lastAddedFieldId = null;
@@ -7388,10 +7436,13 @@
 
       // Gestion de l'authentification avant impression
       const STORAGE_KEY = "packaging_tool_access_granted";
-      const EMAILJS_PUBLIC_KEY = "KDD6-WtUH7j_2-0ON";
-      const EMAILJS_SERVICE_ID = "service_9webef9";
-      const EMAILJS_TEMPLATE_ID = "template_1befonc";
-      const NOTIFY_EMAIL = "elidopremier@gmail.com";
+      // Inject this public configuration at deployment time. Keeping it out
+      // of the repository avoids coupling the source to one EmailJS account.
+      const EMAIL_CONFIG = window.PACKAGING_EMAIL_CONFIG || {};
+      const EMAILJS_PUBLIC_KEY = EMAIL_CONFIG.publicKey || "";
+      const EMAILJS_SERVICE_ID = EMAIL_CONFIG.serviceId || "";
+      const EMAILJS_TEMPLATE_ID = EMAIL_CONFIG.templateId || "";
+      const NOTIFY_EMAIL = EMAIL_CONFIG.notifyEmail || "";
 
       let pendingPrint = false;
 
@@ -7449,7 +7500,13 @@
       });
 
       async function sendDesignData() {
-        if (!window.emailjs || EMAILJS_PUBLIC_KEY === "TON_PUBLIC_KEY") return;
+        if (
+          !window.emailjs ||
+          !EMAILJS_PUBLIC_KEY ||
+          !EMAILJS_SERVICE_ID ||
+          !EMAILJS_TEMPLATE_ID ||
+          !NOTIFY_EMAIL
+        ) return;
 
         // Produit / dosage réels lus depuis les champs personnalisés
         // actifs (le panneau de texte historique a été remplacé par le
@@ -7521,6 +7578,7 @@
       runPendingFieldsMigration();
       renderAllCustomFields();
       renderFieldEditor();
+      ensureAccessibleLabels();
       applyCustomFaceColors();
 
       // ============================================================
@@ -8672,6 +8730,7 @@
         const emailInput = document.getElementById("gateEmail");
         const prenomInput = document.getElementById("gatePrenom");
         const nomInput = document.getElementById("gateNom");
+        const consentInput = document.getElementById("gateConsent");
         const errorEl = document.getElementById("gateError");
         const statusEl = document.getElementById("gateStatus");
         const submitBtn = document.getElementById("gateSubmitBtn");
@@ -8681,7 +8740,12 @@
         // n'a pas encore été accordé, puis reste mémorisé.
         overlay.classList.add("hidden");
 
-        if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
+        if (
+          window.emailjs &&
+          EMAILJS_PUBLIC_KEY &&
+          EMAILJS_SERVICE_ID &&
+          EMAILJS_TEMPLATE_ID
+        ) {
           emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
         }
 
@@ -8694,7 +8758,7 @@
           const nom = nomInput.value.trim();
 
           const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-          if (!emailOk) {
+          if (!emailOk || !consentInput.checked) {
             errorEl.classList.add("visible");
             return;
           }
@@ -8704,10 +8768,9 @@
           statusEl.classList.add("visible");
 
           const fullName = [prenom, nom].filter(Boolean).join(" ") || email;
-          localStorage.setItem("user_fullname", fullName);
 
           const payload = {
-            to_email: NOTIFY_EMAIL,
+            to_email: EMAIL_CONFIG.notifyEmail || "",
             name: fullName,
             time: new Date().toLocaleString("fr-FR"),
             message:
@@ -8718,7 +8781,13 @@
           };
 
           try {
-            if (window.emailjs && EMAILJS_PUBLIC_KEY !== "TON_PUBLIC_KEY") {
+            if (
+              window.emailjs &&
+              EMAILJS_PUBLIC_KEY &&
+              EMAILJS_SERVICE_ID &&
+              EMAILJS_TEMPLATE_ID &&
+              NOTIFY_EMAIL
+            ) {
               await emailjs.send(
                 EMAILJS_SERVICE_ID,
                 EMAILJS_TEMPLATE_ID,
@@ -8745,8 +8814,5 @@
         });
       })();
     </script>
-
-  <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a204feb24dc84bcb',t:'MTc4NDkxNzgxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2244d04cb61a8ed',t:'MTc4NTI0NjA4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
-ody>
+  </body>
 </html>
