@@ -5005,7 +5005,7 @@
       function validateFields() {
         const summary = document.getElementById('validationSummary');
         const editorContainer = document.getElementById('fieldEditorContainer');
-        const issues = []; // { type: 'overflow'|'overlap', label, fieldId }
+        let issues; // { type: 'overflow'|'overlap', label, fieldId }
 
         // Réinitialiser les marqueurs visuels
         document.querySelectorAll('.custom-field').forEach(el => {
@@ -5025,48 +5025,7 @@
         const modeFaces = currentModeFaces();
         const activeFields = fieldsConfig.filter(f => modeFaces.includes(f.face));
 
-        // Grouper les champs par face
-        const byFace = {};
-        activeFields.forEach(field => {
-          if (!byFace[field.face]) byFace[field.face] = [];
-          byFace[field.face].push(field);
-        });
-
-        // Détecter les débordements — on utilise la taille VISUELLE
-        // (getVisualSize) et non field.w/field.h bruts, sans quoi un
-        // champ pivoté à 90°/270° est mal évalué (faux positif ou
-        // faux négatif selon le cas).
-        activeFields.forEach(field => {
-          const { w: visW, h: visH } = getVisualSize(field);
-          const overflowX = (field.x + visW) > 102; // petite tolérance de 2%
-          const overflowY = (field.y + visH) > 102;
-          if (overflowX || overflowY) {
-            issues.push({ type: 'overflow', label: field.label, fieldId: field.id });
-          }
-        });
-
-        // Détecter les chevauchements (AABB) — on ignore les shapes entre eux
-        Object.values(byFace).forEach(group => {
-          const nonShapes = group.filter(f => f.type !== 'shape');
-          for (let i = 0; i < nonShapes.length; i++) {
-            for (let j = i + 1; j < nonShapes.length; j++) {
-              const a = nonShapes[i];
-              const b = nonShapes[j];
-              const aSize = getVisualSize(a);
-              const bSize = getVisualSize(b);
-              const overX = a.x < (b.x + bSize.w) && (a.x + aSize.w) > b.x;
-              const overY = a.y < (b.y + bSize.h) && (a.y + aSize.h) > b.y;
-              if (overX && overY) {
-                if (!issues.find(iss => iss.type === 'overlap' && iss.fieldId === a.id)) {
-                  issues.push({ type: 'overlap', label: a.label, fieldId: a.id });
-                }
-                if (!issues.find(iss => iss.type === 'overlap' && iss.fieldId === b.id)) {
-                  issues.push({ type: 'overlap', label: b.label, fieldId: b.id });
-                }
-              }
-            }
-          }
-        });
+        issues = PackagingUtils.findFieldIssues(activeFields, getVisualSize);
 
         // Appliquer les marqueurs visuels sur les éléments rendus
         issues.forEach(issue => {

@@ -30,6 +30,7 @@ const assertions = [
   ["geometry updates are frame-scheduled", (value) => value.includes("function scheduleGeometryUpdate") && value.includes("requestAnimationFrame")],
   ["pure packaging utilities are loaded before the application", (value) => value.includes('src/packaging-utils.js') && value.includes("PackagingUtils.sanitizeImportedFields")],
   ["pure geometry utilities are used by the application", (value) => value.includes("PackagingUtils.getVisualSize") && value.includes("PackagingUtils.getFieldPlacement")],
+  ["field validation uses the pure issue detector", (value) => value.includes("PackagingUtils.findFieldIssues(activeFields, getVisualSize)")],
   ["field schema migration uses the pure utility", (value) => value.includes("PackagingUtils.migrateFieldsV1toV2")],
   ["template serialization uses the pure utility", (value) => value.includes("PackagingUtils.createTemplate") && value.includes("PackagingUtils.parseTemplate")],
   ["local persistence uses the storage adapter", (value) => value.includes("PackagingUtils.createStorageAdapter") && value.includes("clearLocalStorage")],

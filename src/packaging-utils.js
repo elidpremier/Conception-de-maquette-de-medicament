@@ -34,9 +34,46 @@
       fitted.h = Math.round(fitted.h * scale * 10) / 10;
       visual = getSize(fitted);
     }
+
     fitted.x = Math.round(Math.max(0, Math.min(100 - visual.w, fitted.x)) * 10) / 10;
     fitted.y = Math.round(Math.max(0, Math.min(100 - visual.h, fitted.y)) * 10) / 10;
     return fitted;
+  }
+
+  function findFieldIssues(fields, getSize = (field) => getVisualSize(field)) {
+    if (!Array.isArray(fields)) return [];
+    const issues = [];
+    const byFace = {};
+    fields.forEach((field) => {
+      if (!field || typeof field !== "object") return;
+      const size = getSize(field);
+      if (field.x + size.w > 102 || field.y + size.h > 102) {
+        issues.push({ type: "overflow", label: field.label, fieldId: field.id });
+      }
+      if (!byFace[field.face]) byFace[field.face] = [];
+      byFace[field.face].push({ field, size });
+    });
+    Object.values(byFace).forEach((group) => {
+      const nonShapes = group.filter(({ field }) => field.type !== "shape");
+      for (let i = 0; i < nonShapes.length; i += 1) {
+        for (let j = i + 1; j < nonShapes.length; j += 1) {
+          const a = nonShapes[i];
+          const b = nonShapes[j];
+          const overlaps = a.field.x < b.field.x + b.size.w &&
+            a.field.x + a.size.w > b.field.x &&
+            a.field.y < b.field.y + b.size.h &&
+            a.field.y + a.size.h > b.field.y;
+          if (!overlaps) continue;
+          if (!issues.some((issue) => issue.type === "overlap" && issue.fieldId === a.field.id)) {
+            issues.push({ type: "overlap", label: a.field.label, fieldId: a.field.id });
+          }
+          if (!issues.some((issue) => issue.type === "overlap" && issue.fieldId === b.field.id)) {
+            issues.push({ type: "overlap", label: b.field.label, fieldId: b.field.id });
+          }
+        }
+      }
+    });
+    return issues;
   }
 
   function migrateFieldsV1toV2(fields, getAspect = () => 1) {
@@ -303,6 +340,7 @@
     isSafeImageDataUrl,
     normalizeRotation,
     getVisualSize,
+    findFieldIssues,
     fitFieldIntoFace,
     migrateFieldsV1toV2,
     createTemplate,

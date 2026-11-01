@@ -69,6 +69,18 @@ const placement = utils.getFieldPlacement({ x: 10, y: 20, w: 30, h: 20, rotation
 if (!placement.transform.includes("rotate(90deg)") || !placement.transform.includes("translate(-20.000px, 20.000px)")) {
   throw new Error("Field placement calculation failed.");
 }
+const issues = utils.findFieldIssues([
+  { id: "overflow", label: "Overflow", face: "p5", x: 95, y: 0, w: 10, h: 10, type: "text" },
+  { id: "first", label: "First", face: "p5", x: 10, y: 10, w: 20, h: 20, type: "text" },
+  { id: "second", label: "Second", face: "p5", x: 20, y: 20, w: 20, h: 20, type: "text" },
+  { id: "shape", label: "Shape", face: "p5", x: 15, y: 15, w: 50, h: 50, type: "shape" },
+]);
+if (!issues.some((issue) => issue.type === "overflow" && issue.fieldId === "overflow") ||
+    !issues.some((issue) => issue.type === "overlap" && issue.fieldId === "first") ||
+    !issues.some((issue) => issue.type === "overlap" && issue.fieldId === "second") ||
+    issues.some((issue) => issue.fieldId === "shape")) {
+  throw new Error("Field issue detection failed.");
+}
 const fitted = utils.fitFieldIntoFace({ x: 95, y: 95, w: 80, h: 80, rotation: 90 }, (field) =>
   utils.getVisualSize(field, 1),
 );
