@@ -123,6 +123,8 @@ La préparation générique du clone `html2canvas` est isolée dans
 `src/png-clone.js`.
 La conversion des clips polygonaux CSS en clips SVG est isolée dans
 `src/png-clips.js`.
+La géométrie des panneaux du fallback PNG est isolée dans
+`src/png-fallback-geometry.js`.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 

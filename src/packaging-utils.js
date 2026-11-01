@@ -247,6 +247,26 @@
     return placement;
   }
 
+  function getFaceDimensions(boxType, faceId, dimensions, mmToPx = 3.779527559) {
+    const scale = Number(mmToPx) || 3.779527559;
+    const width = Number(dimensions?.dimW) * scale;
+    const height = Number(dimensions?.dimH) * scale;
+    const depth = Number(dimensions?.dimD) * scale;
+    const flap = Number(dimensions?.flapLength) * scale;
+    if (boxType === "tablet") {
+      if (["p5", "p9"].includes(faceId)) return { width, height };
+      if (["p1", "p10"].includes(faceId)) return { width: depth, height };
+      if (["p1-rabat", "p10-rabat"].includes(faceId)) return { width: flap, height };
+      if (["p12", "p7"].includes(faceId)) return { width, height: depth };
+    } else {
+      if (["lp5", "lp7"].includes(faceId)) return { width, height };
+      if (["lp6", "lp8"].includes(faceId)) return { width: depth, height };
+      if (["lp1", "lp10"].includes(faceId)) return { width, height: depth };
+      if (["lp1-rabat", "lp10-rabat"].includes(faceId)) return { width, height: flap };
+    }
+    return { width, height };
+  }
+
   function sanitizeImportedFields(fields, validFaces, validTypes, options = {}) {
     if (!Array.isArray(fields)) return [];
     const maxFields = options.maxFields ?? 250;
@@ -350,6 +370,7 @@
     parseStoredJson,
     readFileAs,
     getFieldPlacement,
+    getFaceDimensions,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,
     sanitizeImportedSettings,

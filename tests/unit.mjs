@@ -118,6 +118,17 @@ if (!context.window.PackagingPngClips.applyPolygonClip(clipDocument, "p1") ||
     clipStyle.clipPath !== "url(#pngclip_panel_p1)") {
   throw new Error("PNG panel clip application failed.");
 }
+const fallbackGeometrySource = await readFile(new URL("../src/png-fallback-geometry.js", import.meta.url), "utf8");
+runInNewContext(fallbackGeometrySource, context);
+const fallbackPoly = context.window.PackagingFallbackGeometry.getPanelClipPoly("tablet", "p1", {
+  pctRabat: 40, pctCote: 60, pctRect: 50,
+});
+if (!fallbackPoly || fallbackPoly.length !== 6 ||
+    !context.window.PackagingFallbackGeometry.polyToPath(fallbackPoly, {
+      left: 0, top: 0, width: 100, height: 100,
+    }).startsWith("M")) {
+  throw new Error("PNG fallback geometry failed.");
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({
@@ -169,6 +180,12 @@ if (Math.abs(visual.w - 20) > 0.001 || Math.abs(visual.h - 40) > 0.001) {
 const placement = utils.getFieldPlacement({ x: 10, y: 20, w: 30, h: 20, rotation: 90 }, 200, 100);
 if (!placement.transform.includes("rotate(90deg)") || !placement.transform.includes("translate(-20.000px, 20.000px)")) {
   throw new Error("Field placement calculation failed.");
+}
+const faceDimensions = utils.getFaceDimensions("tablet", "p1", {
+  dimW: 80, dimH: 120, dimD: 30, flapLength: 20,
+});
+if (faceDimensions.width !== 30 * 3.779527559 || faceDimensions.height !== 120 * 3.779527559) {
+  throw new Error("Face dimension calculation failed.");
 }
 const issues = utils.findFieldIssues([
   { id: "overflow", label: "Overflow", face: "p5", x: 95, y: 0, w: 10, h: 10, type: "text" },

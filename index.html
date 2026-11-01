@@ -27,6 +27,7 @@
     <script src="src/field-svg.js"></script>
     <script src="src/png-clone.js"></script>
     <script src="src/png-clips.js"></script>
+    <script src="src/png-fallback-geometry.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -2690,49 +2691,12 @@
       }
 
       function getFaceDimensionsPx(faceId) {
-        const type = controls.boxType.value;
-        const scale = MM_TO_PX;
-        const w = controls.dimW.value * scale;
-        const h = controls.dimH.value * scale;
-        const d = controls.dimD.value * scale;
-        const flap = Number(controls.flapLength.value) * scale;
-
-        if (type === "tablet") {
-          switch (faceId) {
-            case "p5": // Avant
-            case "p9": // Arrière
-              return { width: w, height: h };
-            case "p1": // Côté gauche
-            case "p10": // Côté droit
-              return { width: d, height: h }; // rectangular visible part
-            case "p1-rabat":
-            case "p10-rabat":
-              return { width: flap, height: h };
-            case "p12": // Supérieur
-            case "p7": // Inférieur
-              return { width: w, height: d };
-            default:
-              return { width: w, height: h };
-          }
-        } else {
-          // Liquid mode
-          switch (faceId) {
-            case "lp5": // Avant
-            case "lp7": // Arrière
-              return { width: w, height: h };
-            case "lp6": // Côté gauche
-            case "lp8": // Côté droit
-              return { width: d, height: h };
-            case "lp1": // Rabat haut visible
-            case "lp10": // Rabat bas visible
-              return { width: w, height: d };
-            case "lp1-rabat":
-            case "lp10-rabat":
-              return { width: w, height: flap };
-            default:
-              return { width: w, height: h };
-          }
-        }
+        return PackagingUtils.getFaceDimensions(controls.boxType.value, faceId, {
+          dimW: controls.dimW.value,
+          dimH: controls.dimH.value,
+          dimD: controls.dimD.value,
+          flapLength: controls.flapLength.value,
+        }, MM_TO_PX);
       }
 
       function selectField(fieldId, skipSidebarScroll = false, focusInput = true) {
@@ -7197,36 +7161,6 @@
             height: er.height / zoom,
           };
         }
-        function panelClipPoly(id) {
-          if (type === "tablet") {
-            switch (id) {
-              case "p1": return [[100,0],[100,100],[pctRabat,100],[0,85],[0,15],[pctRabat,0]];
-              case "p10": return [[0,0],[0,100],[pctCote,100],[100,85],[100,15],[pctCote,0]];
-              case "p2": return [[5,0],[95,0],[85,100],[15,100]];
-              case "p3": return [[100,0],[100,100],[20,80],[20,0]];
-              case "p4": return [[0,0],[0,100],[80,80],[80,0]];
-              case "p11": return [[100,0],[100,100],[20,100],[20,20]];
-              case "p13": return [[0,0],[100,0],[80,100],[20,100]];
-              default: return null;
-            }
-          } else {
-            switch (id) {
-              case "p1": return [[0,100],[100,100],[100,pctRect],[85,0],[15,0],[0,pctRect]];
-              case "p10": return [[0,0],[100,0],[100,pctRect],[85,100],[15,100],[0,pctRect]];
-              case "p2": return [[20,0],[80,0],[100,100],[0,100]];
-              case "p3": return [[20,0],[80,0],[100,100],[0,100]];
-              case "p4": return [[0,0],[100,0],[80,100],[20,100]];
-              case "p11": return [[0,0],[100,0],[80,100],[20,100]];
-              case "p9": return [[0,5],[0,95],[100,85],[100,15]];
-              default: return null;
-            }
-          }
-        }
-        function polyToPath(poly, b) {
-          if (!poly) return `M${b.left} ${b.top} H${b.left + b.width} V${b.top + b.height} H${b.left} Z`;
-          const pts = poly.map(p => `${(b.left + p[0] / 100 * b.width).toFixed(2)} ${(b.top + p[1] / 100 * b.height).toFixed(2)}`);
-          return "M" + pts.join(" L") + " Z";
-        }
         function computedFill(el) {
           const c = window.getComputedStyle(el).backgroundColor;
           if (!c || c === "transparent" || c === "rgba(0, 0, 0, 0)") return "#ffffff";
@@ -7245,7 +7179,7 @@
           if (window.getComputedStyle(el).display === "none") return;
           const b = boxOf(el);
           if (!b.width || !b.height) return;
-          parts.push(`<path d="${polyToPath(panelClipPoly(id), b)}" fill="${computedFill(el)}"/>`);
+          parts.push(`<path d="${PackagingFallbackGeometry.polyToPath(PackagingFallbackGeometry.getPanelClipPoly(type, id, { pctRabat, pctCote, pctRect }), b)}" fill="${computedFill(el)}"/>`);
         });
 
         // Champs personnalisés (z-order : formes d'abord)
