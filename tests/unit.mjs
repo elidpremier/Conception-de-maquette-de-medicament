@@ -49,6 +49,12 @@ const exported = utils.createTemplate([{ id: "field" }], { boxType: "tablet" }, 
 if (exported.version !== 2 || exported.fields.length !== 1 || exported.settings.boxType !== "tablet") {
   throw new Error("Template serialization failed.");
 }
+const roundTrip = utils.parseTemplate(JSON.parse(JSON.stringify(exported)), 2);
+const roundTripFields = utils.sanitizeImportedFields(roundTrip.fields, ["p5"], ["text"]);
+const roundTripSettings = utils.sanitizeImportedSettings(roundTrip.settings);
+if (roundTripFields[0].id !== "field" || roundTripSettings.boxType !== "tablet") {
+  throw new Error("Template round-trip changed valid data.");
+}
 const oldTemplate = utils.parseTemplate([{ id: "legacy" }], 2);
 const newTemplate = utils.parseTemplate(exported, 2);
 if (!oldTemplate?.needsMigration || oldTemplate.format !== "v1" || newTemplate?.needsMigration || newTemplate.format !== "v2") {

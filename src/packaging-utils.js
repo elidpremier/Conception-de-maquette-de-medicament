@@ -214,22 +214,22 @@
         const id = createUniqueFieldId(usedIds, preferredId, () => `${index}`);
         usedIds.add(id);
         return {
-        ...field,
-        id,
-        type: typeSet.has(field.type) ? field.type : "text",
-        face: faceSet.has(field.face) ? field.face : "p5",
-        x: number(field.x, 10, -50, 200),
-        y: number(field.y, 10, -50, 200),
-        w: number(field.w, 30, 1, 200),
-        h: number(field.h, 15, 1, 200),
-        fontSize: number(field.fontSize, 10, 4, 60),
-        rotation: [0, 90, 180, 270].includes(Number(field.rotation)) ? Number(field.rotation) : 0,
-        align: ["left", "center", "right"].includes(field.align) ? field.align : "left",
-        color: SAFE_COLOR.test(field.color) ? field.color : "#1e3a8a",
-        color2: SAFE_COLOR.test(field.color2) ? field.color2 : "#f97316",
-        content: typeof field.content === "string" ? field.content.slice(0, 20000) : "",
-        label: typeof field.label === "string" ? field.label.slice(0, 200) : "Champ",
-        src: isSafeImageDataUrl(field.src) ? field.src : null,
+          ...field,
+          id,
+          type: typeSet.has(field.type) ? field.type : "text",
+          face: faceSet.has(field.face) ? field.face : "p5",
+          x: number(field.x, 10, -50, 200),
+          y: number(field.y, 10, -50, 200),
+          w: number(field.w, 30, 1, 200),
+          h: number(field.h, 15, 1, 200),
+          fontSize: number(field.fontSize, 10, 4, 60),
+          rotation: [0, 90, 180, 270].includes(Number(field.rotation)) ? Number(field.rotation) : 0,
+          align: ["left", "center", "right"].includes(field.align) ? field.align : "left",
+          color: SAFE_COLOR.test(field.color) ? field.color : "#1e3a8a",
+          color2: SAFE_COLOR.test(field.color2) ? field.color2 : "#f97316",
+          content: typeof field.content === "string" ? field.content.slice(0, 20000) : "",
+          label: typeof field.label === "string" ? field.label.slice(0, 200) : "Champ",
+          src: isSafeImageDataUrl(field.src) ? field.src : null,
         };
       });
   }

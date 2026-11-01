@@ -182,6 +182,8 @@ Les réglages importés sont également normalisés : dimensions et rabats sont
 bornés, couleurs et logos sont validés, textes tronqués et options booléennes
 limitées à leurs types attendus. Les logos qui ne sont pas des images PNG,
 JPEG, GIF ou WebP encodées en base64 sont rejetés.
+Les tests unitaires vérifient également qu'un gabarit valide conserve ses
+champs et réglages après un cycle export JSON puis import et sanitation.
 
 Les modifications des contrôles sont regroupées par frame d'affichage afin de
 limiter les recalculs géométriques pendant la saisie et le déplacement des curseurs.
