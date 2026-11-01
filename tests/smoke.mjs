@@ -24,7 +24,8 @@ const assertions = [
   ["image and template imports have size and type limits", (value) => value.includes("MAX_IMAGE_FILE_SIZE") && value.includes("MAX_TEMPLATE_FILE_SIZE") && value.includes("isAllowedTemplateFile")],
   ["static security metadata is present", (value) => value.includes('name="referrer"') && value.includes('http-equiv="Permissions-Policy"')],
   ["geometry updates are frame-scheduled", (value) => value.includes("function scheduleGeometryUpdate") && value.includes("requestAnimationFrame")],
-  ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("validTypes") && value.includes("slice(0, MAX_IMPORTED_FIELDS)") && value.includes('fontSize: number(field.fontSize, 10, 4, 60)')],
+  ["pure packaging utilities are loaded before the application", (value) => value.includes('src/packaging-utils.js') && value.includes("PackagingUtils.sanitizeImportedFields")],
+  ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 
 const failures = assertions

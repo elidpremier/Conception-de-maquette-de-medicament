@@ -103,7 +103,8 @@ Points à retenir :
 ```
 .
 ├── index.html   # Application complète (HTML + CSS + JS embarqués)
-└── tests/       # Suite de non-régression (Playwright)
+├── src/         # Utilitaires purs partagés par l'application
+└── tests/       # Tests unitaires, smoke et navigateur
 ```
 
 Le fichier `index.html` est autonome : toute la logique (géométrie du patron, moteur de champs, rainage, zoom, exports) y est contenue, à l'exception des polices Google Fonts, de html2canvas et d'EmailJS chargés via CDN.
@@ -121,8 +122,8 @@ npm test
 npm run lint
 ```
 
-La commande `npm test` inclut les contrôles de fumée et un test navigateur
-Playwright couvrant le rendu initial, les deux modes de boîte, le
+La commande `npm test` inclut les tests unitaires des utilitaires de
+sanitation, les contrôles de fumée et un test navigateur Playwright couvrant le rendu initial, les deux modes de boîte, le
 redimensionnement, l'import d'un gabarit, la porte d'accès à l'impression et
 la présence des contrôles clavier. Le test exécute également axe-core et bloque
 les violations d'accessibilité critiques ou sérieuses.

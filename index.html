@@ -17,6 +17,7 @@
       rel="stylesheet" />
     <!-- html2canvas : capture fidèle du DOM pour export PNG haute qualité -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="src/packaging-utils.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -2924,7 +2925,7 @@
       const SAFE_COLOR = /^#[0-9a-f]{6}$/i;
 
       function isSafeImageDataUrl(value) {
-        return typeof value === "string" && SAFE_IMAGE_DATA_URL.test(value);
+        return PackagingUtils.isSafeImageDataUrl(value);
       }
 
       function isAllowedImageFile(file) {
@@ -2942,63 +2943,17 @@
       }
 
       function sanitizeImportedFields(fields) {
-        if (!Array.isArray(fields)) return [];
         const validFaces = new Set(
           [...TABLET_FACE_OPTIONS, ...LIQUID_FACE_OPTIONS].map((face) => face.value),
         );
         const validTypes = new Set(TYPE_OPTIONS.map((type) => type.value));
-        return fields
-          .slice(0, MAX_IMPORTED_FIELDS)
-          .filter((field) => field && typeof field === "object")
-          .map((field, index) => {
-            const number = (value, fallback, min, max) => {
-              const parsed = Number(value);
-              return Number.isFinite(parsed)
-                ? Math.max(min, Math.min(max, parsed))
-                : fallback;
-            };
-            const type = validTypes.has(field.type) ? field.type : "text";
-            const face = validFaces.has(field.face) ? field.face : "p5";
-            return {
-              ...field,
-              id: typeof field.id === "string" && field.id.length <= 120
-                ? field.id
-                : `imported-field-${Date.now()}-${index}`,
-              type,
-              face,
-              x: number(field.x, 10, -50, 200),
-              y: number(field.y, 10, -50, 200),
-              w: number(field.w, 30, 1, 200),
-              h: number(field.h, 15, 1, 200),
-              fontSize: number(field.fontSize, 10, 4, 60),
-              rotation: [0, 90, 180, 270].includes(Number(field.rotation))
-                ? Number(field.rotation)
-                : 0,
-              align: ["left", "center", "right"].includes(field.align)
-                ? field.align
-                : "left",
-              color: SAFE_COLOR.test(field.color) ? field.color : "#1e3a8a",
-              color2: SAFE_COLOR.test(field.color2) ? field.color2 : "#f97316",
-              content: typeof field.content === "string"
-                ? field.content.slice(0, 20000)
-                : "",
-              label: typeof field.label === "string"
-                ? field.label.slice(0, 200)
-                : "Champ",
-              src: isSafeImageDataUrl(field.src) ? field.src : null,
-            };
-          });
+        return PackagingUtils.sanitizeImportedFields(fields, validFaces, validTypes, {
+          maxFields: MAX_IMPORTED_FIELDS,
+        });
       }
 
       function sanitizeImportedFaceColors(value) {
-        if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-        return Object.fromEntries(
-          Object.entries(value).filter(
-            ([face, color]) =>
-              typeof face === "string" &&
-              SAFE_COLOR.test(color),
-          ),
-        );
+        return PackagingUtils.sanitizeImportedFaceColors(value);
       }
 
       function isValidImportedNumber(value, min, max) {
@@ -4858,7 +4813,7 @@
 
       // Normalise un angle dans [0, 360[.
       function normalizeRotation(rot) {
-        return (((Number(rot) || 0) % 360) + 360) % 360;
+        return PackagingUtils.normalizeRotation(rot);
       }
 
       // --- Rapport d'aspect des faces -----------------------------------
