@@ -195,6 +195,8 @@ des chemins d'erreur explicites : les échecs de lecture, de conversion ou de
 téléchargement sont affichés à l'utilisateur et journalisés.
 La lecture des fichiers est centralisée dans les utilitaires partagés et reste
 adaptée aux APIs navigateur via un mince adaptateur dans l'application.
+La suite navigateur vérifie également l'export PNG de secours basé sur SVG
+lorsque `html2canvas` n'est pas disponible.
 
 ## Confidentialité
 

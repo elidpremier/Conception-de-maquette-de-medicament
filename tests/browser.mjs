@@ -123,8 +123,19 @@ try {
     throw new Error("La restauration depuis un stockage local corrompu a dégradé le rendu.");
   }
 
+  await page.evaluate(() => {
+    window.html2canvas = undefined;
+  });
+  const fallbackDownload = page.waitForEvent("download");
+  await page.locator("#menuDropdownBtn").click();
+  await page.locator("#exportPngAction").click();
+  const download = await fallbackDownload;
+  if (!download.suggestedFilename().endsWith(".png")) {
+    throw new Error("Le fallback SVG n'a pas produit un téléchargement PNG.");
+  }
+
   if (errors.length) throw new Error(`Erreur JavaScript navigateur : ${errors.join("; ")}`);
-  console.log(`Browser checks passed (render, modes, resize, import, access gate, keyboard controls, axe: ${accessibility.violations.length} violation(s)).`);
+  console.log(`Browser checks passed (render, modes, resize, import, access gate, keyboard controls, PNG fallback, axe: ${accessibility.violations.length} violation(s)).`);
 } finally {
   await context.close();
   await browser.close();
