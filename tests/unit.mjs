@@ -94,6 +94,30 @@ const cloneDocument = {
   querySelectorAll: () => [],
 };
 context.window.PackagingPngClone.prepareClone(cloneDocument);
+const clipsSource = await readFile(new URL("../src/png-clips.js", import.meta.url), "utf8");
+runInNewContext(clipsSource, context);
+if (JSON.stringify(context.window.PackagingPngClips.toObjectBoundingBoxPoints("0% 50%, 100% 0%")) !==
+    JSON.stringify([[0, 0.5], [1, 0]])) {
+  throw new Error("PNG clip point conversion failed.");
+}
+const clipStyle = { clipPath: "polygon(0% 50%, 100% 0%)" };
+const clipElement = {
+  style: clipStyle,
+  appendChild(node) { this.child = node; },
+};
+const clipDocument = {
+  defaultView: { getComputedStyle: () => ({ display: "block" }) },
+  getElementById: () => clipElement,
+  createElementNS: () => ({
+    style: {},
+    setAttribute(name, value) { this[name] = value; },
+    appendChild(node) { this.child = node; },
+  }),
+};
+if (!context.window.PackagingPngClips.applyPolygonClip(clipDocument, "p1") ||
+    clipStyle.clipPath !== "url(#pngclip_panel_p1)") {
+  throw new Error("PNG panel clip application failed.");
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({

@@ -26,6 +26,7 @@
     <script src="src/export-primitives.js"></script>
     <script src="src/field-svg.js"></script>
     <script src="src/png-clone.js"></script>
+    <script src="src/png-clips.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -7116,59 +7117,7 @@
               // deviennent 0.85 dans objectBoundingBox.
               // Les valeurs "100%" → 1, "0%" → 0, etc.
               const clipPanels = ['p1', 'p2', 'p3', 'p4', 'p9', 'p10', 'p11', 'p13'];
-              clipPanels.forEach(id => {
-                const el = clonedDoc.getElementById(id);
-                if (!el) return;
-                if (clonedDoc.defaultView && clonedDoc.defaultView.getComputedStyle(el).display === 'none') return;
-                const cpStyle = el.style.clipPath;
-                if (!cpStyle) return;
-                // Extraire les coordonnées du polygon CSS
-                const match = cpStyle.match(/polygon\s*\(([^)]+)\)/i);
-                if (!match) return;
-                const rawPts = match[1].trim();
-                // Convertir les % en valeurs normalisées (0→1)
-                // pour clipPathUnits="objectBoundingBox".
-                // Ex : "85%" → 0.85, "0%" → 0, "100%" → 1
-                const ptPairs = rawPts.split(/\s*,\s*/).map(pair => {
-                  const parts = pair.trim().split(/\s+/);
-                  return parts.map(v => {
-                    if (v.includes('%')) return parseFloat(v) / 100;
-                    // Valeurs non-pct (ex: px) — on les ignore
-                    // car objectBoundingBox ne les supporte pas ;
-                    // on les traite comme 0 ou 1 selon le contexte.
-                    const num = parseFloat(v);
-                    return num <= 0 ? 0 : (num >= 100 ? 1 : num / 100);
-                  });
-                });
-                const svgPts = ptPairs.map(p => `${p[0].toFixed(4)},${p[1].toFixed(4)}`).join(' ');
-                const clipId = 'pngclip_panel_' + id;
-                const svgNS = 'http://www.w3.org/2000/svg';
-                const svgEl = clonedDoc.createElementNS(svgNS, 'svg');
-                svgEl.setAttribute('width', '0');
-                svgEl.setAttribute('height', '0');
-                svgEl.style.position = 'absolute';
-                svgEl.style.pointerEvents = 'none';
-                svgEl.style.overflow = 'hidden';
-                const defs = clonedDoc.createElementNS(svgNS, 'defs');
-                const clipPathEl = clonedDoc.createElementNS(svgNS, 'clipPath');
-                clipPathEl.setAttribute('id', clipId);
-                // objectBoundingBox : les coordonnées du polygon
-                // sont exprimées en fractions (0→1) de la boîte
-                // englobante de l'élément clippé — exactement ce
-                // que nous avons calculé ci-dessus.
-                clipPathEl.setAttribute('clipPathUnits', 'objectBoundingBox');
-                const poly = clonedDoc.createElementNS(svgNS, 'polygon');
-                poly.setAttribute('points', svgPts);
-                clipPathEl.appendChild(poly);
-                defs.appendChild(clipPathEl);
-                svgEl.appendChild(defs);
-                el.appendChild(svgEl);
-                // Remplacer clip-path CSS par clip-path SVG (url)
-                el.style.clipPath = `url(#${clipId})`;
-                el.style.overflow = 'hidden';
-                el.style.border = 'none';
-              });
-
+              PackagingPngClips.applyPanelClips(clonedDoc, clipPanels);
             }
           }).then(function(canvas) {
             // Restaurer l'état initial

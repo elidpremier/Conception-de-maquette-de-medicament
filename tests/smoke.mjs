@@ -20,6 +20,7 @@ const assertions = [
   ["PNG export primitives are isolated in their module", (value) => value.includes('src/export-primitives.js') && value.includes("PackagingExportPrimitives.createCodeSvg") && value.includes("PackagingExportPrimitives.buildLogoSvg")],
   ["field SVG rendering is isolated in its module", (value) => value.includes('src/field-svg.js') && value.includes("PackagingFieldSvg.createFieldToSvg")],
   ["PNG clone preparation is isolated in its module", (value) => value.includes('src/png-clone.js') && value.includes("PackagingPngClone.prepareClone")],
+  ["PNG panel clips are isolated in their module", (value) => value.includes('src/png-clips.js') && value.includes("PackagingPngClips.applyPanelClips")],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],
