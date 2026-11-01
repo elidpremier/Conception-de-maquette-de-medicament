@@ -6622,27 +6622,22 @@
           // Export complet du gabarit : champs + tous les réglages
           // globaux (dimensions, couleurs, logo, slogan, rabats…)
           // pour une restauration fidèle à l'import.
-          const fullExport = {
-            version: 2,
-            schemaVersion: FIELDS_SCHEMA_VERSION,
-            fields: fieldsConfig,
-            settings: {
-              boxType: controls.boxType.value,
-              dimW: Number(controls.dimW.value),
-              dimH: Number(controls.dimH.value),
-              dimD: Number(controls.dimD.value),
-              flapLength: Number(controls.flapLength.value),
-              dustFlapsEnabled: controls.dustFlapsEnabled.checked,
-              colPrimary: controls.colPrimary.value,
-              colAccent: controls.colAccent.value,
-              txtLabName: controls.txtLabName.value,
-              txtSlogan: controls.txtSlogan.value,
-              showLabName: controls.showLabName.checked,
-              logoSize: Number(controls.logoSizeSlider.value),
-              customLogoUrl: customLogoUrl || null,
-              customFacesBg: customFacesBg,
-            },
-          };
+          const fullExport = PackagingUtils.createTemplate(fieldsConfig, {
+            boxType: controls.boxType.value,
+            dimW: Number(controls.dimW.value),
+            dimH: Number(controls.dimH.value),
+            dimD: Number(controls.dimD.value),
+            flapLength: Number(controls.flapLength.value),
+            dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+            colPrimary: controls.colPrimary.value,
+            colAccent: controls.colAccent.value,
+            txtLabName: controls.txtLabName.value,
+            txtSlogan: controls.txtSlogan.value,
+            showLabName: controls.showLabName.checked,
+            logoSize: Number(controls.logoSizeSlider.value),
+            customLogoUrl: customLogoUrl || null,
+            customFacesBg: customFacesBg,
+          }, FIELDS_SCHEMA_VERSION);
           const blob = new Blob([JSON.stringify(fullExport, null, 2)], {
             type: "application/json",
           });
@@ -6674,28 +6669,19 @@
           reader.onload = () => {
             try {
               const parsed = JSON.parse(reader.result);
+              const template = PackagingUtils.parseTemplate(parsed, FIELDS_SCHEMA_VERSION);
               // NB : « v1/v2 » ci-dessous désigne le format du FICHIER
               // (tableau nu vs gabarit complet), à ne pas confondre avec
               // schemaVersion qui décrit la convention GÉOMÉTRIQUE des
               // champs. Un gabarit exporté avant la correction des axes
               // doit être migré, quel que soit son format de fichier.
-              const needsGeomMigration = (obj) =>
-                Number(obj && obj.schemaVersion) < FIELDS_SCHEMA_VERSION ||
-                !(obj && obj.schemaVersion);
-              if (Array.isArray(parsed)) {
-                // Format v1 (ancien) : tableau de champs uniquement
-                fieldsConfig = migrateFieldsV1toV2(sanitizeImportedFields(parsed));
+              if (template) {
+                fieldsConfig = template.needsMigration
+                  ? migrateFieldsV1toV2(sanitizeImportedFields(template.fields))
+                  : sanitizeImportedFields(template.fields);
                 saveFieldsConfig();
-                renderFieldEditor();
-                renderAllCustomFields();
-              } else if (parsed && parsed.fields && Array.isArray(parsed.fields)) {
-                // Format v2 (nouveau) : champs + réglages globaux
-                fieldsConfig = needsGeomMigration(parsed)
-                  ? migrateFieldsV1toV2(sanitizeImportedFields(parsed.fields))
-                  : sanitizeImportedFields(parsed.fields);
-                saveFieldsConfig();
-                if (parsed.settings) {
-                  applyImportedSettings(parsed.settings);
+                if (template.settings) {
+                  applyImportedSettings(template.settings);
                 }
                 renderFieldEditor();
                 renderAllCustomFields();
@@ -8571,27 +8557,22 @@
             }
             case "export-json": {
               // Export complet du gabarit (v2) — champs + réglages
-              const fullExport = {
-                version: 2,
-                schemaVersion: FIELDS_SCHEMA_VERSION,
-                fields: fieldsConfig,
-                settings: {
-                  boxType: controls.boxType.value,
-                  dimW: Number(controls.dimW.value),
-                  dimH: Number(controls.dimH.value),
-                  dimD: Number(controls.dimD.value),
-                  flapLength: Number(controls.flapLength.value),
-                  dustFlapsEnabled: controls.dustFlapsEnabled.checked,
-                  colPrimary: controls.colPrimary.value,
-                  colAccent: controls.colAccent.value,
-                  txtLabName: controls.txtLabName.value,
-                  txtSlogan: controls.txtSlogan.value,
-                  showLabName: controls.showLabName.checked,
-                  logoSize: Number(controls.logoSizeSlider.value),
-                  customLogoUrl: customLogoUrl || null,
-                  customFacesBg: customFacesBg,
-                },
-              };
+              const fullExport = PackagingUtils.createTemplate(fieldsConfig, {
+                boxType: controls.boxType.value,
+                dimW: Number(controls.dimW.value),
+                dimH: Number(controls.dimH.value),
+                dimD: Number(controls.dimD.value),
+                flapLength: Number(controls.flapLength.value),
+                dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+                colPrimary: controls.colPrimary.value,
+                colAccent: controls.colAccent.value,
+                txtLabName: controls.txtLabName.value,
+                txtSlogan: controls.txtSlogan.value,
+                showLabName: controls.showLabName.checked,
+                logoSize: Number(controls.logoSizeSlider.value),
+                customLogoUrl: customLogoUrl || null,
+                customFacesBg: customFacesBg,
+              }, FIELDS_SCHEMA_VERSION);
               const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a"); a.href = url; a.download = "gabarit-complet.json"; a.click();
@@ -8616,18 +8597,14 @@
                 reader.onload = () => {
                   try {
                     const data = JSON.parse(reader.result);
-                    if (Array.isArray(data)) {
-                      // Format v1 (ancien) : tableau de champs uniquement
-                      fieldsConfig = sanitizeImportedFields(data);
+                    const template = PackagingUtils.parseTemplate(data, FIELDS_SCHEMA_VERSION);
+                    if (template) {
+                      fieldsConfig = template.needsMigration
+                        ? migrateFieldsV1toV2(sanitizeImportedFields(template.fields))
+                        : sanitizeImportedFields(template.fields);
                       saveFieldsConfig();
-                      renderFieldEditor();
-                      renderAllCustomFields();
-                    } else if (data && data.fields && Array.isArray(data.fields)) {
-                      // Format v2 (nouveau) : champs + réglages globaux
-                      fieldsConfig = sanitizeImportedFields(data.fields);
-                      saveFieldsConfig();
-                      if (data.settings) {
-                        applyImportedSettings(data.settings);
+                      if (template.settings) {
+                        applyImportedSettings(template.settings);
                       }
                       renderFieldEditor();
                       renderAllCustomFields();

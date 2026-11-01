@@ -45,6 +45,18 @@ const migrated = utils.migrateFieldsV1toV2(
 if (migrated[0].x !== 7.5 || migrated[0].y !== 19) {
   throw new Error("Field schema migration failed.");
 }
+const exported = utils.createTemplate([{ id: "field" }], { boxType: "tablet" }, 2);
+if (exported.version !== 2 || exported.fields.length !== 1 || exported.settings.boxType !== "tablet") {
+  throw new Error("Template serialization failed.");
+}
+const oldTemplate = utils.parseTemplate([{ id: "legacy" }], 2);
+const newTemplate = utils.parseTemplate(exported, 2);
+if (!oldTemplate?.needsMigration || oldTemplate.format !== "v1" || newTemplate?.needsMigration || newTemplate.format !== "v2") {
+  throw new Error("Template parsing or version detection failed.");
+}
+if (utils.parseTemplate({ invalid: true }, 2) !== null) {
+  throw new Error("Malformed template parsing failed.");
+}
 if (fields.length !== 1 || fields[0].id !== "test-0" || fields[0].type !== "text") {
   throw new Error("Field type or identifier sanitation failed.");
 }

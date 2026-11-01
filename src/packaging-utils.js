@@ -77,6 +77,39 @@
     });
   }
 
+  function createTemplate(fields, settings, schemaVersion = 2) {
+    return {
+      version: 2,
+      schemaVersion,
+      fields: Array.isArray(fields) ? fields : [],
+      settings: settings && typeof settings === "object" && !Array.isArray(settings)
+        ? settings
+        : {},
+    };
+  }
+
+  function parseTemplate(value, schemaVersion = 2) {
+    if (Array.isArray(value)) {
+      return {
+        fields: value,
+        settings: null,
+        needsMigration: true,
+        format: "v1",
+      };
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.fields)) {
+      return null;
+    }
+    return {
+      fields: value.fields,
+      settings: value.settings && typeof value.settings === "object" && !Array.isArray(value.settings)
+        ? value.settings
+        : null,
+      needsMigration: Number(value.schemaVersion) < schemaVersion || !value.schemaVersion,
+      format: "v2",
+    };
+  }
+
   function getFieldPlacement(field, zoneW, zoneH) {
     const rot = normalizeRotation(field.rotation);
     const placement = {
@@ -148,6 +181,8 @@
     getVisualSize,
     fitFieldIntoFace,
     migrateFieldsV1toV2,
+    createTemplate,
+    parseTemplate,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,
