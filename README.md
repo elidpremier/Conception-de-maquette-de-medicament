@@ -121,8 +121,15 @@ npm test
 npm run lint
 ```
 
-Les scénarios Playwright avancés décrits dans les anciennes versions de cette
-documentation ne sont pas inclus dans le dépôt actuel.
+La commande `npm test` inclut les contrôles de fumée et un test navigateur
+Playwright couvrant le rendu initial, les deux modes de boîte, le
+redimensionnement et l'import d'un gabarit.
+
+Sur une machine neuve, installez Chromium avant le test :
+
+```bash
+npx playwright install chromium
+```
 
 ---
 

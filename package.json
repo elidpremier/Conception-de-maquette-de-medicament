@@ -4,10 +4,13 @@
   "version": "1.0.0",
   "description": "Générateur statique de patrons de boîtes pharmaceutiques",
   "scripts": {
-    "test": "node tests/smoke.mjs",
+    "test": "node tests/smoke.mjs && node tests/browser.mjs",
     "lint": "node tests/smoke.mjs"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }
