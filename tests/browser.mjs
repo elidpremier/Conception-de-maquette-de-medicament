@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -80,6 +80,51 @@ try {
   }));
   if (imported.boxType !== "liquid" || imported.svgChildren < 1 || imported.summary.includes("Impossible")) {
     throw new Error("L'import du gabarit n'a pas restauré le rendu.");
+  }
+
+  let invalidImportMessage = "";
+  page.once("dialog", async (dialog) => {
+    invalidImportMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#importFieldsInput").setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{invalid"),
+  });
+  await page.waitForTimeout(100);
+  if (!invalidImportMessage.includes("Impossible de lire ce fichier JSON")) {
+    throw new Error("L'import JSON invalide n'a pas affiché d'erreur.");
+  }
+
+  let oversizedImportMessage = "";
+  page.once("dialog", async (dialog) => {
+    oversizedImportMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#importFieldsInput").setInputFiles({
+    name: "oversized.json",
+    mimeType: "application/json",
+    buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x20),
+  });
+  await page.waitForTimeout(100);
+  if (!oversizedImportMessage.includes("Gabarit refusé")) {
+    throw new Error("L'import JSON trop volumineux n'a pas été refusé.");
+  }
+
+  const jsonDownloadPromise = page.waitForEvent("download");
+  await page.locator("#exportFieldsBtn").click();
+  const jsonDownload = await jsonDownloadPromise;
+  const jsonDownloadPath = await jsonDownload.path();
+  if (!jsonDownloadPath) throw new Error("L'export JSON n'a pas produit de fichier.");
+  const exportedTemplate = JSON.parse(await readFile(jsonDownloadPath, "utf8"));
+  if (
+    exportedTemplate.version !== 2 ||
+    exportedTemplate.schemaVersion !== 2 ||
+    !Array.isArray(exportedTemplate.fields) ||
+    exportedTemplate.settings?.boxType !== "liquid"
+  ) {
+    throw new Error("La structure du gabarit JSON exporté est invalide.");
   }
 
   await page.locator("#printBtn").click();

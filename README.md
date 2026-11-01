@@ -197,6 +197,10 @@ La lecture des fichiers est centralisée dans les utilitaires partagés et reste
 adaptée aux APIs navigateur via un mince adaptateur dans l'application.
 La suite navigateur vérifie également l'export PNG de secours basé sur SVG
 lorsque `html2canvas` n'est pas disponible.
+Elle couvre aussi les erreurs d'import JSON : contenu invalide et fichier
+dépassant la limite de 2 Mo.
+Le téléchargement JSON est également relu par le test navigateur pour
+confirmer la version du schéma, les champs et les réglages exportés.
 
 ## Confidentialité
 
