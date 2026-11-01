@@ -114,6 +114,8 @@ principaux. Les données de presets sont isolées dans
 sont isolés dans `src/packaging-utils.js`. La géométrie des formes SVG
 partagée par l'éditeur et l'export est isolée dans `src/shape-geometry.js`.
 Le découpage de texte de l’export PNG est isolé dans `src/png-text.js`.
+Le générateur SVG des formes du fallback PNG est isolé dans
+`src/shape-svg.js`.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 

@@ -32,6 +32,16 @@ const wrapped = pngText.wrap("alpha beta\nlongword", 7, "12px Arial");
 if (wrapped.join("|") !== "alpha|beta|longwor|d") {
   throw new Error(`PNG text wrapping failed: ${wrapped.join("|")}`);
 }
+const shapeSvgSource = await readFile(new URL("../src/shape-svg.js", import.meta.url), "utf8");
+runInNewContext(shapeSvgSource, context);
+const triangleSvg = context.window.PackagingShapeSvg.buildShapeSvg(
+  { shapeType: "triangle", color: "#123456", fillMode: "fill" },
+  1, 2, 30, 40,
+);
+if (!triangleSvg.includes("<polygon") || !triangleSvg.includes('fill="#123456"') ||
+    !triangleSvg.includes('x="1.00"') || !triangleSvg.includes('height="40.00"')) {
+  throw new Error("Shape SVG generation failed.");
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({
