@@ -2972,23 +2972,11 @@
       }
 
       function readFileAsText(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = () => reject(reader.error || new Error("Lecture du fichier impossible."));
-          reader.onabort = () => reject(new Error("Lecture du fichier interrompue."));
-          reader.readAsText(file);
-        });
+        return PackagingUtils.readFileAs(file, "readAsText");
       }
 
       function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = () => reject(reader.error || new Error("Lecture de l'image impossible."));
-          reader.onabort = () => reject(new Error("Lecture de l'image interrompue."));
-          reader.readAsDataURL(file);
-        });
+        return PackagingUtils.readFileAs(file, "readAsDataURL");
       }
 
       function sanitizeImportedFields(fields) {

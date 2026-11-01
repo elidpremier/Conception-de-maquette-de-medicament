@@ -193,6 +193,8 @@ limiter les recalculs géométriques pendant la saisie et le déplacement des cu
 Les imports de gabarits et d'images ainsi que les exports JSON et PNG utilisent
 des chemins d'erreur explicites : les échecs de lecture, de conversion ou de
 téléchargement sont affichés à l'utilisateur et journalisés.
+La lecture des fichiers est centralisée dans les utilitaires partagés et reste
+adaptée aux APIs navigateur via un mince adaptateur dans l'application.
 
 ## Confidentialité
 

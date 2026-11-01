@@ -156,6 +156,24 @@
     }
   }
 
+  function readFileAs(file, readMethod = "readAsText") {
+    return new Promise((resolve, reject) => {
+      if (typeof FileReader === "undefined") {
+        reject(new Error("FileReader unavailable."));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("File read failed."));
+      reader.onabort = () => reject(new Error("File read aborted."));
+      if (typeof reader[readMethod] !== "function") {
+        reject(new Error(`Unsupported file read method: ${readMethod}`));
+        return;
+      }
+      reader[readMethod](file);
+    });
+  }
+
   function createUniqueFieldId(existingIds, preferredId = "field", suffixFactory = () => Date.now().toString(36)) {
     const used = new Set(existingIds);
     const base = String(preferredId || "field").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100) || "field";
@@ -292,6 +310,7 @@
     createStorageAdapter,
     createUniqueFieldId,
     parseStoredJson,
+    readFileAs,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,

@@ -34,6 +34,7 @@ const assertions = [
   ["local JSON restores through safe parsing", (value) => value.includes("PackagingUtils.parseStoredJson") && value.includes("sanitizeImportedFaceColors(PackagingUtils.parseStoredJson")],
   ["global reset handles storage failures", (value) => value.includes("if (!clearLocalStorage())") && value.includes("Les données existantes ont été conservées")],
   ["file operations report import and download failures", (value) => value.includes("function reportFileOperationError") && value.includes("function downloadBlob") && value.includes("function readFileAsText") && value.includes("function readFileAsDataUrl")],
+  ["file reading delegates to pure utilities", (value) => value.includes('PackagingUtils.readFileAs(file, "readAsText")') && value.includes('PackagingUtils.readFileAs(file, "readAsDataURL")')],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 

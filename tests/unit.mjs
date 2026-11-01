@@ -92,6 +92,18 @@ if (utils.parseStoredJson('{"ok":true}')?.ok !== true ||
     utils.parseStoredJson(null, "fallback") !== "fallback") {
   throw new Error("Stored JSON parsing failed.");
 }
+class TestFileReader {
+  readAsText() {
+    queueMicrotask(() => {
+      this.result = "content";
+      this.onload?.({ target: this });
+    });
+  }
+}
+context.FileReader = TestFileReader;
+const fileContent = await utils.readFileAs({}, "readAsText");
+if (fileContent !== "content") throw new Error("File reader utility failed.");
+delete context.FileReader;
 const adapter = utils.createStorageAdapter(storage);
 if (!adapter.write("settings", '{"ok":true}') || adapter.read("settings") !== '{"ok":true}') {
   throw new Error("Storage adapter read/write failed.");
