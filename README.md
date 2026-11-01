@@ -102,8 +102,8 @@ Points à retenir :
 
 ```
 .
-├── index.html   # Application complète (HTML + CSS + JS embarqués)
-├── src/         # Utilitaires purs et presets de champs (sanitation, géométrie, migration, JSON, stockage)
+├── index.html   # Markup de l'application et contrôleurs DOM principaux
+├── src/         # CSS, utilitaires purs, presets et modules d'export
 └── tests/       # Tests unitaires, smoke et navigateur
 ```
 
@@ -125,6 +125,9 @@ La conversion des clips polygonaux CSS en clips SVG est isolée dans
 `src/png-clips.js`.
 La géométrie des panneaux du fallback PNG est isolée dans
 `src/png-fallback-geometry.js`.
+Les styles de l'application sont isolés dans `src/packaging.css`.
+Le contrôleur DOM principal est chargé depuis `src/app.js`; `index.html`
+conserve le markup et le bootstrap des dépendances.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 

@@ -1,0 +1,4815 @@
+      // Exact conversion ratio 96px/25.4mm for physical print dimensions
+      const MM_TO_PX = 3.779527559;
+
+      // Selection state for PowerPoint-style custom fields
+      let selectedFieldId = null;
+      // Sélection multiple additionnelle (Maj+clic). Ne contient jamais
+      // selectedFieldId lui-même — l'ensemble complet sélectionné est
+      // { selectedFieldId } ∪ groupSelection, accessible via getSelectedIds().
+      let groupSelection = new Set();
+      // La barre d'outils flottante ne s'affiche qu'à la demande (clic
+      // droit sur un champ), pour ne pas masquer le contenu à chaque
+      // simple clic de sélection.
+      let toolbarVisible = false;
+
+      function getSelectedIds() {
+        const ids = [];
+        if (selectedFieldId) ids.push(selectedFieldId);
+        groupSelection.forEach(id => { if (id !== selectedFieldId) ids.push(id); });
+        return ids;
+      }
+
+      function refreshSelectionVisuals() {
+        const ids = getSelectedIds();
+        document.querySelectorAll(".custom-field").forEach(el => {
+          el.classList.toggle("selected", ids.includes(el.dataset.fieldId));
+        });
+      }
+
+      // Maj+clic sur un champ : l'ajoute ou le retire de la sélection
+      // groupée, sans démarrer de glisser-déposer.
+      function toggleGroupSelection(fieldId) {
+        if (!selectedFieldId) {
+          selectField(fieldId, /*skipSidebarScroll=*/true, /*focusInput=*/false);
+          return;
+        }
+        if (fieldId === selectedFieldId) {
+          if (groupSelection.size > 0) {
+            const next = groupSelection.values().next().value;
+            groupSelection.delete(next);
+            selectedFieldId = next;
+          } else {
+            deselectField();
+            return;
+          }
+        } else if (groupSelection.has(fieldId)) {
+          groupSelection.delete(fieldId);
+        } else {
+          groupSelection.add(fieldId);
+        }
+        toolbarVisible = false;
+        refreshSelectionVisuals();
+        updateGroupToolbar();
+        updateFloatingToolbar();
+      }
+
+      function getFaceDimensionsPx(faceId) {
+        return PackagingUtils.getFaceDimensions(controls.boxType.value, faceId, {
+          dimW: controls.dimW.value,
+          dimH: controls.dimH.value,
+          dimD: controls.dimD.value,
+          flapLength: controls.flapLength.value,
+        }, MM_TO_PX);
+      }
+
+      function selectField(fieldId, skipSidebarScroll = false, focusInput = true) {
+        selectedFieldId = fieldId;
+        groupSelection = new Set();
+        
+        // Add visual outline class on target
+        document.querySelectorAll(".custom-field").forEach(el => {
+          if (el.dataset.fieldId === fieldId) {
+            el.classList.add("selected");
+          } else {
+            el.classList.remove("selected");
+          }
+        });
+
+        const groupToolbarEl = document.getElementById("groupToolbar");
+        if (groupToolbarEl) groupToolbarEl.classList.remove("show");
+
+        // Show toolbar
+        updateFloatingToolbar();
+
+        if (skipSidebarScroll) return;
+
+        // Focus & highlight sidebar input
+        const row = document.querySelector(`#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`);
+        if (row) {
+          // Uncollapse if collapsed
+          if (row.classList.contains("collapsed")) {
+            row.classList.remove("collapsed");
+          }
+          
+          // Scroll into view inside sidebar
+          row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          
+          // Highlight row temporarily
+          row.classList.add("highlight-pulse");
+          setTimeout(() => {
+            row.classList.remove("highlight-pulse");
+          }, 1500);
+
+          // Focus first text input — désactivé pour un clic depuis le
+          // plan de travail (canvas), afin que les flèches du clavier
+          // restent disponibles immédiatement pour le déplacement fin
+          // (nudge) du champ au lieu d'être captées par le champ texte.
+          if (focusInput) {
+            const firstInput = row.querySelector("input[type='text'], textarea");
+            if (firstInput) {
+              firstInput.focus();
+            }
+          }
+        }
+      }
+
+      function deselectField() {
+        selectedFieldId = null;
+        groupSelection = new Set();
+        toolbarVisible = false;
+        document.querySelectorAll(".custom-field").forEach(el => el.classList.remove("selected"));
+        const toolbar = document.getElementById("floatingToolbar");
+        if (toolbar) toolbar.classList.remove("show");
+        const groupToolbar = document.getElementById("groupToolbar");
+        if (groupToolbar) groupToolbar.classList.remove("show");
+      }
+
+      function updateFloatingToolbar() {
+        const toolbar = document.getElementById("floatingToolbar");
+        if (!toolbar) return;
+        if (!selectedFieldId || !toolbarVisible || getSelectedIds().length > 1) {
+          toolbar.classList.remove("show");
+          return;
+        }
+
+        const field = fieldsConfig.find((f) => f.id === selectedFieldId);
+        if (!field) {
+          deselectField();
+          return;
+        }
+
+        // Find the rendered element on canvas
+        const renderedEl = document.querySelector(`.custom-field[data-field-id="${selectedFieldId}"]`);
+        if (!renderedEl) {
+          toolbar.classList.remove("show");
+          return;
+        }
+
+        // Position toolbar
+        const rect = renderedEl.getBoundingClientRect();
+        const workspaceEl = document.querySelector(".workspace");
+        const workspaceRect = workspaceEl.getBoundingClientRect();
+
+        // Calculate position relative to the workspace container
+        // We place the toolbar well above the top of the element, centered
+        // horizontally, with enough clearance to not overlap the field
+        // itself or its selection outline.
+        const TOOLBAR_OFFSET = 70;
+        const left = rect.left - workspaceRect.left + workspaceEl.scrollLeft + rect.width / 2;
+        let top = rect.top - workspaceRect.top + workspaceEl.scrollTop - TOOLBAR_OFFSET;
+
+        // Prevent toolbar from going off the top of the workspace viewport
+        if (top < workspaceEl.scrollTop + 10) {
+          top = rect.bottom - workspaceRect.top + workspaceEl.scrollTop + (TOOLBAR_OFFSET - 25);
+        }
+
+        toolbar.style.left = `${left}px`;
+        toolbar.style.top = `${top}px`;
+        toolbar.style.transform = "translateX(-50%)";
+        toolbar.classList.add("show");
+
+        // Sync inputs in the toolbar
+        document.getElementById("tbFontFamily").value = field.fontFamily || "inherit";
+        document.getElementById("tbFontSize").value = field.fontSize || 10;
+        document.getElementById("tbBold").classList.toggle("active", !!field.bold);
+        
+        document.getElementById("tbAlignLeft").classList.toggle("active", field.align === "left");
+        document.getElementById("tbAlignCenter").classList.toggle("active", field.align === "center");
+        document.getElementById("tbAlignRight").classList.toggle("active", field.align === "right");
+        
+        document.getElementById("tbColor").value = field.color || "#000000";
+
+        // Le bouton d'édition directe n'a de sens que pour les types dont
+        // le contenu est du texte affiché tel quel.
+        const tbEdit = document.getElementById("tbEditText");
+        if (tbEdit) tbEdit.style.display = canEditInline(field) ? "" : "none";
+      }
+
+      // Controls Selection
+      const controls = {
+        boxType: document.getElementById("boxType"),
+        dimW: document.getElementById("dimW"),
+        dimH: document.getElementById("dimH"),
+        dimD: document.getElementById("dimD"),
+        colPrimary: document.getElementById("colPrimary"),
+        colAccent: document.getElementById("colAccent"),
+        txtLabName: document.getElementById("txtLabName"),
+        showLabName: document.getElementById("showLabName"),
+        txtSlogan: document.getElementById("txtSlogan"),
+        flapLength: document.getElementById("flapLength"),
+        dustFlapsEnabled: document.getElementById("dustFlapsEnabled"),
+        logoSizeSlider: document.getElementById("logoSizeSlider"),
+      };
+
+      const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
+      const toggleMarginsBtn = document.getElementById("toggleMarginsBtn");
+      const printBtn = document.getElementById("printBtn");
+      const boxGrid = document.getElementById("boxGrid");
+      const dieLinesSvg = document.getElementById("dieLinesSvg");
+      const patronSheet = document.getElementById("patronSheet");
+
+      // --- Zoom du graphique (rendu du patron) ---
+      const zoomOutBtn = document.getElementById("zoomOutBtn");
+      const zoomInBtn = document.getElementById("zoomInBtn");
+      const zoomResetBtn = document.getElementById("zoomResetBtn");
+      const zoomLevelLabel = document.getElementById("zoomLevelLabel");
+      const workspaceEl = document.querySelector(".workspace");
+      const ZOOM_MIN = 0.25;
+      const ZOOM_MAX = 3;
+      const ZOOM_STEP = 0.1;
+      let zoomLevel = 1;
+
+      function applyZoom() {
+        patronSheet.style.transform = `scale(${zoomLevel})`;
+        zoomLevelLabel.textContent = `${Math.round(zoomLevel * 100)}%`;
+      }
+
+      function setZoom(value) {
+        zoomLevel = Math.min(
+          ZOOM_MAX,
+          Math.max(ZOOM_MIN, Math.round(value * 100) / 100),
+        );
+        applyZoom();
+      }
+
+      zoomInBtn.addEventListener("click", () => setZoom(zoomLevel + ZOOM_STEP));
+      zoomOutBtn.addEventListener("click", () =>
+        setZoom(zoomLevel - ZOOM_STEP),
+      );
+      zoomResetBtn.addEventListener("click", () => setZoom(1));
+
+      // Zoom à la molette (Ctrl/Cmd + molette) directement sur le rendu
+      workspaceEl.addEventListener(
+        "wheel",
+        (e) => {
+          if (!e.ctrlKey && !e.metaKey) return;
+          e.preventDefault();
+          setZoom(zoomLevel + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+        },
+        { passive: false },
+      );
+      const logoUpload = document.getElementById("logoUpload");
+      const logoResetBtn = document.getElementById("logoResetBtn");
+
+      // Logo personnalisé — stocké en mémoire (data URL), utilisé par
+      // getLogoMarkup() partout où un logo est affiché (Comprimé & Sirop).
+      let customLogoUrl = null;
+      const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+      const MAX_TEMPLATE_FILE_SIZE = 2 * 1024 * 1024;
+      const MAX_IMPORTED_FIELDS = 250;
+      const SAFE_IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
+      const SAFE_COLOR = /^#[0-9a-f]{6}$/i;
+
+      function isSafeImageDataUrl(value) {
+        return PackagingUtils.isSafeImageDataUrl(value);
+      }
+
+      function isAllowedImageFile(file) {
+        return (
+          file &&
+          MAX_IMAGE_FILE_SIZE >= file.size &&
+          ["image/png", "image/jpeg", "image/gif", "image/webp"].includes(file.type)
+        );
+      }
+
+      function isAllowedTemplateFile(file) {
+        return file && file.size <= MAX_TEMPLATE_FILE_SIZE && (
+          file.type === "application/json" || /\.json$/i.test(file.name)
+        );
+      }
+
+      function reportFileOperationError(message, error = null) {
+        if (error) console.error(message, error);
+        else console.error(message);
+        const summary = document.getElementById("validationSummary");
+        if (summary) {
+          summary.textContent = message;
+          summary.classList.add("has-warnings");
+        }
+        alert(message);
+      }
+
+      function downloadBlob(blob, filename) {
+        try {
+          if (!(blob instanceof Blob)) throw new TypeError("Export invalide.");
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          return true;
+        } catch (error) {
+          reportFileOperationError(`Impossible de télécharger ${filename}.`, error);
+          return false;
+        }
+      }
+
+      function readFileAsText(file) {
+        return PackagingUtils.readFileAs(file, "readAsText");
+      }
+
+      function readFileAsDataUrl(file) {
+        return PackagingUtils.readFileAs(file, "readAsDataURL");
+      }
+
+      function sanitizeImportedFields(fields) {
+        const validFaces = new Set(
+          [...TABLET_FACE_OPTIONS, ...LIQUID_FACE_OPTIONS].map((face) => face.value),
+        );
+        const validTypes = new Set(TYPE_OPTIONS.map((type) => type.value));
+        return PackagingUtils.sanitizeImportedFields(fields, validFaces, validTypes, {
+          maxFields: MAX_IMPORTED_FIELDS,
+        });
+      }
+
+      function createFieldId(preferred) {
+        return PackagingUtils.createUniqueFieldId(
+          fieldsConfig.map((field) => field.id),
+          preferred,
+        );
+      }
+
+      function sanitizeImportedFaceColors(value) {
+        return PackagingUtils.sanitizeImportedFaceColors(value);
+      }
+
+      function getLogoMarkup(sizePx) {
+        if (customLogoUrl) {
+          return `<img src="${customLogoUrl}" alt="Logo" style="width:var(--logo-size, ${sizePx}px); height:var(--logo-size, ${sizePx}px); object-fit:contain; flex-shrink:0;" />`;
+        }
+        return `<div class="logo-icon" style="width:var(--logo-size, ${sizePx}px); height:var(--logo-size, ${sizePx}px);"></div>`;
+      }
+
+      logoUpload.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!isAllowedImageFile(file)) {
+          alert("Image refusée : formats PNG, JPEG, GIF ou WebP de 5 Mo maximum.");
+          logoUpload.value = "";
+          return;
+        }
+        readFileAsDataUrl(file).then((dataUrl) => {
+          if (!isSafeImageDataUrl(dataUrl)) {
+            alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
+            logoUpload.value = "";
+            return;
+          }
+          customLogoUrl = dataUrl;
+          updateTextBinders();
+        }).catch((error) => reportFileOperationError("Impossible de lire le logo.", error));
+      });
+
+      logoResetBtn.addEventListener("click", () => {
+        customLogoUrl = null;
+        logoUpload.value = "";
+        updateTextBinders();
+      });
+
+      // Default template presets
+      const presets = {
+        tablet: {
+          dimW: 90,
+          dimH: 60,
+          dimD: 24,
+          colPrimary: "#12233f",
+          colAccent: "#f5a623",
+          txtProduct: "Paracétamol",
+          txtDosage: "paracétamol 500 mg",
+          txtQty: "20 comprimés",
+          txtComposition2:
+            "Chaque comprimé contient 500 mg de paracétamol. Excipients : lactose, amidon, talc, stéarate de magnésium.",
+          txtIndications:
+            "Traitement symptomatique de la douleur et/ou de la fièvre.\nAdulte : 1 à 2 comprimés toutes les 4 à 6 heures.\nNe pas dépasser 3 g par jour.",
+          txtLiquidDescription: "",
+          txtLiquidComposition: "",
+          txtLiquidPrecautions: "",
+        },
+        liquid: {
+          dimW: 80,
+          dimH: 160,
+          dimD: 60,
+          colPrimary: "#1e3a8a",
+          colAccent: "#f97316",
+          txtProduct: "Sirop de Paracétamol",
+          txtDosage: "paracétamol 2.4% (120mg / 5ml)",
+          txtQty: "200 ML",
+          txtComposition2:
+            "Chaque ml de sirop contient 24 mg de paracétamol. Excipients : saccharose, propylène glycol, sorbitol, arôme fraise, eau purifiée.",
+          txtIndications:
+            "Traitement symptomatique des douleurs légères à modérées.\nEnfants : 15 mg/kg toutes les 6 heures.\nUtiliser exclusivement la pipette doseuse fournie.",
+          txtLiquidDescription:
+            "Chaque mesure contient le principe actif dosé pour assurer l'efficacité thérapeutique. Veuillez lire attentivement la notice réglementaire et les dosages de sécurité figurant sur le flanc de l'emballage.",
+          txtLiquidComposition:
+            "Paracétamol: 24 mg\nSaccharose: 0.3 g\nPropylène Glycol: 0.1 ml\nSorbitol: 0.15 g\nArôme fraise: Q.S.\nEau purifiée: Q.S.P 1 ml",
+          txtLiquidPrecautions:
+            "Tenir hors de la portée et de la vue des enfants. Conserver à une température ne dépassant pas 30°C.",
+        },
+      };
+
+      // Affiche uniquement les champs pertinents pour le type de boîte
+      // sélectionné (évite les zones dupliquées / sans effet visible).
+      function applyModeVisibility(type) {
+        document.querySelectorAll("[data-mode-only]").forEach((el) => {
+          el.style.display = el.dataset.modeOnly === type ? "" : "none";
+        });
+      }
+
+      // Apply template properties
+      controls.boxType.addEventListener("change", () => {
+        const type = controls.boxType.value;
+        const preset = presets[type];
+        applyModeVisibility(type);
+
+        controls.dimW.value = preset.dimW;
+        controls.dimH.value = preset.dimH;
+        controls.dimD.value = preset.dimD;
+        controls.colPrimary.value = preset.colPrimary;
+        controls.colAccent.value = preset.colAccent;
+
+        updateTextBinders();
+        updateGeometry();
+
+        // Le mode a changé : les pickers et l'éditeur de champs doivent
+        // être reconstruits pour ne montrer que les faces pertinentes.
+        populateDefaultFieldPicker();
+        populateResetFacePicker();
+        populateFaceColorPicker();
+        renderFieldEditor();
+        applyCustomFaceColors();
+      });
+
+      // ============================================================
+      // === Système de champs personnalisables (mode Comprimés) ===
+      // Chaque champ définit : sur quelle face il apparaît, sa
+      // position (x/y en %), sa taille (largeur/hauteur en %), sa
+      // police et son contenu. Le rendu est entièrement généré à
+      // partir de ce tableau — aucune position n'est plus codée en dur.
+      // ============================================================
+
+      const FIELDS_STORAGE_KEY = "packaging_fields_config_v1";
+
+      const TABLET_FACE_OPTIONS = [
+        { value: "p5", label: "Face avant" },
+        { value: "p9", label: "Face arrière" },
+        { value: "p1", label: "Rabat gauche — zone rectangle (côté)" },
+        {
+          value: "p1-rabat",
+          label: "Rabat gauche — zone trapèze (verrouillage)",
+        },
+        { value: "p10", label: "Rabat droit — zone rectangle (côté)" },
+        {
+          value: "p10-rabat",
+          label: "Rabat droit — zone trapèze (verrouillage)",
+        },
+        { value: "p12", label: "Flanc supérieur" },
+        { value: "p7", label: "Flanc inférieur" },
+      ];
+
+      // Faces disponibles pour le mode Sirop / Flacon liquide
+      // (correspondance avec les panneaux du patron déplié vertical).
+      const LIQUID_FACE_OPTIONS = [
+        { value: "lp5", label: "Face avant" },
+        { value: "lp7", label: "Face arrière" },
+        { value: "lp6", label: "Côté gauche (ingrédients)" },
+        { value: "lp8", label: "Côté droit (notice & codes)" },
+        { value: "lp1", label: "Rabat haut — zone visible (côté pli)" },
+        { value: "lp1-rabat", label: "Rabat haut — zone trapèze (verrouillage)" },
+        { value: "lp10", label: "Rabat bas — zone visible (côté pli)" },
+        { value: "lp10-rabat", label: "Rabat bas — zone trapèze (verrouillage)" },
+      ];
+
+      // Rétro-compatibilité : ancien nom utilisé ailleurs dans le code.
+      const FACE_OPTIONS = TABLET_FACE_OPTIONS;
+
+      function isLiquidMode() {
+        return controls.boxType.value === "liquid";
+      }
+
+      function getActiveFaceOptions() {
+        return isLiquidMode() ? LIQUID_FACE_OPTIONS : TABLET_FACE_OPTIONS;
+      }
+
+      const TYPE_OPTIONS = [
+        { value: "text", label: "Texte" },
+        { value: "table", label: "Tableau (nom … valeur, pointillés)" },
+        { value: "pictogram", label: "Pictogramme" },
+        { value: "barcode", label: "Code-barres EAN-13" },
+        { value: "datamatrix", label: "Datamatrix (2D)" },
+        { value: "braille", label: "Braille" },
+        { value: "shape", label: "Forme / Zone de couleur" },
+        { value: "logo", label: "Logo personnalisé" },
+        { value: "image", label: "Image importée" },
+      ];
+
+      // Rotation du contenu d'un champ : permet de disposer le texte (ou
+      // tout autre type de champ) dans un sens comme dans l'autre — utile
+      // notamment dans les zones étroites (trapèze de verrouillage des
+      // rabats) où le contenu se lit mieux tourné à 90°.
+      const ROTATION_OPTIONS = [
+        { value: 0, label: "0° (normal)" },
+        { value: 90, label: "90° (horaire)" },
+        { value: 180, label: "180° (tête en bas)" },
+        { value: 270, label: "270° (anti-horaire)" },
+      ];
+
+      const SHAPE_TYPE_OPTIONS = [
+        // --- Unis ---
+        { value: "rectangle", label: "Rectangle uni", group: "Unis" },
+        { value: "rounded-rectangle", label: "Rectangle arrondi", group: "Unis" },
+        { value: "pill", label: "Pilule (bords totalement arrondis)", group: "Unis" },
+        { value: "circle", label: "Cercle / Ovale", group: "Unis" },
+
+        // --- Dégradés (2 couleurs, transition douce) ---
+        { value: "gradient-linear", label: "Dégradé linéaire (diagonal)", group: "Dégradés" },
+        { value: "gradient-horizontal", label: "Dégradé horizontal", group: "Dégradés" },
+        { value: "gradient-vertical", label: "Dégradé vertical", group: "Dégradés" },
+        { value: "gradient-radial", label: "Dégradé radial (halo)", group: "Dégradés" },
+
+        // --- Bicolores (séparation nette) ---
+        { value: "diagonal-tl-br", label: "Diagonale ↘ (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "diagonal-tr-bl", label: "Diagonale ↙ (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "split-horizontal", label: "Séparation horizontale (haut/bas)", group: "Bicolores (séparation nette)" },
+        { value: "split-vertical", label: "Séparation verticale (gauche/droite)", group: "Bicolores (séparation nette)" },
+        { value: "curve-wave", label: "Courbe / vague (2 couleurs)", group: "Bicolores (séparation nette)" },
+        { value: "corner-accent-tr", label: "Accent triangulaire (coin haut-droit)", group: "Bicolores (séparation nette)" },
+
+        // --- Motifs / textures ---
+        { value: "stripes-diagonal", label: "Rayures diagonales", group: "Motifs / textures" },
+        { value: "stripes-horizontal", label: "Rayures horizontales", group: "Motifs / textures" },
+        { value: "dots-pattern", label: "Pois / motif à points", group: "Motifs / textures" },
+        { value: "grid-pattern", label: "Quadrillage fin", group: "Motifs / textures" },
+
+        // --- Cadres & contours (fond transparent) ---
+        { value: "outline-frame", label: "Cadre (contour simple)", group: "Cadres & contours" },
+        { value: "outline-frame-rounded", label: "Cadre arrondi", group: "Cadres & contours" },
+        { value: "ring", label: "Anneau (cercle contour)", group: "Cadres & contours" },
+        { value: "double-frame", label: "Double cadre (liseré intérieur)", group: "Cadres & contours" },
+
+        // --- Formes géométriques standards (plein ou contour) ---
+        { value: "triangle", label: "Triangle", group: "Formes géométriques" },
+        { value: "triangle-inverted", label: "Triangle inversé", group: "Formes géométriques" },
+        { value: "right-triangle", label: "Triangle rectangle", group: "Formes géométriques" },
+        { value: "diamond", label: "Losange", group: "Formes géométriques" },
+        { value: "pentagon", label: "Pentagone", group: "Formes géométriques" },
+        { value: "hexagon", label: "Hexagone", group: "Formes géométriques" },
+        { value: "star", label: "Étoile (5 branches)", group: "Formes géométriques" },
+        { value: "arrow-right", label: "Flèche →", group: "Formes géométriques" },
+        { value: "arrow-left", label: "Flèche ←", group: "Formes géométriques" },
+        { value: "arrow-up", label: "Flèche ↑", group: "Formes géométriques" },
+        { value: "arrow-down", label: "Flèche ↓", group: "Formes géométriques" },
+        { value: "chevron-right", label: "Chevron", group: "Formes géométriques" },
+        { value: "line-horizontal", label: "Ligne horizontale", group: "Formes géométriques" },
+        { value: "line-vertical", label: "Ligne verticale", group: "Formes géométriques" },
+        { value: "line-diagonal", label: "Ligne diagonale", group: "Formes géométriques" },
+
+        // --- Forme personnalisée (tracé libre par clic) ---
+        { value: "custom", label: "✏️ Forme personnalisée (dessin libre)", group: "Personnalisé" },
+      ];
+
+      // Formes dont le style visuel supporte le choix Plein/Contour +
+      // épaisseur de trait dans l'éditeur de champ.
+      const GEOMETRIC_SHAPE_TYPES = [
+        "triangle", "triangle-inverted", "right-triangle", "diamond",
+        "pentagon", "hexagon", "star", "arrow-right", "arrow-left",
+        "arrow-up", "arrow-down", "chevron-right",
+        "line-horizontal", "line-vertical", "line-diagonal",
+      ];
+
+      function defaultTabletFieldsConfig() {
+        return PackagingDefaults.defaultTabletFieldsConfig();
+      }
+
+      function defaultLiquidFieldsConfig() {
+        return PackagingDefaults.defaultLiquidFieldsConfig();
+      }
+
+      function defaultFieldsConfig() {
+        return [
+          ...defaultTabletFieldsConfig(),
+          ...defaultLiquidFieldsConfig(),
+        ];
+      }
+
+      // Recadre un champ pour que son AABB tienne dans sa face.
+      // Indispensable pour les champs pivotés posés sur une face étroite :
+      // à 90°, la largeur visuelle vaut h/aspect — sur un rabat étroit
+      // (aspect ≈ 0,47) un h de 60 % réclamerait 128 % de largeur, ce qui
+      // est géométriquement impossible. On réduit alors la boîte locale
+      // (à ratio constant) puis on ramène l'origine dans la face.
+      function fitFieldIntoFace(field) {
+        return PackagingUtils.fitFieldIntoFace(field, getVisualSize);
+      }
+
+      // ==================================================================
+      // MIGRATION DU SCHÉMA DES CHAMPS
+      // ==================================================================
+      // v1 → v2 : x/y désignaient le coin de la boîte LOCALE, avec une
+      // compensation de rotation erronée (translate en % résolu sur la
+      // taille de l'élément au lieu de celle du parent). Ils désignent
+      // désormais le coin de l'AABB.
+      //
+      // Sans migration, toute maquette contenant un champ pivoté « sauterait »
+      // au premier chargement de cette version. On recalcule donc x/y pour
+      // que l'utilisateur retrouve sa mise en page à l'identique.
+      //
+      // ⚠️ L'ancien rendu dépendait du ratio px de la face (le % de transform
+      // se résolvait sur la taille en px de l'élément). Cette migration
+      // reproduit ce calcul en utilisant le ratio d'aspect réel de la face
+      // quand il est connu ; à défaut elle suppose une face carrée. Les
+      // champs NON pivotés (l'immense majorité) sont exacts dans tous les cas.
+      const FIELDS_SCHEMA_VERSION = 2;
+      let storageWarningShown = false;
+
+      const localStorageAdapter = PackagingUtils.createStorageAdapter(
+        (() => {
+          try {
+            return window.localStorage;
+          } catch (error) {
+            return null;
+          }
+        })(),
+        {
+          onReadError: (key, error) => {
+            console.error(`Lecture locale impossible pour ${key} :`, error);
+          },
+          onWriteError: (key, error) => {
+            console.error(`Sauvegarde locale impossible pour ${key} :`, error);
+            if (!storageWarningShown) {
+              storageWarningShown = true;
+              const summary = document.getElementById("validationSummary");
+              if (summary) {
+                summary.textContent =
+                  "La sauvegarde locale est indisponible ou pleine. Vos modifications ne seront pas conservées après fermeture.";
+                summary.classList.add("has-warnings");
+              }
+            }
+          },
+          onClearError: (error) => {
+            console.error("Réinitialisation locale impossible :", error);
+            const summary = document.getElementById("validationSummary");
+            if (summary) {
+              summary.textContent =
+                "La réinitialisation locale a échoué. Les données existantes ont été conservées.";
+              summary.classList.add("has-warnings");
+            }
+          },
+        },
+      );
+
+      function readFromLocalStorage(key) {
+        return localStorageAdapter.read(key);
+      }
+
+      function saveToLocalStorage(key, value) {
+        return localStorageAdapter.write(key, value);
+      }
+
+      function clearLocalStorage() {
+        return localStorageAdapter.clear();
+      }
+
+      // Reproduit fidèlement l'ANCIEN rendu (buggé) pour en déduire le
+      // coin de l'AABB réellement affiché à l'écran, puis l'adopte comme
+      // nouveau x/y. L'utilisateur retrouve ainsi sa maquette à l'identique.
+      //
+      // Ancien code : transform-origin:top left, puis
+      //   translate(dxOld%, dyOld%) rotate(rot)
+      // où dxOld/dyOld étaient CALCULÉS en % de la face mais INTERPRÉTÉS
+      // par le navigateur en % de l'élément — d'où le décalage.
+      function migrateFieldsV1toV2(fields) {
+        return PackagingUtils.migrateFieldsV1toV2(fields, (face) => getFaceAspect(face) || 1);
+      }
+
+      // Nombre de champs pivotés migrés : sert à avertir l'utilisateur
+      // que ces champs méritent une vérification visuelle.
+      let _fieldsMigrationApplied = 0;
+      // La migration a besoin des rapports d'aspect des faces, donc du DOM
+      // rendu. Or loadFieldsConfig() s'exécute bien avant le premier
+      // updateGeometry(). On mémorise donc le travail à faire et on
+      // l'exécute après le premier rendu (voir runPendingFieldsMigration).
+      let _pendingFieldsMigration = false;
+      // Idem pour le recadrage des presets (champs pivotés sur faces
+      // étroites), qui dépend lui aussi des rapports d'aspect.
+      let _pendingDefaultsNormalize = false;
+
+      function loadFieldsConfig() {
+        const raw = readFromLocalStorage(FIELDS_STORAGE_KEY);
+        if (raw) {
+          const parsed = PackagingUtils.parseStoredJson(raw);
+          if (parsed) {
+            // Format v2 : { version, fields }. Format v1 : tableau nu.
+            if (Array.isArray(parsed) && parsed.length) {
+              // Format v1 : tableau nu → migration différée.
+              _pendingFieldsMigration = true;
+              return sanitizeImportedFields(parsed);
+            }
+            if (
+              parsed &&
+              Array.isArray(parsed.fields) &&
+              parsed.fields.length
+            ) {
+              if (Number(parsed.version) < FIELDS_SCHEMA_VERSION) {
+                _pendingFieldsMigration = true;
+              }
+              return sanitizeImportedFields(parsed.fields);
+            }
+          }
+        }
+        // Aucune sauvegarde : on part des presets. Ils sont désormais
+        // AUTEURÉS dans le repère v2 (pas de migration à leur appliquer),
+        // mais leurs champs pivotés doivent être recadrés une fois les
+        // rapports d'aspect connus (voir _pendingDefaultsNormalize).
+        _pendingDefaultsNormalize = true;
+        return sanitizeImportedFields(defaultFieldsConfig());
+      }
+
+      // Exécute la migration une fois les faces rendues (rapports d'aspect
+      // mesurables). Idempotent : le drapeau est consommé.
+      function runPendingFieldsMigration() {
+        // Presets neufs : pas de migration de repère, mais un recadrage
+        // des champs pivotés dont l'AABB dépasse leur face étroite.
+        if (_pendingDefaultsNormalize) {
+          _pendingDefaultsNormalize = false;
+          fieldsConfig = fieldsConfig.map((f) =>
+            normalizeRotation(f.rotation) ? fitFieldIntoFace(f) : f,
+          );
+          persistFieldsConfig();
+          return;
+        }
+        if (!_pendingFieldsMigration) return;
+        _pendingFieldsMigration = false;
+        _fieldsMigrationApplied = fieldsConfig.filter(
+          (f) => normalizeRotation(f && f.rotation) !== 0,
+        ).length;
+        // Migration du repère, PUIS recadrage : une maquette ancienne peut
+        // contenir un champ pivoté qui débordait déjà sous l'ancien rendu.
+        fieldsConfig = migrateFieldsV1toV2(fieldsConfig).map((f) =>
+          normalizeRotation(f.rotation) ? fitFieldIntoFace(f) : f,
+        );
+        persistFieldsConfig();
+        if (_fieldsMigrationApplied > 0) {
+          console.info(
+            `[maquette] ${_fieldsMigrationApplied} champ(s) pivoté(s) migré(s) vers le repère AABB (schéma v${FIELDS_SCHEMA_VERSION}).`,
+          );
+        }
+      }
+
+      function persistFieldsConfig() {
+        saveToLocalStorage(
+          FIELDS_STORAGE_KEY,
+          JSON.stringify({
+            version: FIELDS_SCHEMA_VERSION,
+            fields: fieldsConfig,
+          }),
+        );
+      }
+
+      // --- Historique Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ---
+      const fieldsHistory = PackagingHistory.createHistoryController({
+        getState: () => fieldsConfig,
+        restoreState: (snapshot) => {
+          fieldsConfig = snapshot;
+          persistFieldsConfig();
+          deselectField();
+          renderFieldEditor();
+          renderAllCustomFields();
+        },
+      });
+
+      function commitHistorySnapshot() {
+        fieldsHistory.commit();
+      }
+
+      function scheduleHistorySnapshot() {
+        fieldsHistory.schedule();
+      }
+
+      function undoFieldChange() {
+        fieldsHistory.undo();
+      }
+
+      function redoFieldChange() {
+        fieldsHistory.redo();
+      }
+
+      function saveFieldsConfig() {
+        persistFieldsConfig();
+        scheduleHistorySnapshot();
+      }
+
+      // Applique les réglages globaux importés depuis un gabarit v2 :
+      // dimensions, couleurs, logo, slogan, rabats, couleurs de face…
+      // Cette fonction restaure fidèlement l'état complet de l'outil,
+      // ce qui manquait dans l'export v1 (champs uniquement).
+      function applyImportedSettings(settings) {
+        const safeSettings = PackagingUtils.sanitizeImportedSettings(settings);
+        if (!Object.keys(safeSettings).length) return;
+        // Type de boîte
+        if (safeSettings.boxType) {
+          controls.boxType.value = safeSettings.boxType;
+          applyModeVisibility(safeSettings.boxType);
+        }
+        // Dimensions (mm)
+        if (safeSettings.dimW !== undefined) controls.dimW.value = safeSettings.dimW;
+        if (safeSettings.dimH !== undefined) controls.dimH.value = safeSettings.dimH;
+        if (safeSettings.dimD !== undefined) controls.dimD.value = safeSettings.dimD;
+        // Rabat de verrouillage (mm)
+        if (safeSettings.flapLength !== undefined) controls.flapLength.value = safeSettings.flapLength;
+        // Rabats poussière
+        if (safeSettings.dustFlapsEnabled !== undefined) controls.dustFlapsEnabled.checked = safeSettings.dustFlapsEnabled;
+        // Couleurs
+        if (safeSettings.colPrimary) {
+          controls.colPrimary.value = safeSettings.colPrimary;
+          document.documentElement.style.setProperty('--primary', safeSettings.colPrimary);
+        }
+        if (safeSettings.colAccent) {
+          controls.colAccent.value = safeSettings.colAccent;
+          document.documentElement.style.setProperty('--accent', safeSettings.colAccent);
+        }
+        // Laboratoire / Slogan
+        if (safeSettings.txtLabName !== undefined) controls.txtLabName.value = safeSettings.txtLabName;
+        if (safeSettings.txtSlogan !== undefined) controls.txtSlogan.value = safeSettings.txtSlogan;
+        if (safeSettings.showLabName !== undefined) {
+          controls.showLabName.checked = safeSettings.showLabName;
+          const labNameGroup = document.getElementById('labNameGroup');
+          if (labNameGroup) labNameGroup.style.opacity = safeSettings.showLabName ? '1' : '0.4';
+          document.body.classList.toggle('hide-lab-name', !safeSettings.showLabName);
+        }
+        // Taille du logo
+        if (safeSettings.logoSize !== undefined) {
+          controls.logoSizeSlider.value = safeSettings.logoSize;
+          document.documentElement.style.setProperty('--logo-size', safeSettings.logoSize + 'px');
+          const logoSizeVal = document.getElementById('logoSizeVal');
+          if (logoSizeVal) logoSizeVal.textContent = safeSettings.logoSize + 'px';
+        }
+        // Logo personnalisé (image importée)
+        if (safeSettings.customLogoUrl) {
+          customLogoUrl = safeSettings.customLogoUrl;
+        } else {
+          customLogoUrl = null;
+          logoUpload.value = '';
+        }
+        // Couleurs de fond des faces
+        if (safeSettings.customFacesBg) {
+          customFacesBg = safeSettings.customFacesBg;
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+        }
+        // Rafraîchir les pickers et la géométrie pour refléter les
+        // nouveaux réglages dans l'interface et le rendu du patron.
+        populateDefaultFieldPicker();
+        populateResetFacePicker();
+        populateFaceColorPicker();
+        updateTextBinders();
+        updateGeometry();
+        applyCustomFaceColors();
+        updateStatusChip();
+        // Afficher la valeur courante du curseur rabat
+        const flapLengthVal = document.getElementById('flapLengthVal');
+        if (flapLengthVal) flapLengthVal.textContent = controls.flapLength.value + 'mm';
+      }
+
+      let fieldsConfig = loadFieldsConfig();
+      fieldsHistory.setBaseline();
+
+      function escapeHtml(str) {
+        return String(str == null ? "" : str).replace(
+          /[&<>"']/g,
+          (s) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[s],
+        );
+      }
+
+      const BRAILLE_MAP = {
+        a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑", f: "⠋", g: "⠛", h: "⠓",
+        i: "⠊", j: "⠚", k: "⠅", l: "⠇", m: "⠍", n: "⠝", o: "⠕", p: "⠏",
+        q: "⠟", r: "⠗", s: "⠎", t: "⠞", u: "⠥", v: "⠧", w: "⠺", x: "⠭",
+        y: "⠽", z: "⠵", " ": " ",
+        "0": "⠴", "1": "⠂", "2": "⠆", "3": "⠒", "4": "⠲",
+        "5": "⠢", "6": "⠖", "7": "⠶", "8": "⠦", "9": "⠔",
+      };
+
+      function toBraille(text) {
+        return (text || "")
+          .toLowerCase()
+          .split("")
+          .map((ch) => BRAILLE_MAP[ch] || ch)
+          .join("");
+      }
+
+      function buildDatamatrixNode(field, contentOverride) {
+        const wrap = document.createElement("div");
+        wrap.className = "field-datamatrix-grid";
+        const size = 12;
+        wrap.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        wrap.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+        wrap.style.color = field.color || "#000000";
+        const str = contentOverride || field.content || "GS1";
+        let seed = 0;
+        for (let i = 0; i < str.length; i++) {
+          seed = (seed * 31 + str.charCodeAt(i)) >>> 0;
+        }
+        for (let i = 0; i < size * size; i++) {
+          seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+          const on = (seed >>> 16) % 2 === 0;
+          const cell = document.createElement("div");
+          cell.style.opacity = on ? "1" : "0";
+          wrap.appendChild(cell);
+        }
+        return wrap;
+      }
+
+      function buildLogoNode(field) {
+        const wrap = document.createElement("div");
+        wrap.className = "logo-container";
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.width = "100%";
+        wrap.style.height = "100%";
+        wrap.style.overflow = "hidden";
+        wrap.style.justifyContent = field.align === "center" ? "center" : (field.align === "right" ? "flex-end" : "flex-start");
+
+        // La taille de l'icône du logo suit le slider global "Taille du
+        // logo" (--logo-size) pour rester cohérente partout où le logo
+        // apparaît. field.fontSize ne sert plus qu'à dimensionner le texte
+        // du nom/slogan à côté du logo, pas l'icône elle-même.
+        const sizeStyle = `width:var(--logo-size, 22px); height:var(--logo-size, 22px);`;
+        let logoHtml = "";
+        if (customLogoUrl) {
+          logoHtml = `<img src="${customLogoUrl}" alt="Logo" style="${sizeStyle} object-fit:contain; flex-shrink:0;" />`;
+        } else {
+          const c1 = field.color || "var(--primary)";
+          const c2 = field.color2 || "var(--accent)";
+          logoHtml = `
+            <svg viewBox="0 0 100 100" style="${sizeStyle} flex-shrink:0;" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100" height="100" rx="20" fill="${c1}" />
+              <path d="M30 50H70M50 30V70" stroke="${c2}" stroke-width="8" stroke-linecap="round" />
+              <circle cx="50" cy="50" r="10" fill="#ffffff" />
+            </svg>
+          `;
+        }
+
+        const nameColor = field.color || "var(--primary)";
+        const sloganColor = field.color2 || "var(--accent)";
+        const showText = field.content !== "logo-only" && field.content !== "icon-only";
+
+        if (showText) {
+          const nameText = field.content ? field.content : controls.txtLabName.value;
+          const sloganText = controls.txtSlogan.value;
+          wrap.innerHTML = `
+            ${logoHtml}
+            <div class="logo-text" style="display:flex; flex-direction:column; overflow:hidden; text-align:left;">
+              <span class="logo-name" style="font-size:${field.fontSize || 10}px; font-weight:800; color:${nameColor}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; line-height:1.1;">${escapeHtml(nameText)}</span>
+              <span class="logo-slogan" style="font-size:${Math.max(5, (field.fontSize || 10) * 0.7)}px; font-weight:700; color:${sloganColor}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; line-height:1.1;">${escapeHtml(sloganText)}</span>
+            </div>
+          `;
+        } else {
+          wrap.innerHTML = logoHtml;
+        }
+
+        return wrap;
+      }
+
+      function buildShapeNode(field) {
+        const shapeType = field.shapeType || "rectangle";
+        const c1 = field.color || "#1e3a8a";
+        const c2 = field.color2 || "#f97316";
+        const wrap = document.createElement("div");
+        wrap.style.position = "relative";
+        wrap.style.width = "100%";
+        wrap.style.height = "100%";
+        wrap.style.overflow = "hidden";
+        wrap.style.boxSizing = "border-box";
+
+        // Petit utilitaire pour les formes bicolores en 2 blocs superposés
+        // (évite de dupliquer le clip-path/position à chaque fois).
+        function addSplitBlocks(insetA, bgA, insetB, bgB) {
+          const a = document.createElement("div");
+          a.style.position = "absolute";
+          a.style.inset = insetA;
+          a.style.background = bgA;
+          const b = document.createElement("div");
+          b.style.position = "absolute";
+          b.style.inset = insetB;
+          b.style.background = bgB;
+          wrap.appendChild(a);
+          wrap.appendChild(b);
+        }
+
+        if (shapeType === "circle") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "50%";
+        } else if (shapeType === "rounded-rectangle") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "10%";
+        } else if (shapeType === "pill") {
+          wrap.style.background = c1;
+          wrap.style.borderRadius = "999px";
+        } else if (shapeType === "gradient-linear") {
+          wrap.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-horizontal") {
+          wrap.style.background = `linear-gradient(90deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-vertical") {
+          wrap.style.background = `linear-gradient(180deg, ${c1}, ${c2})`;
+        } else if (shapeType === "gradient-radial") {
+          wrap.style.background = `radial-gradient(circle at 30% 30%, ${c1}, ${c2})`;
+        } else if (shapeType === "diagonal-tl-br" || shapeType === "diagonal-tr-bl") {
+          const base = document.createElement("div");
+          base.style.position = "absolute";
+          base.style.inset = "0";
+          base.style.background = c1;
+          const tri = document.createElement("div");
+          tri.style.position = "absolute";
+          tri.style.inset = "0";
+          tri.style.background = c2;
+          tri.style.clipPath =
+            shapeType === "diagonal-tl-br"
+              ? "polygon(100% 0, 100% 100%, 0 100%)"
+              : "polygon(0 0, 100% 0, 0 100%)";
+          wrap.appendChild(base);
+          wrap.appendChild(tri);
+        } else if (shapeType === "split-horizontal") {
+          addSplitBlocks("0 0 50% 0", c1, "50% 0 0 0", c2);
+        } else if (shapeType === "split-vertical") {
+          addSplitBlocks("0 50% 0 0", c1, "0 0 0 50%", c2);
+        } else if (shapeType === "curve-wave") {
+          wrap.style.background = c1;
+          const svgNS = "http://www.w3.org/2000/svg";
+          const svg = document.createElementNS(svgNS, "svg");
+          svg.setAttribute("viewBox", "0 0 100 100");
+          svg.setAttribute("preserveAspectRatio", "none");
+          svg.style.position = "absolute";
+          svg.style.inset = "0";
+          svg.style.width = "100%";
+          svg.style.height = "100%";
+          const path = document.createElementNS(svgNS, "path");
+          path.setAttribute(
+            "d",
+            "M0,55 C 30,40 70,70 100,50 L100,100 L0,100 Z",
+          );
+          path.setAttribute("fill", c2);
+          svg.appendChild(path);
+          wrap.appendChild(svg);
+        } else if (shapeType === "corner-accent-tr") {
+          wrap.style.background = c1;
+          const tri = document.createElement("div");
+          tri.style.position = "absolute";
+          tri.style.inset = "0";
+          tri.style.background = c2;
+          tri.style.clipPath = "polygon(100% 0, 100% 45%, 55% 0)";
+          wrap.appendChild(tri);
+        } else if (shapeType === "stripes-diagonal") {
+          wrap.style.background = `repeating-linear-gradient(45deg, ${c1} 0px, ${c1} 10px, ${c2} 10px, ${c2} 20px)`;
+        } else if (shapeType === "stripes-horizontal") {
+          wrap.style.background = `repeating-linear-gradient(180deg, ${c1} 0px, ${c1} 8px, ${c2} 8px, ${c2} 16px)`;
+        } else if (shapeType === "dots-pattern") {
+          wrap.style.background = c1;
+          wrap.style.backgroundImage = `radial-gradient(${c2} 20%, transparent 21%)`;
+          wrap.style.backgroundSize = "14px 14px";
+        } else if (shapeType === "grid-pattern") {
+          wrap.style.background = c1;
+          wrap.style.backgroundImage = `
+            linear-gradient(${c2} 1px, transparent 1px),
+            linear-gradient(90deg, ${c2} 1px, transparent 1px)
+          `;
+          wrap.style.backgroundSize = "10px 10px";
+        } else if (shapeType === "outline-frame") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `2px solid ${c1}`;
+        } else if (shapeType === "outline-frame-rounded") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `2px solid ${c1}`;
+          wrap.style.borderRadius = "10%";
+        } else if (shapeType === "ring") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `3px solid ${c1}`;
+          wrap.style.borderRadius = "50%";
+        } else if (shapeType === "double-frame") {
+          wrap.style.background = "transparent";
+          wrap.style.border = `3px solid ${c1}`;
+          const inner = document.createElement("div");
+          inner.style.position = "absolute";
+          inner.style.inset = "4px";
+          inner.style.border = `1px solid ${c2}`;
+          wrap.appendChild(inner);
+        } else if (GEOMETRIC_SHAPE_POINTS[shapeType]) {
+          wrap.appendChild(
+            buildGeometricSvgNode(shapeType, c1, field.fillMode || "fill", field.strokeWidth || 4),
+          );
+        } else if (shapeType === "custom") {
+          if (field.points && field.points.length >= 2) {
+            wrap.appendChild(
+              buildCustomSvgNode(field.points, !!field.closed, c1, field.fillMode || "outline", field.strokeWidth || 3),
+            );
+          }
+          // Si aucun point n'a encore été tracé, la zone reste vide
+          // (rien à afficher) plutôt que de retomber sur un rectangle uni.
+        } else {
+          // rectangle uni (valeur par défaut / repli)
+          wrap.style.background = c1;
+        }
+
+        return wrap;
+      }
+
+      // --- Formes géométriques standards (triangle, losange, étoile,
+      // flèches, lignes...) construites en SVG afin de supporter
+      // nativement le mode "plein" ou "contour" avec épaisseur de trait
+      // réglable, en plus de la rotation déjà gérée au niveau du champ. ---
+      function buildGeometricSvgNode(shapeType, color, fillMode, strokeWidth) {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 100 100");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.position = "absolute";
+        svg.style.inset = "0";
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        const sw = Math.max(0.5, Number(strokeWidth) || 4);
+
+        const geometry = PackagingShapeGeometry.getShapeGeometry(shapeType);
+        if (geometry.kind === "line") {
+          const [x1, y1, x2, y2] = geometry.points;
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", color);
+          line.setAttribute("stroke-width", sw);
+          line.setAttribute("stroke-linecap", "round");
+          line.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(line);
+          return svg;
+        }
+
+        const poly = document.createElementNS(svgNS, "polygon");
+        poly.setAttribute("points", geometry.points.map((point) => point.join(",")).join(" "));
+        if (fillMode === "outline") {
+          poly.setAttribute("fill", "none");
+          poly.setAttribute("stroke", color);
+          poly.setAttribute("stroke-width", sw);
+          poly.setAttribute("stroke-linejoin", "round");
+        } else {
+          poly.setAttribute("fill", color);
+        }
+        svg.appendChild(poly);
+        return svg;
+      }
+
+      // --- Forme personnalisée : rend une liste de points (en % 0-100 de
+      // la zone du champ) sous forme de polygone fermé (rempli ou en
+      // contour) ou de ligne ouverte (polyligne), tracés via l'éditeur de
+      // points "Dessiner la forme". ---
+      function buildCustomSvgNode(points, closed, color, fillMode, strokeWidth) {
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 100 100");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.position = "absolute";
+        svg.style.inset = "0";
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        svg.style.overflow = "visible";
+        const sw = Math.max(0.5, Number(strokeWidth) || 3);
+        const ptsAttr = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+        if (closed) {
+          const poly = document.createElementNS(svgNS, "polygon");
+          poly.setAttribute("points", ptsAttr);
+          if (fillMode === "fill") {
+            poly.setAttribute("fill", color);
+            poly.setAttribute("stroke", "none");
+          } else {
+            poly.setAttribute("fill", "none");
+            poly.setAttribute("stroke", color);
+            poly.setAttribute("stroke-width", sw);
+            poly.setAttribute("stroke-linejoin", "round");
+            poly.setAttribute("vector-effect", "non-scaling-stroke");
+          }
+          svg.appendChild(poly);
+        } else {
+          const polyline = document.createElementNS(svgNS, "polyline");
+          polyline.setAttribute("points", ptsAttr);
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", color);
+          polyline.setAttribute("stroke-width", sw);
+          polyline.setAttribute("stroke-linecap", "round");
+          polyline.setAttribute("stroke-linejoin", "round");
+          polyline.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(polyline);
+        }
+        return svg;
+      }
+
+      // Faces disponibles pour le mode Comprimés (correspondance
+      // avec les panneaux du patron déplié).
+      const TABLET_FIELD_FACES = [
+        "p5",
+        "p9",
+        "p1",
+        "p1-rabat",
+        "p10",
+        "p10-rabat",
+        "p12",
+        "p7",
+      ];
+
+      // Faces disponibles pour le mode Sirop / Flacon liquide.
+      const LIQUID_FIELD_FACES = ["lp5", "lp7", "lp6", "lp8", "lp1", "lp1-rabat", "lp10", "lp10-rabat"];
+
+      // Rétro-compatibilité (ancien nom, mode Comprimés uniquement).
+      const CUSTOM_FIELD_FACES = TABLET_FIELD_FACES;
+
+      // Toutes les faces des deux modes confondus — utilisé uniquement
+      // pour nettoyer les zones DOM avant un nouveau rendu.
+      const ALL_FIELD_FACES = [...TABLET_FIELD_FACES, ...LIQUID_FIELD_FACES];
+
+      // Renvoie la liste des faces pertinentes pour le mode actuellement
+      // sélectionné (Comprimés ou Liquide) : sert à filtrer l'éditeur de
+      // champs, la validation et les réinitialisations pour qu'un mode
+      // n'affecte jamais les champs de l'autre.
+      function currentModeFaces() {
+        return isLiquidMode() ? LIQUID_FIELD_FACES : TABLET_FIELD_FACES;
+      }
+
+      // ==================================================================
+      // GÉOMÉTRIE DES CHAMPS — SOURCE DE VÉRITÉ UNIQUE
+      // ==================================================================
+      // CONVENTION (schéma v2) :
+      //   • field.x / field.y = coin HAUT-GAUCHE de la boîte englobante
+      //     VISUELLE (AABB, axis-aligned bounding box), en % de la face.
+      //     Autrement dit : « ce que je vois à l'écran commence bien à
+      //     X %, Y % », quelle que soit la rotation.
+      //   • field.w / field.h = dimensions LOCALES (avant rotation), en %
+      //     de la face. Ce sont elles qui gouvernent le flux du texte
+      //     (retour à la ligne), d'où leur conservation en repère local.
+      //
+      // Toute la géométrie passe par getVisualSize() et getFieldPlacement()
+      // afin qu'aucun appelant ne puisse « oublier » la conversion — c'est
+      // précisément cet oubli qui produisait le décalage après rotation.
+      // ==================================================================
+
+      // Normalise un angle dans [0, 360[.
+      function normalizeRotation(rot) {
+        return PackagingUtils.normalizeRotation(rot);
+      }
+
+      // --- Rapport d'aspect des faces -----------------------------------
+      // POINT CRITIQUE : field.w est un % de la LARGEUR de la face et
+      // field.h un % de sa HAUTEUR — deux échelles de pixels différentes.
+      // Or une rotation s'opère dans l'espace des PIXELS. On ne peut donc
+      // pas écrire « largeur visuelle = field.h » à 90° : c'est faux dès
+      // que la face n'est pas carrée (cas de la quasi-totalité des faces
+      // ici, ex. 252×168). Il faut le rapport d'aspect r = largeur/hauteur.
+      const _faceAspectCache = new Map();
+
+      function getFaceAspect(faceId) {
+        if (_faceAspectCache.has(faceId)) return _faceAspectCache.get(faceId);
+        const zone = document.getElementById("fieldzone-" + faceId);
+        let r = 1;
+        if (zone && zone.offsetHeight > 0 && zone.offsetWidth > 0) {
+          r = zone.offsetWidth / zone.offsetHeight;
+          _faceAspectCache.set(faceId, r);
+        }
+        return r;
+      }
+
+      // À appeler dès que la géométrie du patron change (dimensions,
+      // mode, longueur de rabat) : les faces sont redimensionnées, donc
+      // les rapports d'aspect mémorisés deviennent obsolètes.
+      function invalidateFaceAspectCache() {
+        _faceAspectCache.clear();
+      }
+
+      // Dimensions de l'AABB d'un champ, en % de la face.
+      // Formule générale, valable pour TOUT angle et TOUT rapport d'aspect.
+      //   aabbW% = w·|cos| + h·|sin|/r
+      //   aabbH% = w·|sin|·r + h·|cos|      avec r = largeurFace/hauteurFace
+      // (à 90° on retrouve bien aabbW% = h/r et aabbH% = w·r)
+      function getVisualSize(field) {
+        return PackagingUtils.getVisualSize(field, getFaceAspect(field.face) || 1);
+      }
+
+      // Style de placement d'un champ pour que son AABB commence
+      // exactement à (field.x, field.y).
+      //
+      // left/top ciblent le coin de l'AABB ; width/height restent la boîte
+      // locale ; le translate recentre la boîte locale à l'intérieur de
+      // l'AABB. Avec transform-origin:center la rotation ne déplace pas le
+      // centre : il ne reste que le demi-écart AABB/locale à compenser.
+      //
+      // ⚠️ Le décalage est exprimé en PIXELS et non en pourcentage : en CSS,
+      // translate(X%) se résout sur la taille de l'ÉLÉMENT, pas du parent —
+      // ambiguïté qui était la cause racine du bug de positionnement.
+      // zoneW / zoneH sont les dimensions de la face en px NON zoomées
+      // (utiliser offsetWidth/offsetHeight, insensibles au scale() parent).
+      function getFieldPlacement(field, zoneW, zoneH) {
+        return PackagingUtils.getFieldPlacement(field, zoneW, zoneH);
+      }
+
+      // Applique le placement sur un élément DOM déjà rendu.
+      // Centralisé pour que rendu initial, glisser-déposer et
+      // redimensionnement partagent rigoureusement le même calcul.
+      function applyFieldPlacement(el, field) {
+        const zone = el.parentElement;
+        // offsetWidth/offsetHeight : dimensions de mise en page, non
+        // affectées par le transform:scale() du plan de travail (zoom).
+        const zoneW = zone ? zone.offsetWidth : 0;
+        const zoneH = zone ? zone.offsetHeight : 0;
+        const p = getFieldPlacement(field, zoneW, zoneH);
+        el.style.left = p.left + "%";
+        el.style.top = p.top + "%";
+        el.style.width = p.width + "%";
+        el.style.height = p.height + "%";
+        el.style.transformOrigin = p.transformOrigin;
+        el.style.transform = p.transform;
+
+        // Contre-rotation de la poignée : sans cela, à 90° elle apparaît
+        // visuellement en bas-GAUCHE et le curseur nwse-resize ment.
+        const handle = el.querySelector(".field-resize-handle");
+        if (handle) {
+          const rot = normalizeRotation(field.rotation);
+          handle.style.transform = rot ? `rotate(${-rot}deg)` : "";
+        }
+      }
+
+      // --- Ajuster un champ à son contenu ("fit to content") ---
+      // Ne s'applique qu'aux types dont la taille naturelle est
+      // significative visuellement (texte, braille, pictogramme,
+      // tableau). Les codes-barres/datamatrix, images, logos et formes
+      // libres n'ont pas de "taille de contenu" pertinente (graphique
+      // décoratif ou image importée) et sont donc exclus.
+      // --- Édition directe dans la zone visuelle (WYSIWYG) ---
+      // Types dont le contenu EST le texte affiché tel quel : l'aller-retour
+      // DOM → modèle y est trivial et non ambigu.
+      // Exclus volontairement :
+      //   • shape / logo / image : aucun texte à éditer ;
+      //   • barcode / datamatrix : le contenu est une donnée ENCODÉE —
+      //     l'éditer en place montrerait le graphique, pas la donnée ;
+      //   • braille : le rendu est une translittération, pas la source ;
+      //   • table : mini-langage « Nom : valeur » rendu en <div> structurés,
+      //     la resérialisation demande un traitement dédié (phase 2).
+      const INLINE_EDITABLE_TYPES = new Set([undefined, "text", "pictogram"]);
+
+      function canEditInline(field) {
+        return !!field && INLINE_EDITABLE_TYPES.has(field.type);
+      }
+
+      const FIT_TO_CONTENT_TYPES = new Set([undefined, "text", "braille", "pictogram", "table"]);
+
+      function canFitToContent(field) {
+        return FIT_TO_CONTENT_TYPES.has(field.type);
+      }
+
+      function measureNaturalContentSize(fieldId) {
+        const liveEl = document.querySelector(`.custom-field[data-field-id="${fieldId}"]`);
+        if (!liveEl) return null;
+        const clone = liveEl.cloneNode(true);
+        clone.classList.remove("selected", "dragging", "resizing");
+        clone.style.position = "absolute";
+        clone.style.visibility = "hidden";
+        clone.style.pointerEvents = "none";
+        clone.style.left = "-9999px";
+        clone.style.top = "-9999px";
+        clone.style.width = "auto";
+        clone.style.height = "auto";
+        clone.style.maxWidth = "none";
+        clone.style.maxHeight = "none";
+        clone.style.overflow = "visible";
+        clone.style.transform = "none";
+
+        // Neutraliser les dimensions en % héritées des sous-éléments
+        // (barres décoratives, tableaux...) pour que la mesure reflète
+        // la taille naturelle du contenu, pas celle imposée par le
+        // cadre actuel du champ.
+        clone.querySelectorAll("*").forEach((child) => {
+          if (child.style.width === "100%") child.style.width = "";
+          if (child.style.height === "100%" || child.style.height === "70%") child.style.height = "";
+        });
+        const tableEl = clone.querySelector(".liquid-composition-table");
+        if (tableEl) tableEl.style.width = "auto";
+
+        document.body.appendChild(clone);
+        const w = clone.scrollWidth;
+        const h = clone.scrollHeight;
+        document.body.removeChild(clone);
+        if (!w || !h) return null;
+        return { w, h };
+      }
+
+      // Ajuste field.w/field.h à la taille naturelle de son contenu.
+      // Retourne true si l'ajustement a pu être effectué.
+      function fitFieldToContent(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field || !canFitToContent(field)) return false;
+
+        const liveEl = document.querySelector(`.custom-field[data-field-id="${fieldId}"]`);
+        if (!liveEl) return false;
+        const zone = liveEl.parentElement;
+        const zoneRect = zone.getBoundingClientRect();
+        if (!zoneRect.width || !zoneRect.height) return false;
+
+        const size = measureNaturalContentSize(fieldId);
+        if (!size) return false;
+
+        // zoneRect est mesuré à l'écran, donc affecté par le zoom
+        // d'affichage courant ; on le neutralise pour retrouver la
+        // taille réelle (1x) et rester cohérent avec le clone de
+        // mesure (rendu hors zoom, dans <body>).
+        const realZoneW = zoneRect.width / (zoomLevel || 1);
+        const realZoneH = zoneRect.height / (zoomLevel || 1);
+
+        const PAD_PX = 3; // petite marge de confort pour ne pas rogner le contenu
+        let newWPct = ((size.w + PAD_PX) / realZoneW) * 100;
+        let newHPct = ((size.h + PAD_PX) / realZoneH) * 100;
+
+        newWPct = Math.max(2, Math.min(100 - field.x, Math.round(newWPct * 10) / 10));
+        newHPct = Math.max(2, Math.min(100 - field.y, Math.round(newHPct * 10) / 10));
+
+        field.w = newWPct;
+        field.h = newHPct;
+        return true;
+      }
+
+      // Ajuste le champ sélectionné (ou tous les champs de la sélection
+      // groupée) à leur contenu. Les types non pris en charge sont
+      // ignorés et signalés une fois à la fin, plutôt que bloquer les
+      // autres champs de la sélection.
+      function fitSelectionToContent() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+        let fitted = 0;
+        let skipped = 0;
+        ids.forEach((id) => {
+          if (fitFieldToContent(id)) fitted++;
+          else skipped++;
+        });
+        if (fitted > 0) {
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+          refreshSelectionVisuals();
+          updateFloatingToolbar();
+          updateGroupToolbar();
+          validateFields();
+        }
+        if (skipped > 0) {
+          alert(
+            fitted > 0
+              ? `${fitted} champ(s) ajusté(s). ${skipped} champ(s) ignoré(s) (type sans contenu ajustable : code-barres, image, logo ou forme libre).`
+              : `Aucun champ ajustable dans la sélection (type sans contenu ajustable : code-barres, image, logo ou forme libre).`,
+          );
+        }
+      }
+
+      function renderAllCustomFields() {
+        // Garde-fou : reconstruire le DOM pendant une édition inline
+        // détruirait l'élément édité et donc le curseur. Tout appel
+        // concurrent (slider de police, changement de mode, validation…)
+        // valide d'abord la saisie en cours, puis le rendu a lieu via
+        // exitInlineEdit → renderAllCustomFields.
+        if (inlineEditFieldId) {
+          exitInlineEdit(true);
+          return;
+        }
+        ALL_FIELD_FACES.forEach((faceId) => {
+          const zone = document.getElementById("fieldzone-" + faceId);
+          if (zone) zone.innerHTML = "";
+        });
+
+        // Les zones de couleur/design (fond) sont rendues avant les
+        // autres champs, pour rester derrière le texte quel que soit
+        // leur ordre dans la liste.
+        const orderedFields = [...fieldsConfig].sort(
+          (a, b) => (a.type === "shape" ? 0 : 1) - (b.type === "shape" ? 0 : 1),
+        );
+
+        orderedFields.forEach((field) => {
+          const zone = document.getElementById("fieldzone-" + field.face);
+          if (!zone) return;
+
+          // Replace placeholders dynamically
+          const dynamicContent = String(field.content || "")
+            .replace(/COMPANY NAME/g, controls.txtLabName.value)
+            .replace(/YOUR SLOGAN HERE/g, controls.txtSlogan.value);
+
+          const el = document.createElement("div");
+          el.className = "custom-field";
+          if (selectedFieldId === field.id) {
+            el.classList.add("selected");
+          }
+          el.dataset.fieldId = field.id;
+          // Position/taille/rotation : appliquées plus bas via
+          // applyFieldPlacement(), une fois l'élément inséré dans le DOM
+          // (le calcul a besoin des dimensions réelles de la zone parente).
+          el.style.textAlign = field.align || "left";
+          el.style.fontSize = (field.fontSize || 10) + "px";
+          el.style.fontWeight = field.bold ? "800" : "400";
+          el.style.color = field.color || "#0f172a";
+          if (field.fontFamily) {
+            el.style.fontFamily = field.fontFamily;
+          }
+          if (field.type === "barcode") {
+            el.innerHTML = `
+              <div class="field-barcode-graphic"></div>
+              <div class="field-barcode-number" style="font-size:${Math.max(6, (field.fontSize || 10) * 0.65)}px;">${escapeHtml(dynamicContent)}</div>
+            `;
+          } else if (field.type === "datamatrix") {
+            // pass dynamicContent to datamatrix generator
+            el.appendChild(buildDatamatrixNode(field, dynamicContent));
+          } else if (field.type === "braille") {
+            el.innerHTML = `
+              <div class="field-braille-text" style="font-size:${field.fontSize || 11}px;">${escapeHtml(toBraille(dynamicContent))}</div>
+              <div style="font-size:${Math.max(6, (field.fontSize || 11) * 0.55)}px; color:#64748b; margin-top:2px;">${escapeHtml(dynamicContent)}</div>
+            `;
+          } else if (field.type === "pictogram") {
+            el.innerHTML = `<div class="field-pictogram" style="width:100%; height:100%; border-color:${field.color || "#1e3a8a"}; color:${field.color || "#1e3a8a"}; font-size:${field.fontSize || 9}px;">${escapeHtml(dynamicContent).replace(/\n/g, "<br/>")}</div>`;
+          } else if (field.type === "table") {
+            const rows = dynamicContent
+              .split("\n")
+              .map((l) => l.trim())
+              .filter(Boolean)
+              .map((line) => {
+                const sepIdx = line.indexOf(":");
+                const name = sepIdx >= 0 ? line.slice(0, sepIdx).trim() : line;
+                const value = sepIdx >= 0 ? line.slice(sepIdx + 1).trim() : "";
+                return `<div class="liquid-table-row" style="font-size:${field.fontSize || 8}px; color:${field.color || "#334155"}; font-weight:${field.bold ? 800 : 400};"><span>${escapeHtml(name)}</span><span>${escapeHtml(value)}</span></div>`;
+              })
+              .join("");
+            el.innerHTML = `<div class="liquid-composition-table" style="margin-top:0;">${rows}</div>`;
+          } else if (field.type === "shape") {
+            el.style.padding = "0";
+            el.appendChild(buildShapeNode(field));
+          } else if (field.type === "logo") {
+            el.style.padding = "0";
+            el.appendChild(buildLogoNode(field));
+          } else if (field.type === "image") {
+            el.style.padding = "0";
+            if (field.src) {
+              const img = document.createElement("img");
+              img.src = field.src;
+              img.alt = field.label || "";
+              img.style.width = "100%";
+              img.style.height = "100%";
+              img.style.objectFit = field.fit || "contain";
+              img.style.display = "block";
+              el.appendChild(img);
+            } else {
+              el.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; border:1px dashed #94a3b8; color:#94a3b8; font-size:9px; text-align:center; padding:2px;">Image non définie<br/>(voir l'éditeur de champs)</div>`;
+            }
+          } else {
+            el.textContent = dynamicContent;
+          }
+
+          // --- Drag & drop + redimensionnement à la souris ---
+          // Déplacer le champ en le faisant glisser directement sur
+          // l'aperçu ; la poignée en bas à droite permet d'ajuster sa
+          // taille. Les champs numériques X/Y/Largeur/Hauteur de
+          // l'éditeur restent synchronisés en temps réel.
+          el.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return; // clic gauche uniquement
+            // En édition : laisser le clic placer le curseur nativement,
+            // sinon chaque clic dans le texte déplacerait le champ.
+            if (inlineEditFieldId === field.id) {
+              e.stopPropagation();
+              return;
+            }
+            if (e.shiftKey) {
+              // Maj+clic : ajoute/retire le champ de la sélection groupée,
+              // sans démarrer de glisser-déposer.
+              e.preventDefault();
+              e.stopPropagation();
+              toggleGroupSelection(field.id);
+              return;
+            }
+            startFieldDrag(e, field.id);
+          });
+
+          // Double-clic : édition directe du texte dans la maquette.
+          if (canEditInline(field)) {
+            el.style.cursor = "move";
+            el.title = "Double-cliquez pour éditer le texte";
+            el.addEventListener("dblclick", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              enterInlineEdit(field.id);
+            });
+          }
+
+          // Clic droit : sélectionne le champ ET ouvre la barre d'outils
+          // flottante (police, taille, couleur...). Le clic gauche se
+          // contente de sélectionner sans afficher la barre, pour ne
+          // pas masquer le champ à chaque clic.
+          el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            toolbarVisible = true;
+            selectField(field.id, /*skipSidebarScroll=*/false, /*focusInput=*/false);
+          });
+
+          const resizeHandle = document.createElement("div");
+          resizeHandle.className = "field-resize-handle";
+          resizeHandle.title = "Redimensionner";
+          resizeHandle.addEventListener("pointerdown", (e) => {
+            e.stopPropagation(); // ne pas déclencher le déplacement du champ
+            startFieldResize(e, field.id);
+          });
+          el.appendChild(resizeHandle);
+
+          zone.appendChild(el);
+          // Placement APRÈS insertion : getFieldPlacement a besoin des
+          // dimensions réelles (offsetWidth/Height) de la zone parente.
+          applyFieldPlacement(el, field);
+        });
+        // Validation chevauchements/débordements après chaque rendu
+        validateFields();
+      }
+
+      // Met à jour les champs numériques X/Y/Largeur/Hauteur de
+      // l'éditeur pour un champ donné, sans reconstruire tout le
+      // panneau (évite de perdre le focus / l'état déplié pendant un
+      // glisser-déposer).
+      function syncFieldEditorInputs(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        const row = document.querySelector(
+          `#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`,
+        );
+        if (!row) return;
+        ["x", "y", "w", "h"].forEach((prop) => {
+          const input = row.querySelector(`[data-prop="${prop}"]`);
+          if (input) input.value = field[prop];
+        });
+      }
+
+      function showCoordTooltip(zone, clientX, clientY, text) {
+        const zRect = zone.getBoundingClientRect();
+        let tip = zone.querySelector(".drag-coord-tooltip");
+        if (!tip) { tip = document.createElement("div"); tip.className = "drag-coord-tooltip"; zone.appendChild(tip); }
+        tip.textContent = text;
+        tip.style.left = (clientX - zRect.left) + "px";
+        tip.style.top = (clientY - zRect.top) + "px";
+      }
+
+      function hideCoordTooltip(zone) {
+        const tip = zone.querySelector(".drag-coord-tooltip");
+        if (tip) tip.remove();
+      }
+
+      function getGroupFields() {
+        return getSelectedIds().map(id => fieldsConfig.find(f => f.id === id)).filter(Boolean);
+      }
+
+      function applyGroupChange(mutator) {
+        const fields = getGroupFields();
+        if (fields.length < 2) return;
+        mutator(fields);
+        saveFieldsConfig();
+        renderAllCustomFields();
+        refreshSelectionVisuals();
+        renderFieldEditor();
+        updateGroupToolbar();
+        validateFields();
+      }
+
+      function alignGroup(mode) {
+        applyGroupChange(fields => {
+          const sizes = fields.map(f => { const v = getVisualSize(f); return { f, w: v.w, h: v.h }; });
+          switch (mode) {
+            case "left": {
+              const minX = Math.min(...sizes.map(s => s.f.x));
+              sizes.forEach(s => s.f.x = minX);
+              break;
+            }
+            case "right": {
+              const maxRight = Math.max(...sizes.map(s => s.f.x + s.w));
+              sizes.forEach(s => s.f.x = Math.max(0, maxRight - s.w));
+              break;
+            }
+            case "center-h": {
+              const minX = Math.min(...sizes.map(s => s.f.x));
+              const maxRight = Math.max(...sizes.map(s => s.f.x + s.w));
+              const center = (minX + maxRight) / 2;
+              sizes.forEach(s => s.f.x = Math.max(0, center - s.w / 2));
+              break;
+            }
+            case "top": {
+              const minY = Math.min(...sizes.map(s => s.f.y));
+              sizes.forEach(s => s.f.y = minY);
+              break;
+            }
+            case "bottom": {
+              const maxBottom = Math.max(...sizes.map(s => s.f.y + s.h));
+              sizes.forEach(s => s.f.y = Math.max(0, maxBottom - s.h));
+              break;
+            }
+            case "center-v": {
+              const minY = Math.min(...sizes.map(s => s.f.y));
+              const maxBottom = Math.max(...sizes.map(s => s.f.y + s.h));
+              const center = (minY + maxBottom) / 2;
+              sizes.forEach(s => s.f.y = Math.max(0, center - s.h / 2));
+              break;
+            }
+          }
+          sizes.forEach(s => {
+            s.f.x = Math.round(s.f.x * 10) / 10;
+            s.f.y = Math.round(s.f.y * 10) / 10;
+          });
+        });
+      }
+
+      function distributeGroup(axis) {
+        applyGroupChange(fields => {
+          if (fields.length < 3) return; // distribuer n'a de sens qu'à partir de 3 éléments
+          const sizes = fields.map(f => { const v = getVisualSize(f); return { f, w: v.w, h: v.h }; });
+          if (axis === "h") {
+            sizes.sort((a, b) => a.f.x - b.f.x);
+            const first = sizes[0], last = sizes[sizes.length - 1];
+            const totalW = sizes.reduce((sum, s) => sum + s.w, 0);
+            const span = (last.f.x + last.w) - first.f.x;
+            const gap = (span - totalW) / (sizes.length - 1);
+            let cursor = first.f.x + first.w;
+            for (let i = 1; i < sizes.length - 1; i++) {
+              cursor += gap;
+              sizes[i].f.x = Math.round(cursor * 10) / 10;
+              cursor += sizes[i].w;
+            }
+          } else {
+            sizes.sort((a, b) => a.f.y - b.f.y);
+            const first = sizes[0], last = sizes[sizes.length - 1];
+            const totalH = sizes.reduce((sum, s) => sum + s.h, 0);
+            const span = (last.f.y + last.h) - first.f.y;
+            const gap = (span - totalH) / (sizes.length - 1);
+            let cursor = first.f.y + first.h;
+            for (let i = 1; i < sizes.length - 1; i++) {
+              cursor += gap;
+              sizes[i].f.y = Math.round(cursor * 10) / 10;
+              cursor += sizes[i].h;
+            }
+          }
+        });
+      }
+
+      function duplicateGroup() {
+        const fields = getGroupFields();
+        if (fields.length === 0) return;
+        const newIds = [];
+        fields.forEach(original => {
+          const clone = JSON.parse(JSON.stringify(original));
+          clone.id = createFieldId(original.type || "field");
+          const { w: visW, h: visH } = getVisualSize(clone);
+          clone.x = Math.max(0, Math.min(100 - visW, (original.x || 0) + 3));
+          clone.y = Math.max(0, Math.min(100 - visH, (original.y || 0) + 3));
+          if (clone.label) clone.label = clone.label + " (copie)";
+          fieldsConfig.push(clone);
+          newIds.push(clone.id);
+        });
+        saveFieldsConfig();
+        renderFieldEditor();
+        renderAllCustomFields();
+        selectedFieldId = newIds[newIds.length - 1];
+        groupSelection = new Set(newIds.slice(0, -1));
+        refreshSelectionVisuals();
+        updateGroupToolbar();
+      }
+
+      function deleteGroup() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+        if (!confirm(`Supprimer ces ${ids.length} champs ?`)) return;
+        fieldsConfig = fieldsConfig.filter(f => !ids.includes(f.id));
+        deselectField();
+        saveFieldsConfig();
+        renderFieldEditor();
+        renderAllCustomFields();
+      }
+
+      function updateGroupToolbar() {
+        const groupToolbar = document.getElementById("groupToolbar");
+        if (!groupToolbar) return;
+        const ids = getSelectedIds();
+        if (ids.length < 2) {
+          groupToolbar.classList.remove("show");
+          return;
+        }
+        const els = ids
+          .map(id => document.querySelector(`.custom-field[data-field-id="${id}"]`))
+          .filter(Boolean);
+        if (els.length < 2) {
+          groupToolbar.classList.remove("show");
+          return;
+        }
+        const workspaceEl = document.querySelector(".workspace");
+        const workspaceRect = workspaceEl.getBoundingClientRect();
+        let minLeft = Infinity, minTop = Infinity, maxRight = -Infinity;
+        els.forEach(el => {
+          const r = el.getBoundingClientRect();
+          minLeft = Math.min(minLeft, r.left);
+          minTop = Math.min(minTop, r.top);
+          maxRight = Math.max(maxRight, r.right);
+        });
+        const TOOLBAR_OFFSET = 70;
+        const left = minLeft - workspaceRect.left + workspaceEl.scrollLeft + (maxRight - minLeft) / 2;
+        let top = minTop - workspaceRect.top + workspaceEl.scrollTop - TOOLBAR_OFFSET;
+        if (top < workspaceEl.scrollTop + 10) {
+          top = minTop - workspaceRect.top + workspaceEl.scrollTop + 15;
+        }
+        groupToolbar.style.left = left + "px";
+        groupToolbar.style.top = top + "px";
+        groupToolbar.classList.add("show");
+        const singleToolbar = document.getElementById("floatingToolbar");
+        if (singleToolbar) singleToolbar.classList.remove("show");
+      }
+
+      function startFieldDrag(e, fieldId) {
+        const el = e.currentTarget;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const zoneRect = el.parentElement.getBoundingClientRect();
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const startX = field.x;
+        const startY = field.y;
+        let moved = false;
+        const DRAG_THRESHOLD_PX = 4; // en-deçà, on considère qu'il s'agit d'un clic, pas d'un glisser
+
+        el.classList.add("dragging");
+        selectField(fieldId, /*skipSidebarScroll=*/true);
+
+        // --- Snap guides helpers ---
+        function getSnapCandidates() {
+          const candidates = [
+            { axis: "h", pct: 0   }, { axis: "h", pct: 50  }, { axis: "h", pct: 100 },
+            { axis: "v", pct: 0   }, { axis: "v", pct: 50  }, { axis: "v", pct: 100 },
+          ];
+          // Add other fields' edges as snap targets
+          fieldsConfig.forEach(f => {
+            if (f.id === fieldId) return;
+            const { w: fW, h: fH } = getVisualSize(f);
+            candidates.push({ axis: "h", pct: f.y }, { axis: "h", pct: f.y + fH / 2 }, { axis: "h", pct: f.y + fH });
+            candidates.push({ axis: "v", pct: f.x }, { axis: "v", pct: f.x + fW / 2 }, { axis: "v", pct: f.x + fW });
+          });
+          return candidates;
+        }
+
+        const SNAP_THRESHOLD = 1.5; // percent
+        function applySnap(rawX, rawY) {
+          const candidates = getSnapCandidates();
+          let snapX = rawX, snapY = rawY;
+          let guideH = null, guideV = null;
+
+          const { w: visualW, h: visualH } = getVisualSize(field);
+
+          candidates.forEach(c => {
+            if (c.axis === "h") {
+              for (const edge of [rawY, rawY + visualH / 2, rawY + visualH]) {
+                if (Math.abs(edge - c.pct) < SNAP_THRESHOLD) {
+                  snapY = c.pct - (edge - rawY);
+                  guideH = c.pct;
+                }
+              }
+            } else {
+              for (const edge of [rawX, rawX + visualW / 2, rawX + visualW]) {
+                if (Math.abs(edge - c.pct) < SNAP_THRESHOLD) {
+                  snapX = c.pct - (edge - rawX);
+                  guideV = c.pct;
+                }
+              }
+            }
+          });
+          return { snapX, snapY, guideH, guideV };
+        }
+
+        function showGuides(guideH, guideV, zone) {
+          let gh = zone.querySelector(".snap-guide-h");
+          let gv = zone.querySelector(".snap-guide-v");
+          if (!gh) { gh = document.createElement("div"); gh.className = "snap-guide-h"; zone.appendChild(gh); }
+          if (!gv) { gv = document.createElement("div"); gv.className = "snap-guide-v"; zone.appendChild(gv); }
+          gh.style.display = guideH !== null ? "block" : "none";
+          gv.style.display = guideV !== null ? "block" : "none";
+          if (guideH !== null) gh.style.top = guideH + "%";
+          if (guideV !== null) gv.style.left = guideV + "%";
+        }
+
+        function hideGuides(zone) {
+          zone.querySelectorAll(".snap-guide-h, .snap-guide-v").forEach(g => g.remove());
+        }
+
+        function onMove(ev) {
+          const distPx = Math.hypot(ev.clientX - startClientX, ev.clientY - startClientY);
+          if (distPx < DRAG_THRESHOLD_PX) return; // micro-mouvement : pas encore un vrai glisser
+          moved = true;
+          const dxPct = ((ev.clientX - startClientX) / zoneRect.width) * 100;
+          const dyPct = ((ev.clientY - startClientY) / zoneRect.height) * 100;
+          const rawX = Math.max(-50, Math.min(200, Math.round((startX + dxPct) * 10) / 10));
+          const rawY = Math.max(-50, Math.min(200, Math.round((startY + dyPct) * 10) / 10));
+          const { snapX, snapY, guideH, guideV } = applySnap(rawX, rawY);
+          // Clamp aux bords réels de la zone en utilisant la taille
+          // VISUELLE (après rotation) — sans ça, un champ pivoté à
+          // 90°/270° peut être déplacé au-delà des bords, ou au
+          // contraire ne jamais pouvoir atteindre certains coins,
+          // car les bornes étaient calculées sur field.w/field.h
+          // bruts au lieu de l'encombrement réel à l'écran.
+          const { w: visW, h: visH } = getVisualSize(field);
+          field.x = Math.max(0, Math.min(100 - visW, snapX));
+          field.y = Math.max(0, Math.min(100 - visH, snapY));
+          applyFieldPlacement(el, field);
+          showGuides(guideH, guideV, el.parentElement);
+          showCoordTooltip(el.parentElement, ev.clientX, ev.clientY, `X: ${field.x.toFixed(1)}%  Y: ${field.y.toFixed(1)}%`);
+          updateFloatingToolbar();
+        }
+
+        function onUp() {
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+          el.classList.remove("dragging");
+          hideGuides(el.parentElement);
+          hideCoordTooltip(el.parentElement);
+          if (moved) {
+            saveFieldsConfig();
+            syncFieldEditorInputs(fieldId);
+            validateFields();
+          } else {
+            // Simple clic (pas de glisser-déposer) : on scrolle vers le
+            // champ correspondant dans le panneau latéral pour permettre
+            // une édition rapide, sans voler le focus clavier — ainsi les
+            // flèches restent immédiatement disponibles pour déplacer
+            // finement le champ (nudge) juste après l'avoir cliqué.
+            // On referme aussi la barre flottante si elle était ouverte
+            // (seul le clic droit doit la rouvrir).
+            toolbarVisible = false;
+            selectField(fieldId, /*skipSidebarScroll=*/false, /*focusInput=*/false);
+          }
+          updateFloatingToolbar();
+        }
+
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
+      }
+
+      function startFieldResize(e, fieldId) {
+        const handle = e.currentTarget;
+        const el = handle.parentElement;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const zoneRect = el.parentElement.getBoundingClientRect();
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const startW = field.w;
+        const startH = field.h;
+
+        el.classList.add("resizing");
+        selectField(fieldId, /*skipSidebarScroll=*/true);
+
+        function onMove(ev) {
+          const rot = Number(field.rotation) || 0;
+          const rad = rot * Math.PI / 180;
+          const cosA = Math.cos(rad);
+          const sinA = Math.sin(rad);
+          // Mouse movement in zone-% space
+          const rawDx = ((ev.clientX - startClientX) / zoneRect.width) * 100;
+          const rawDy = ((ev.clientY - startClientY) / zoneRect.height) * 100;
+          // Project onto local (rotated) axes to get dW and dH
+          const dwPct =  rawDx * cosA + rawDy * sinA;
+          const dhPct = -rawDx * sinA + rawDy * cosA;
+
+          let newW = Math.max(2, Math.min(200, Math.round((startW + dwPct) * 10) / 10));
+          let newH = Math.max(2, Math.min(200, Math.round((startH + dhPct) * 10) / 10));
+
+          // Clamp générique fondé sur l'AABB : on réduit w/h (en
+          // conservant le ratio) jusqu'à ce que la boîte englobante
+          // visuelle tienne dans la face depuis (x, y). Valable pour
+          // TOUT angle, contrairement à l'ancien cas particulier 90/270
+          // qui écrasait un seul axe.
+          const vis = getVisualSize({ ...field, w: newW, h: newH });
+          const kx = vis.w > 0 ? (100 - field.x) / vis.w : 1;
+          const ky = vis.h > 0 ? (100 - field.y) / vis.h : 1;
+          const k = Math.min(1, kx, ky);
+          if (k < 1) {
+            newW = Math.max(2, Math.round(newW * k * 10) / 10);
+            newH = Math.max(2, Math.round(newH * k * 10) / 10);
+          }
+
+          field.w = newW;
+          field.h = newH;
+          applyFieldPlacement(el, field);
+          showCoordTooltip(el.parentElement, ev.clientX, ev.clientY, `L: ${field.w.toFixed(1)}%  H: ${field.h.toFixed(1)}%`);
+          updateFloatingToolbar();
+        }
+
+        function onUp() {
+          document.removeEventListener("pointermove", onMove);
+          document.removeEventListener("pointerup", onUp);
+          el.classList.remove("resizing");
+          hideCoordTooltip(el.parentElement);
+          saveFieldsConfig();
+          syncFieldEditorInputs(fieldId);
+          validateFields();
+        }
+
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
+      }
+
+      // ==================================================================
+      // ÉDITION DIRECTE DU TEXTE DANS LA ZONE VISUELLE
+      // ==================================================================
+      // Approche : contenteditable sur l'élément DÉJÀ rendu, plutôt qu'un
+      // <textarea> superposé. Le texte conserve ainsi sa police, sa taille,
+      // sa couleur, son alignement ET sa rotation réels ; un overlay devrait
+      // répliquer toute cette géométrie (y compris le transform), ce qui
+      // redoublerait la surface de bug qu'on vient justement de corriger.
+      let inlineEditFieldId = null;
+
+      // Firefox ne supporte pas encore "plaintext-only" : on teste puis on
+      // se rabat sur "true" + interception du collage (voir onInlinePaste).
+      let _plaintextOnlySupported = null;
+      function supportsPlaintextOnly() {
+        if (_plaintextOnlySupported !== null) return _plaintextOnlySupported;
+        const probe = document.createElement("div");
+        probe.setAttribute("contenteditable", "plaintext-only");
+        _plaintextOnlySupported =
+          probe.contentEditable === "plaintext-only";
+        return _plaintextOnlySupported;
+      }
+
+      // Un champ est-il en cours d'édition de texte (natif ou inline) ?
+      // Les handlers clavier globaux doivent s'effacer dans ce cas :
+      // sans cela les flèches déplaceraient le champ au lieu de bouger le
+      // curseur, et Suppr proposerait de supprimer le champ en pleine frappe.
+      function isTextEntryFocused() {
+        // Une édition inline en cours suffit : on ne dépend pas de
+        // isContentEditable, dont le support est inégal selon les moteurs.
+        if (inlineEditFieldId) return true;
+        const a = document.activeElement;
+        if (!a) return false;
+        if (
+          a.tagName === "INPUT" ||
+          a.tagName === "TEXTAREA" ||
+          a.tagName === "SELECT"
+        ) {
+          return true;
+        }
+        if (a.isContentEditable === true) return true;
+        // Repli : attribut explicite, y compris sur un ancêtre.
+        return !!(a.closest && a.closest('[contenteditable="true"], [contenteditable="plaintext-only"]'));
+      }
+
+      function enterInlineEdit(fieldId) {
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (!field || !canEditInline(field)) return;
+        if (inlineEditFieldId === fieldId) return;
+
+        // Fermer une édition précédente AVANT de chercher l'élément :
+        // exitInlineEdit() déclenche renderAllCustomFields(), qui détruit
+        // et reconstruit tout le DOM des champs. Un élément capturé avant
+        // cet appel serait DÉTACHÉ — on lui poserait contenteditable sans
+        // effet visible, et l'édition semblerait « ne plus fonctionner ».
+        if (inlineEditFieldId) exitInlineEdit(true);
+
+        // Requête APRÈS la reconstruction : on tient le nœud réellement
+        // affiché.
+        const el = document.querySelector(
+          `.custom-field[data-field-id="${fieldId}"]`,
+        );
+        if (!el) return;
+
+        inlineEditFieldId = fieldId;
+        selectField(fieldId, /*skipSidebarScroll=*/ true);
+
+        // On édite la valeur BRUTE : le contenu peut renfermer les
+        // variables COMPANY NAME / YOUR SLOGAN HERE, substituées seulement
+        // à l'affichage. Éditer la valeur substituée les figerait en dur.
+        el.dataset.rawBefore = field.content || "";
+        el.textContent = field.content || "";
+
+        el.contentEditable = supportsPlaintextOnly()
+          ? "plaintext-only"
+          : "true";
+        el.spellcheck = false;
+        el.classList.add("inline-editing");
+        // Laisser voir le texte qui dépasse pendant la frappe.
+        el.style.overflow = "visible";
+
+        // Sélectionner tout : la première frappe remplace, comme dans les
+        // outils de PAO ; Ctrl+A ou un clic replacent le curseur.
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.focus({ preventScroll: true });
+
+        el.addEventListener("input", onInlineInput);
+        el.addEventListener("keydown", onInlineKeydown);
+        el.addEventListener("paste", onInlinePaste);
+        el.addEventListener("blur", onInlineBlur);
+
+        showInlineEditHint(field);
+      }
+
+      function exitInlineEdit(commit = true) {
+        if (!inlineEditFieldId) return;
+        const fieldId = inlineEditFieldId;
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        const el = document.querySelector(
+          `.custom-field[data-field-id="${fieldId}"]`,
+        );
+        // Remis à null AVANT le re-rendu : renderAllCustomFields() refuse
+        // de s'exécuter tant qu'une édition est en cours (garde-fou).
+        inlineEditFieldId = null;
+
+        if (el) {
+          el.removeEventListener("input", onInlineInput);
+          el.removeEventListener("keydown", onInlineKeydown);
+          el.removeEventListener("paste", onInlinePaste);
+          el.removeEventListener("blur", onInlineBlur);
+          el.contentEditable = "false";
+          el.classList.remove("inline-editing");
+          el.style.overflow = "";
+          if (field && !commit) {
+            field.content = el.dataset.rawBefore || "";
+          }
+          delete el.dataset.rawBefore;
+        }
+        hideInlineEditHint();
+
+        // Persister DANS LES DEUX CAS : la frappe a déjà écrit le contenu
+        // intermédiaire en localStorage (onInlineInput), donc une annulation
+        // doit réécrire la valeur d'origine — sinon le texte abandonné
+        // survivrait au rechargement de la page.
+        saveFieldsConfig();
+        // Re-rendu complet : réapplique les variables dynamiques et la
+        // validation ; resynchronise le <textarea> de la barre latérale.
+        renderAllCustomFields();
+        renderFieldEditor();
+        selectField(fieldId, /*skipSidebarScroll=*/ true);
+      }
+
+      function onInlineInput(e) {
+        const field = fieldsConfig.find((f) => f.id === inlineEditFieldId);
+        if (!field) return;
+        // innerText préserve les sauts de ligne visuels ; repli sur
+        // textContent pour les moteurs qui ne l'implémentent pas.
+        // On normalise les espaces insécables que certains navigateurs
+        // insèrent en fin de ligne pendant la frappe.
+        const el = e.currentTarget;
+        const raw = el.innerText != null ? el.innerText : el.textContent;
+        field.content = String(raw || "").replace(/\u00a0/g, " ");
+        saveFieldsConfig();
+        syncFieldEditorContent(field.id);
+        // ⚠️ NE PAS appeler renderAllCustomFields() ici : il reconstruit
+        // tout le DOM et détruirait l'élément en cours d'édition, donc le
+        // curseur, à CHAQUE caractère. Seul le modèle est mis à jour ;
+        // le re-rendu a lieu à la sortie d'édition.
+        validateFields();
+      }
+
+      function onInlineKeydown(e) {
+        // Ne pas laisser les raccourcis globaux (nudge, suppression,
+        // undo du champ, duplication…) intercepter la frappe.
+        e.stopPropagation();
+
+        if (e.key === "Escape") {
+          e.preventDefault();
+          exitInlineEdit(/*commit=*/ false);
+          return;
+        }
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          exitInlineEdit(true);
+          return;
+        }
+        if (e.key === "Tab") {
+          // Valider puis passer au champ éditable suivant de la même face.
+          e.preventDefault();
+          const field = fieldsConfig.find((f) => f.id === inlineEditFieldId);
+          const face = field && field.face;
+          const siblings = fieldsConfig.filter(
+            (f) => f.face === face && canEditInline(f),
+          );
+          const i = siblings.findIndex((f) => f.id === inlineEditFieldId);
+          exitInlineEdit(true);
+          if (siblings.length > 1 && i >= 0) {
+            const step = e.shiftKey ? -1 : 1;
+            const next =
+              siblings[(i + step + siblings.length) % siblings.length];
+            if (next) enterInlineEdit(next.id);
+          }
+          return;
+        }
+        // Entrée simple = saut de ligne (les champs sont multi-lignes,
+        // cf. white-space:pre-wrap) : comportement natif conservé.
+        // Ctrl+Z / Ctrl+Y : on laisse l'annulation NATIVE du navigateur
+        // agir sur le texte (stopPropagation ci-dessus empêche déjà
+        // undoFieldChange de défaire le champ entier).
+      }
+
+      function onInlinePaste(e) {
+        // En repli contenteditable="true" (Firefox), un collage depuis un
+        // traitement de texte injecterait du HTML. On force le texte brut.
+        if (supportsPlaintextOnly()) return;
+        e.preventDefault();
+        const txt = (e.clipboardData || window.clipboardData).getData(
+          "text/plain",
+        );
+        document.execCommand("insertText", false, txt);
+      }
+
+      function onInlineBlur() {
+        // Perte de focus (clic ailleurs) = validation.
+        exitInlineEdit(true);
+      }
+
+      // Met à jour le <textarea> « Contenu » de la barre latérale pendant
+      // la frappe, sans reconstruire le panneau (ce qui volerait le focus).
+      function syncFieldEditorContent(fieldId) {
+        const row = document.querySelector(
+          `#fieldEditorContainer .field-editor-row[data-field-id="${fieldId}"]`,
+        );
+        if (!row) return;
+        const ta = row.querySelector('[data-prop="content"]');
+        const field = fieldsConfig.find((f) => f.id === fieldId);
+        if (ta && field && ta.value !== field.content) {
+          ta.value = field.content || "";
+        }
+      }
+
+      // Bandeau d'aide affiché pendant l'édition.
+      function showInlineEditHint(field) {
+        let hint = document.getElementById("inlineEditHint");
+        if (!hint) {
+          hint = document.createElement("div");
+          hint.id = "inlineEditHint";
+          hint.className = "inline-edit-hint";
+          document.body.appendChild(hint);
+        }
+        const hasVar = /COMPANY NAME|YOUR SLOGAN HERE/.test(
+          field.content || "",
+        );
+        hint.innerHTML =
+          "✎ <b>Édition directe</b> — <kbd>Échap</kbd> annuler · " +
+          "<kbd>Ctrl</kbd>+<kbd>Entrée</kbd> valider · <kbd>Tab</kbd> champ suivant" +
+          (hasVar
+            ? ' <span class="inline-edit-hint-var">· ce champ contient une variable dynamique</span>'
+            : "");
+        hint.classList.add("show");
+      }
+
+      function hideInlineEditHint() {
+        const hint = document.getElementById("inlineEditHint");
+        if (hint) hint.classList.remove("show");
+      }
+
+      // Identifiant du dernier champ ajouté — permet d'ouvrir
+      // automatiquement son accordéon lors du prochain rendu.
+      let _lastAddedFieldId = null;
+
+      // Mapping face → label + couleur pour le groupement visuel
+      const FACE_LABEL_MAP = {
+        'p5':       { label: 'Face avant',              color: '#2563eb' },
+        'p9':       { label: 'Face arrière',             color: '#b45309' },
+        'p1':       { label: 'Côté gauche (rect.)',      color: '#166534' },
+        'p1-rabat': { label: 'Rabat gauche (trapèze)',   color: '#14532d' },
+        'p10':      { label: 'Côté droit (rect.)',       color: '#7c3aed' },
+        'p10-rabat':{ label: 'Rabat droit (trapèze)',    color: '#4c1d95' },
+        'p12':      { label: 'Flanc supérieur',          color: '#be185d' },
+        'p7':       { label: 'Flanc inférieur',          color: '#9f1239' },
+        // --- Mode Liquide (Sirop / Flacon) ---
+        'lp5':      { label: 'Face avant',                color: '#2563eb' },
+        'lp7':      { label: 'Face arrière',               color: '#b45309' },
+        'lp6':      { label: 'Côté gauche (ingrédients)',  color: '#166534' },
+        'lp8':      { label: 'Côté droit (notice & codes)',color: '#7c3aed' },
+        'lp1':      { label: 'Rabat haut (rect.)',          color: '#be185d' },
+        'lp1-rabat':{ label: 'Rabat haut (trapèze)',        color: '#9d174d' },
+        'lp10':     { label: 'Rabat bas (rect.)',           color: '#9f1239' },
+        'lp10-rabat':{ label: 'Rabat bas (trapèze)',        color: '#7f1d1d' },
+      };
+
+      // Mapping type → libellé court pour le badge
+      const TYPE_LABEL_MAP = {
+        text:       'Texte',
+        table:      'Tableau',
+        pictogram:  'Picto',
+        barcode:    'EAN-13',
+        datamatrix: 'Matrix',
+        braille:    'Braille',
+        shape:      'Forme',
+        logo:       'Logo',
+        image:      'Image',
+      };
+
+      // ============================================================
+      // === Validation des chevauchements et débordements ===
+      // ============================================================
+      function validateFields() {
+        const summary = document.getElementById('validationSummary');
+        const editorContainer = document.getElementById('fieldEditorContainer');
+        let issues; // { type: 'overflow'|'overlap', label, fieldId }
+
+        // Réinitialiser les marqueurs visuels
+        document.querySelectorAll('.custom-field').forEach(el => {
+          el.classList.remove('field-overflow', 'field-overlap');
+        });
+        if (editorContainer) {
+          editorContainer.querySelectorAll('.field-editor-row').forEach(row => {
+            row.classList.remove('has-overflow', 'has-overlap');
+            const badge = row.querySelector('.field-error-badge');
+            if (badge) badge.textContent = '';
+          });
+        }
+
+        // Ne valider que les champs du mode actuellement sélectionné
+        // (Comprimés ou Liquide) : un champ inactif dans l'autre mode
+        // ne doit jamais polluer le résumé de validation.
+        const modeFaces = currentModeFaces();
+        const activeFields = fieldsConfig.filter(f => modeFaces.includes(f.face));
+
+        issues = PackagingUtils.findFieldIssues(activeFields, getVisualSize);
+
+        // Appliquer les marqueurs visuels sur les éléments rendus
+        issues.forEach(issue => {
+          const rendered = document.querySelector(`.custom-field[data-field-id="${issue.fieldId}"]`);
+          if (rendered) {
+            rendered.classList.add(issue.type === 'overflow' ? 'field-overflow' : 'field-overlap');
+          }
+          if (editorContainer) {
+            const row = editorContainer.querySelector(`.field-editor-row[data-field-id="${issue.fieldId}"]`);
+            if (row) {
+              row.classList.add(issue.type === 'overflow' ? 'has-overflow' : 'has-overlap');
+              const badge = row.querySelector('.field-error-badge');
+              if (badge) badge.textContent = issue.type === 'overflow' ? '⚠️' : '🔶';
+            }
+          }
+        });
+
+        // Mettre à jour le panneau résumé
+        if (summary) {
+          const overflows = issues.filter(i => i.type === 'overflow');
+          const overlaps  = issues.filter(i => i.type === 'overlap');
+          if (issues.length === 0) {
+            summary.className = '';
+            summary.innerHTML = '';
+          } else {
+            summary.className = overflows.length > 0 ? 'has-errors' : 'has-warnings';
+            summary.innerHTML = `
+              <div class="validation-title">
+                ${overflows.length > 0 ? '🔴 ' + overflows.length + ' débordement(s)' : ''}
+                ${overlaps.length > 0 ? (overflows.length > 0 ? ' &nbsp;·&nbsp; ' : '') + '🟠 ' + overlaps.length + ' chevauchement(s)' : ''}
+              </div>
+              ${overflows.map(i => `<div class="validation-item">↕ ${escapeHtml(i.label)} — dépasse la face</div>`).join('')}
+              ${overlaps.map(i => `<div class="validation-item warn">↔ ${escapeHtml(i.label)} — chevauche un autre champ</div>`).join('')}
+            `;
+          }
+        }
+      }
+
+      // ============================================================
+      // === Éditeur de champs — accordéon + groupement par face ===
+      // ============================================================
+      let accessibleControlId = 0;
+      function ensureAccessibleLabels(root = document) {
+        root.querySelectorAll("label:not([for])").forEach((label, index) => {
+          const control =
+            label.querySelector("input, select, textarea") ||
+            label.parentElement?.querySelector("input, select, textarea");
+          if (!control) {
+            label.setAttribute("aria-hidden", "true");
+            return;
+          }
+          if (!control.id) {
+            control.id = `accessible-control-${accessibleControlId++}`;
+          }
+          label.htmlFor = control.id;
+        });
+      }
+
+      function renderFieldEditor() {
+        const container = document.getElementById("fieldEditorContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        // Ordre des faces pour le groupement — dépend du mode actif
+        // (Comprimés ou Liquide) afin qu'un mode n'affiche jamais les
+        // champs de l'autre dans l'éditeur.
+        const modeFaces = currentModeFaces();
+        const FACE_ORDER = modeFaces;
+        const byFaceOrdered = {};
+        FACE_ORDER.forEach(f => { byFaceOrdered[f] = []; });
+        const miscGroup = [];
+        fieldsConfig.forEach((field, idx) => {
+          if (!modeFaces.includes(field.face)) return; // hors du mode actif
+          if (byFaceOrdered[field.face] !== undefined) {
+            byFaceOrdered[field.face].push({ field, idx });
+          } else {
+            miscGroup.push({ field, idx });
+          }
+        });
+
+        const groups = [
+          ...FACE_ORDER
+            .map(faceId => ({ faceId, items: byFaceOrdered[faceId] }))
+            .filter(g => g.items.length > 0),
+          ...(miscGroup.length > 0 ? [{ faceId: 'other', items: miscGroup }] : []),
+        ];
+
+        groups.forEach(({ faceId, items }) => {
+          const faceInfo = FACE_LABEL_MAP[faceId] || { label: 'Autre', color: '#64748b' };
+
+          // Trier les champs par ordre alphabétique de leur libellé
+          items.sort((a, b) => {
+            const labelA = (a.field.label || "").toLowerCase();
+            const labelB = (b.field.label || "").toLowerCase();
+            return labelA.localeCompare(labelB, "fr", { sensitivity: "base" });
+          });
+
+          // En-tête de groupe par face
+          const groupHeader = document.createElement('div');
+          groupHeader.className = 'face-group-header';
+          groupHeader.innerHTML = `<div class="face-group-dot" style="background:${faceInfo.color}"></div>${escapeHtml(faceInfo.label)} <span style="color:#475569;font-weight:400;">(${items.length})</span>`;
+          container.appendChild(groupHeader);
+
+          items.forEach(({ field, idx }) => {
+            const isShape = field.type === "shape";
+            const isLogo = field.type === "logo";
+            const isImage = field.type === "image";
+            const typeLabel = TYPE_LABEL_MAP[field.type] || field.type;
+            const isNew = _lastAddedFieldId === field.id;
+
+            const row = document.createElement("div");
+            row.className = "field-editor-row" + (isNew ? "" : " collapsed");
+            row.dataset.fieldId = field.id;
+
+            const commonGrid = `
+              <div><label>Face</label>
+                <select data-idx="${idx}" data-prop="face">
+                  ${getActiveFaceOptions().map(o => `<option value="${o.value}" ${o.value === field.face ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div><label>Type</label>
+                <select data-idx="${idx}" data-prop="type">
+                  ${TYPE_OPTIONS.map(o => `<option value="${o.value}" ${o.value === field.type ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+              <div><label>X (%)</label><input type="number" data-idx="${idx}" data-prop="x" value="${field.x}" min="-50" max="200" step="1" /></div>
+              <div><label>Y (%)</label><input type="number" data-idx="${idx}" data-prop="y" value="${field.y}" min="-50" max="200" step="1" /></div>
+              <div><label>Largeur (%)</label><input type="number" data-idx="${idx}" data-prop="w" value="${field.w}" min="1" max="200" step="1" /></div>
+              <div><label>Hauteur (%)</label><input type="number" data-idx="${idx}" data-prop="h" value="${field.h}" min="1" max="200" step="1" /></div>
+              <div><label>Rotation</label>
+                <select data-idx="${idx}" data-prop="rotation">
+                  ${ROTATION_OPTIONS.map(o => `<option value="${o.value}" ${Number(field.rotation) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>
+              </div>
+            `;
+
+            const shapeGrid = `
+              <div><label>Style de forme</label>
+                <select data-idx="${idx}" data-prop="shapeType">
+                  ${Object.entries(
+                    SHAPE_TYPE_OPTIONS.reduce((acc, o) => {
+                      (acc[o.group] = acc[o.group] || []).push(o);
+                      return acc;
+                    }, {}),
+                  )
+                    .map(
+                      ([group, opts]) => `
+                    <optgroup label="${group}">
+                      ${opts.map(o => `<option value="${o.value}" ${o.value === (field.shapeType || 'rectangle') ? 'selected' : ''}>${o.label}</option>`).join('')}
+                    </optgroup>
+                  `,
+                    )
+                    .join('')}
+                </select>
+              </div>
+              <div><label>Couleur principale</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color || '#1e3a8a'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Couleur secondaire</label>
+                <input type="color" data-idx="${idx}" data-prop="color2" value="${field.color2 || '#f97316'}" style="height:26px;padding:2px" />
+              </div>
+              ${GEOMETRIC_SHAPE_TYPES.includes(field.shapeType) ? `
+              <div><label>Remplissage</label>
+                <select data-idx="${idx}" data-prop="fillMode">
+                  <option value="fill" ${((field.fillMode || 'fill') === 'fill') ? 'selected' : ''}>Plein</option>
+                  <option value="outline" ${field.fillMode === 'outline' ? 'selected' : ''}>Contour</option>
+                </select>
+              </div>
+              <div><label>Épaisseur du trait</label>
+                <input type="number" data-idx="${idx}" data-prop="strokeWidth" value="${field.strokeWidth || 4}" min="0.5" max="20" step="0.5" />
+              </div>` : ''}
+              ${field.shapeType === 'custom' ? `
+              <div style="grid-column: span 2;">
+                <button type="button" class="field-draw-shape-btn" data-idx="${idx}" style="width:100%; font-size:12px; padding:6px;">
+                  ✏️ ${(field.points && field.points.length >= 2) ? 'Modifier le tracé' : 'Dessiner la forme'} (${(field.points || []).length} point${(field.points || []).length > 1 ? 's' : ''}${field.closed ? ', fermée' : ''})
+                </button>
+              </div>
+              <div><label>Remplissage</label>
+                <select data-idx="${idx}" data-prop="fillMode">
+                  <option value="fill" ${((field.fillMode || 'outline') === 'fill') ? 'selected' : ''}>Plein</option>
+                  <option value="outline" ${(field.fillMode || 'outline') === 'outline' ? 'selected' : ''}>Contour</option>
+                </select>
+              </div>
+              <div><label>Épaisseur du trait</label>
+                <input type="number" data-idx="${idx}" data-prop="strokeWidth" value="${field.strokeWidth || 3}" min="0.5" max="20" step="0.5" />
+              </div>` : ''}
+            `;
+
+            const textGrid = `
+              <div><label>Police (px)</label><input type="number" data-idx="${idx}" data-prop="fontSize" value="${field.fontSize}" min="4" max="60" step="0.5" /></div>
+              <div><label>Alignement</label>
+                <select data-idx="${idx}" data-prop="align">
+                  <option value="left"   ${field.align === 'left'   ? 'selected' : ''}>Gauche</option>
+                  <option value="center" ${field.align === 'center' ? 'selected' : ''}>Centré</option>
+                  <option value="right"  ${field.align === 'right'  ? 'selected' : ''}>Droite</option>
+                </select>
+              </div>
+              <div><label>Couleur</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color}" style="height:26px;padding:2px" />
+              </div>
+              <div><label style="display:flex;align-items:center;gap:4px;cursor:pointer;text-transform:none;font-size:11px;color:#cbd5e1;">
+                <input type="checkbox" data-idx="${idx}" data-prop="bold" ${field.bold ? 'checked' : ''} style="width:auto" /> Gras
+              </label></div>
+            `;
+
+            const logoGrid = `
+              <div><label>Taille (px)</label><input type="number" data-idx="${idx}" data-prop="fontSize" value="${field.fontSize}" min="4" max="60" step="0.5" /></div>
+              <div><label>Nom (Couleur)</label>
+                <input type="color" data-idx="${idx}" data-prop="color" value="${field.color || '#1e3a8a'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Slogan (Couleur)</label>
+                <input type="color" data-idx="${idx}" data-prop="color2" value="${field.color2 || '#f5a623'}" style="height:26px;padding:2px" />
+              </div>
+              <div><label>Alignement</label>
+                <select data-idx="${idx}" data-prop="align">
+                  <option value="left"   ${field.align === 'left'   ? 'selected' : ''}>Gauche</option>
+                  <option value="center" ${field.align === 'center' ? 'selected' : ''}>Centré</option>
+                  <option value="right"  ${field.align === 'right'  ? 'selected' : ''}>Droite</option>
+                </select>
+              </div>
+            `;
+
+            const imageGrid = `
+              <div style="grid-column: span 2;">
+                <label>Fichier image</label>
+                <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" data-idx="${idx}" data-prop="imgfile" />
+              </div>
+              <div><label>Ajustement</label>
+                <select data-idx="${idx}" data-prop="fit">
+                  <option value="contain" ${(field.fit || 'contain') === 'contain' ? 'selected' : ''}>Contenir (proportions)</option>
+                  <option value="cover"   ${field.fit === 'cover'   ? 'selected' : ''}>Remplir (recadrée)</option>
+                  <option value="fill"    ${field.fit === 'fill'    ? 'selected' : ''}>Étirer</option>
+                </select>
+              </div>
+              <div style="grid-column: span 2; display:flex; align-items:center; gap:8px;">
+                ${field.src
+                  ? `<img src="${field.src}" alt="" style="max-width:60px; max-height:40px; object-fit:contain; border:1px solid #334155; border-radius:4px; background:#fff;" />`
+                  : `<span style="font-size:11px; color:#64748b;">Aucune image sélectionnée</span>`
+                }
+                ${field.src ? `<button type="button" class="field-image-clear-btn" data-idx="${idx}" style="font-size:11px; padding:4px 8px;">Retirer l'image</button>` : ''}
+              </div>
+            `;
+
+            const contentBlock = (isShape || isImage) ? '' : `
+              <div style="margin-top:4px;">
+                <label style="font-size:9px;text-transform:uppercase;color:#64748b;display:block;margin-bottom:2px;">Contenu ${isLogo ? '(Saisir "logo-only" pour masquer le texte, ou texte personnalisé pour remplacer le nom)' : (field.type === 'table' ? '(une ligne = "Nom : valeur" — nom à gauche, valeur à droite, séparés par des pointillés)' : '')}</label>
+                <textarea data-idx="${idx}" data-prop="content" rows="2">${escapeHtml(field.content)}</textarea>
+              </div>
+            `;
+
+            row.innerHTML = `
+              <div class="field-editor-row-header">
+                <button type="button" class="field-editor-toggle" title="Déplier/Replier">▼</button>
+                <span class="type-badge type-${field.type}">${typeLabel}</span>
+                <input type="text" data-idx="${idx}" data-prop="label" value="${escapeHtml(field.label)}" />
+                <span class="field-error-badge" title="Erreur de positionnement"></span>
+                <button type="button" class="field-remove-btn" data-idx="${idx}" title="Supprimer ce champ">✕</button>
+              </div>
+              <div class="field-editor-row-body">
+                <div class="field-editor-grid" style="margin-top:8px;">
+                  ${commonGrid}
+                  ${isShape ? shapeGrid : (isLogo ? logoGrid : (isImage ? imageGrid : textGrid))}
+                </div>
+                ${contentBlock}
+              </div>
+            `;
+            container.appendChild(row);
+          });
+        });
+        ensureAccessibleLabels(container);
+
+        // Réinitialiser _lastAddedFieldId après le rendu
+        _lastAddedFieldId = null;
+
+        // Toggle accordéon au clic sur le bouton
+        container.querySelectorAll('.field-editor-toggle').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.currentTarget.closest('.field-editor-row').classList.toggle('collapsed');
+          });
+        });
+
+        // Écouteurs d'événements sur les inputs (identique à avant),
+        // à l'exception des inputs de type "file" (gérés séparément
+        // plus bas car ils nécessitent une lecture asynchrone en base64).
+        container.querySelectorAll("[data-prop]").forEach((input) => {
+          if (input.type === "file") return;
+          const evtName =
+            input.tagName === "SELECT" ||
+            input.type === "checkbox" ||
+            input.type === "color"
+              ? "change"
+              : "input";
+          input.addEventListener(evtName, (e) => {
+            const idx = Number(e.target.dataset.idx);
+            const prop = e.target.dataset.prop;
+            let value =
+              e.target.type === "checkbox" ? e.target.checked : e.target.value;
+            if (["x", "y", "w", "h", "fontSize", "rotation"].includes(prop)) {
+              value = Number(value);
+            }
+            fieldsConfig[idx][prop] = value;
+            // Changer la rotation (ou la face) modifie l'encombrement
+            // visuel : un champ qui tenait à 0° peut déborder à 90° sur une
+            // face étroite. On le recadre pour qu'il reste toujours visible
+            // et manipulable — « réinitialisation des axes » après rotation.
+            if (prop === "rotation" || prop === "face") {
+              Object.assign(
+                fieldsConfig[idx],
+                fitFieldIntoFace(fieldsConfig[idx]),
+              );
+              syncFieldEditorInputs(fieldsConfig[idx].id);
+            }
+            saveFieldsConfig();
+            if (prop === "label") return;
+            if (prop === "type") {
+              if (value === "shape") {
+                fieldsConfig[idx].shapeType = fieldsConfig[idx].shapeType || "rectangle";
+                fieldsConfig[idx].color     = fieldsConfig[idx].color     || "#1e3a8a";
+                fieldsConfig[idx].color2    = fieldsConfig[idx].color2    || "#f97316";
+              } else if (value === "logo") {
+                fieldsConfig[idx].color     = fieldsConfig[idx].color     || "#1e3a8a";
+                fieldsConfig[idx].color2    = fieldsConfig[idx].color2    || "#f5a623";
+                fieldsConfig[idx].fontSize  = fieldsConfig[idx].fontSize  || 10;
+              } else if (value === "table") {
+                fieldsConfig[idx].fontSize = fieldsConfig[idx].fontSize || 8;
+                fieldsConfig[idx].color    = fieldsConfig[idx].color    || "#334155";
+                if (!fieldsConfig[idx].content || fieldsConfig[idx].content === "Nouveau texte") {
+                  fieldsConfig[idx].content = "Nom du composant: Valeur";
+                }
+              } else if (value === "image") {
+                fieldsConfig[idx].fit = fieldsConfig[idx].fit || "contain";
+              }
+              _lastAddedFieldId = fieldsConfig[idx].id;
+              renderFieldEditor();
+            }
+            renderAllCustomFields();
+          });
+        });
+
+        // Import d'image (type "image") : lecture du fichier choisi et
+        // conversion en base64, stockée directement dans field.src pour
+        // rester incluse dans l'export/import JSON et le localStorage.
+        container.querySelectorAll('input[type="file"][data-prop="imgfile"]').forEach((input) => {
+          input.addEventListener("change", (e) => {
+            const idx = Number(e.target.dataset.idx);
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            if (!isAllowedImageFile(file)) {
+              alert("Image refusée : formats PNG, JPEG, GIF ou WebP de 5 Mo maximum.");
+              e.target.value = "";
+              return;
+            }
+            readFileAsDataUrl(file).then((dataUrl) => {
+              if (!isSafeImageDataUrl(dataUrl)) {
+                alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
+                e.target.value = "";
+                return;
+              }
+              fieldsConfig[idx].src = dataUrl;
+              saveFieldsConfig();
+              _lastAddedFieldId = fieldsConfig[idx].id;
+              renderFieldEditor();
+              renderAllCustomFields();
+            }).catch((error) => reportFileOperationError("Impossible de lire l'image.", error));
+          });
+        });
+
+        // Retirer l'image d'un champ "image"
+        container.querySelectorAll(".field-image-clear-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const idx = Number(e.currentTarget.dataset.idx);
+            delete fieldsConfig[idx].src;
+            saveFieldsConfig();
+            _lastAddedFieldId = fieldsConfig[idx].id;
+            renderFieldEditor();
+            renderAllCustomFields();
+          });
+        });
+
+        container.querySelectorAll(".field-remove-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const idx = Number(e.currentTarget.dataset.idx);
+            fieldsConfig.splice(idx, 1);
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+          });
+        });
+      }
+
+      updateStatusChip();
+
+      const addFieldBtn = document.getElementById("addFieldBtn");
+      const addShapeBtn = document.getElementById("addShapeBtn");
+      const defaultFieldPicker = document.getElementById("defaultFieldPicker");
+      const addDefaultFieldBtn = document.getElementById("addDefaultFieldBtn");
+      const exportFieldsBtn = document.getElementById("exportFieldsBtn");
+      const importFieldsBtn = document.getElementById("importFieldsBtn");
+      const importFieldsInput = document.getElementById("importFieldsInput");
+      const resetFieldsBtn = document.getElementById("resetFieldsBtn");
+
+      function populateDefaultFieldPicker() {
+        if (!defaultFieldPicker) return;
+        const modeFaces = currentModeFaces();
+        defaultFieldPicker.innerHTML = defaultFieldsConfig()
+          .filter((f) => modeFaces.includes(f.face))
+          .map((f) => `<option value="${f.id}">${escapeHtml(f.label)}</option>`)
+          .join("");
+      }
+
+      function populateResetFacePicker() {
+        const picker = document.getElementById('resetFacePicker');
+        if (!picker) return;
+        picker.innerHTML = getActiveFaceOptions()
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('');
+      }
+
+      if (addDefaultFieldBtn) {
+        addDefaultFieldBtn.addEventListener("click", () => {
+          const chosenId = defaultFieldPicker.value;
+          const template = defaultFieldsConfig().find(
+            (f) => f.id === chosenId,
+          );
+          if (!template) return;
+          const clone = JSON.parse(JSON.stringify(template));
+          if (fieldsConfig.some((f) => f.id === clone.id)) {
+            clone.id = createFieldId(clone.id);
+            clone.label = clone.label + " (copie)";
+          }
+          fieldsConfig.push(clone);
+          saveFieldsConfig();
+          _lastAddedFieldId = clone.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (addShapeBtn) {
+        addShapeBtn.addEventListener("click", () => {
+          const face = currentModeFaces()[0];
+          const dims = getFaceDimensionsPx(face);
+          const marginXPct = (10 / dims.width) * 100;
+          const marginYPct = (10 / dims.height) * 100;
+          
+          const newShape = {
+            id: "shape_" + Date.now(),
+            label: "Zone de couleur",
+            face: face,
+            x: Math.max(0, Math.round(marginXPct)),
+            y: Math.max(0, Math.round(marginYPct)),
+            w: Math.max(5, Math.round(Math.min(35, 100 - 2 * marginXPct))),
+            h: Math.max(5, Math.round(Math.min(35, 100 - 2 * marginYPct))),
+            type: "shape",
+            shapeType: "diagonal-tl-br",
+            color: "#1e3a8a",
+            color2: "#f97316",
+            fontSize: 10,
+            bold: false,
+            align: "left",
+            rotation: 0,
+            content: "",
+          };
+          fieldsConfig.push(newShape);
+          saveFieldsConfig();
+          _lastAddedFieldId = newShape.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+          selectField(newShape.id);
+        });
+      }
+
+      if (addFieldBtn) {
+        addFieldBtn.addEventListener("click", () => {
+          const face = currentModeFaces()[0];
+          const dims = getFaceDimensionsPx(face);
+          const marginXPct = (10 / dims.width) * 100;
+          const marginYPct = (10 / dims.height) * 100;
+
+          const newField = {
+            id: "custom_" + Date.now(),
+            label: "Nouveau champ",
+            face: face,
+            x: Math.max(0, Math.round(marginXPct + 2)),
+            y: Math.max(0, Math.round(marginYPct + 2)),
+            w: Math.max(10, Math.round(Math.min(40, 100 - 2 * marginXPct - 4))),
+            h: Math.max(5, Math.round(Math.min(15, 100 - 2 * marginYPct - 4))),
+            fontSize: 10,
+            bold: false,
+            color: "#0f172a",
+            align: "left",
+            type: "text",
+            rotation: 0,
+            content: "Nouveau texte",
+          };
+          fieldsConfig.push(newField);
+          saveFieldsConfig();
+          _lastAddedFieldId = newField.id;
+          renderFieldEditor();
+          renderAllCustomFields();
+          selectField(newField.id);
+        });
+      }
+
+      // ============================================================
+      // Éditeur de tracé pour les formes personnalisées ("custom") :
+      // clic pour poser des points, glisser pour les repositionner,
+      // bouton "Fermer la forme" pour transformer le tracé en polygone
+      // fermé (sinon la forme reste une ligne ouverte / polyligne).
+      // ============================================================
+      let _shapeDrawState = null; // { idx, points, closed }
+
+      function openShapeDrawer(idx) {
+        const field = fieldsConfig[idx];
+        if (!field) return;
+
+        const dims = getFaceDimensionsPx(field.face);
+        const aspect = dims.width / dims.height || 1;
+        const maxW = Math.min(window.innerWidth * 0.8, 640);
+        const maxH = Math.min(window.innerHeight * 0.65, 640);
+        let canvasW = maxW;
+        let canvasH = canvasW / aspect;
+        if (canvasH > maxH) {
+          canvasH = maxH;
+          canvasW = canvasH * aspect;
+        }
+
+        _shapeDrawState = {
+          idx,
+          points: (field.points || []).map((p) => ({ x: p.x, y: p.y })),
+          closed: !!field.closed,
+          canvasW,
+          canvasH,
+          dragIndex: null,
+        };
+
+        const overlay = document.createElement("div");
+        overlay.className = "shape-draw-overlay";
+        overlay.id = "shapeDrawOverlay";
+        overlay.innerHTML = `
+          <div class="shape-draw-panel">
+            <div class="shape-draw-header">
+              <h3>Dessiner la forme — ${escapeHtml(field.label || "Champ")}</h3>
+              <button type="button" class="shape-draw-close" id="shapeDrawCloseX">✕</button>
+            </div>
+            <p class="shape-draw-help">
+              Cliquez sur la zone pour poser des points successifs. Glissez un point pour
+              le déplacer. Utilisez « Fermer la forme » pour obtenir un polygone plein/contour
+              (minimum 3 points), ou laissez-la ouverte pour une ligne/flèche libre.
+            </p>
+            <svg id="shapeDrawSvg" class="shape-draw-canvas-wrap"
+                 width="${canvasW}" height="${canvasH}"
+                 viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+            <div class="shape-draw-footer">
+              <button type="button" class="danger" id="shapeDrawUndo">↩ Annuler dernier point</button>
+              <button type="button" class="danger" id="shapeDrawReset">🗑 Réinitialiser</button>
+              <button type="button" id="shapeDrawToggleClose">⬡ Fermer la forme</button>
+              <button type="button" id="shapeDrawCancel">Annuler</button>
+              <button type="button" class="primary" id="shapeDrawSave">✓ Enregistrer</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        renderShapeDrawSvg();
+
+        const svg = document.getElementById("shapeDrawSvg");
+        svg.addEventListener("click", onShapeDrawSvgClick);
+        svg.addEventListener("pointermove", onShapeDrawSvgPointerMove);
+        svg.addEventListener("pointerup", onShapeDrawSvgPointerUp);
+        svg.addEventListener("pointerleave", onShapeDrawSvgPointerUp);
+
+        document.getElementById("shapeDrawCloseX").addEventListener("click", closeShapeDrawer);
+        document.getElementById("shapeDrawCancel").addEventListener("click", closeShapeDrawer);
+        document.getElementById("shapeDrawUndo").addEventListener("click", () => {
+          _shapeDrawState.points.pop();
+          if (_shapeDrawState.points.length < 3) _shapeDrawState.closed = false;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawReset").addEventListener("click", () => {
+          _shapeDrawState.points = [];
+          _shapeDrawState.closed = false;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawToggleClose").addEventListener("click", () => {
+          if (_shapeDrawState.points.length < 3) {
+            alert("Il faut au moins 3 points pour fermer la forme.");
+            return;
+          }
+          _shapeDrawState.closed = !_shapeDrawState.closed;
+          renderShapeDrawSvg();
+        });
+        document.getElementById("shapeDrawSave").addEventListener("click", () => {
+          const st = _shapeDrawState;
+          const target = fieldsConfig[st.idx];
+          if (target) {
+            target.points = st.points.map((p) => ({
+              x: Math.round(p.x * 10) / 10,
+              y: Math.round(p.y * 10) / 10,
+            }));
+            target.closed = st.closed;
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+          }
+          closeShapeDrawer();
+        });
+      }
+
+      function closeShapeDrawer() {
+        const overlay = document.getElementById("shapeDrawOverlay");
+        if (overlay) overlay.remove();
+        _shapeDrawState = null;
+      }
+
+      function svgPointFromEvent(evt) {
+        const svg = document.getElementById("shapeDrawSvg");
+        const rect = svg.getBoundingClientRect();
+        const x = ((evt.clientX - rect.left) / rect.width) * 100;
+        const y = ((evt.clientY - rect.top) / rect.height) * 100;
+        return {
+          x: Math.max(0, Math.min(100, x)),
+          y: Math.max(0, Math.min(100, y)),
+        };
+      }
+
+      function onShapeDrawSvgClick(evt) {
+        const st = _shapeDrawState;
+        if (!st || st.dragIndex !== null || evt.detail === 0) return;
+        // Ignore le clic qui suit immédiatement un drag (déjà géré par pointerup).
+        if (evt.target.classList && evt.target.classList.contains("shape-draw-point")) return;
+        const pt = svgPointFromEvent(evt);
+        st.points.push(pt);
+        renderShapeDrawSvg();
+      }
+
+      function onShapeDrawSvgPointerMove(evt) {
+        const st = _shapeDrawState;
+        if (!st || st.dragIndex === null) return;
+        st.points[st.dragIndex] = svgPointFromEvent(evt);
+        renderShapeDrawSvg();
+      }
+
+      function onShapeDrawSvgPointerUp() {
+        if (_shapeDrawState) _shapeDrawState.dragIndex = null;
+      }
+
+      function renderShapeDrawSvg() {
+        const st = _shapeDrawState;
+        const svg = document.getElementById("shapeDrawSvg");
+        if (!st || !svg) return;
+        svg.innerHTML = "";
+        const svgNS = "http://www.w3.org/2000/svg";
+
+        if (st.points.length >= 2) {
+          const shape = document.createElementNS(svgNS, st.closed ? "polygon" : "polyline");
+          shape.setAttribute("points", st.points.map((p) => `${p.x},${p.y}`).join(" "));
+          shape.setAttribute("fill", st.closed ? "rgba(37, 99, 235, 0.35)" : "none");
+          shape.setAttribute("stroke", "#2563eb");
+          shape.setAttribute("stroke-width", "1");
+          shape.setAttribute("vector-effect", "non-scaling-stroke");
+          svg.appendChild(shape);
+        }
+
+        st.points.forEach((p, i) => {
+          const circle = document.createElementNS(svgNS, "circle");
+          circle.setAttribute("cx", p.x);
+          circle.setAttribute("cy", p.y);
+          circle.setAttribute("r", "2");
+          circle.setAttribute("vector-effect", "non-scaling-stroke");
+          circle.classList.add("shape-draw-point");
+          if (i === 0) circle.classList.add("first-point");
+          circle.addEventListener("pointerdown", (e) => {
+            e.stopPropagation();
+            st.dragIndex = i;
+          });
+          svg.appendChild(circle);
+        });
+
+        const toggleBtn = document.getElementById("shapeDrawToggleClose");
+        if (toggleBtn) {
+          toggleBtn.textContent = st.closed ? "⬡ Rouvrir la forme" : "⬡ Fermer la forme";
+          toggleBtn.disabled = st.points.length < 3 && !st.closed;
+        }
+        const saveBtn = document.getElementById("shapeDrawSave");
+        if (saveBtn) saveBtn.disabled = st.points.length < 2;
+      }
+
+      // Délégation : le bouton "Dessiner la forme" est recréé à chaque
+      // rendu de l'éditeur de champs, on écoute donc sur le conteneur.
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".field-draw-shape-btn");
+        if (!btn) return;
+        const idx = Number(btn.dataset.idx);
+        openShapeDrawer(idx);
+      });
+
+      if (resetFieldsBtn) {
+        resetFieldsBtn.addEventListener("click", () => {
+          if (
+            !confirm(
+              "Réinitialiser tous les champs personnalisés du mode actuel aux valeurs par défaut ?",
+            )
+          )
+            return;
+          // Ne réinitialise que les champs du mode actif ; les champs de
+          // l'autre mode (Comprimés / Liquide) restent inchangés.
+          const modeFaces = currentModeFaces();
+          fieldsConfig = fieldsConfig.filter(f => !modeFaces.includes(f.face));
+          fieldsConfig.push(...defaultFieldsConfig().filter(f => modeFaces.includes(f.face)));
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      // --- Réinitialisation par face ---
+      const resetFaceBtn = document.getElementById('resetFaceBtn');
+      if (resetFaceBtn) {
+        resetFaceBtn.addEventListener('click', () => {
+          const picker = document.getElementById('resetFacePicker');
+          if (!picker) return;
+          const faceId = picker.value;
+          const faceLabel = getActiveFaceOptions().find(o => o.value === faceId)?.label || faceId;
+          if (!confirm(`Réinitialiser tous les champs de la face "${faceLabel}" aux valeurs par défaut ?\n\nLes champs libres ajoutés sur cette face seront supprimés.`))
+            return;
+          // Supprimer les champs de cette face
+          fieldsConfig = fieldsConfig.filter(f => f.face !== faceId);
+          // Ré-insérer les valeurs par défaut pour cette face
+          const defaults = defaultFieldsConfig().filter(f => f.face === faceId);
+          fieldsConfig.push(...defaults);
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+      }
+
+      if (exportFieldsBtn) {
+        exportFieldsBtn.addEventListener("click", () => {
+          // Export complet du gabarit : champs + tous les réglages
+          // globaux (dimensions, couleurs, logo, slogan, rabats…)
+          // pour une restauration fidèle à l'import.
+          const fullExport = PackagingUtils.createTemplate(fieldsConfig, {
+            boxType: controls.boxType.value,
+            dimW: Number(controls.dimW.value),
+            dimH: Number(controls.dimH.value),
+            dimD: Number(controls.dimD.value),
+            flapLength: Number(controls.flapLength.value),
+            dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+            colPrimary: controls.colPrimary.value,
+            colAccent: controls.colAccent.value,
+            txtLabName: controls.txtLabName.value,
+            txtSlogan: controls.txtSlogan.value,
+            showLabName: controls.showLabName.checked,
+            logoSize: Number(controls.logoSizeSlider.value),
+            customLogoUrl: customLogoUrl || null,
+            customFacesBg: customFacesBg,
+          }, FIELDS_SCHEMA_VERSION);
+          downloadBlob(
+            new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" }),
+            "gabarit-complet.json",
+          );
+        });
+      }
+
+      if (importFieldsBtn) {
+        importFieldsBtn.addEventListener("click", () => {
+          importFieldsInput.click();
+        });
+      }
+
+      if (importFieldsInput) {
+        importFieldsInput.addEventListener("change", (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          if (!isAllowedTemplateFile(file)) {
+            alert("Gabarit refusé : fichier JSON de 2 Mo maximum attendu.");
+            e.target.value = "";
+            return;
+          }
+          readFileAsText(file).then((text) => {
+            try {
+              const parsed = JSON.parse(text);
+              const template = PackagingUtils.parseTemplate(parsed, FIELDS_SCHEMA_VERSION);
+              // NB : « v1/v2 » ci-dessous désigne le format du FICHIER
+              // (tableau nu vs gabarit complet), à ne pas confondre avec
+              // schemaVersion qui décrit la convention GÉOMÉTRIQUE des
+              // champs. Un gabarit exporté avant la correction des axes
+              // doit être migré, quel que soit son format de fichier.
+              if (template) {
+                fieldsConfig = template.needsMigration
+                  ? migrateFieldsV1toV2(sanitizeImportedFields(template.fields))
+                  : sanitizeImportedFields(template.fields);
+                saveFieldsConfig();
+                if (template.settings) {
+                  applyImportedSettings(template.settings);
+                }
+                renderFieldEditor();
+                renderAllCustomFields();
+              } else {
+                alert("Fichier JSON invalide : un tableau de champs ou un gabarit complet est attendu.");
+              }
+            } catch (err) {
+              reportFileOperationError("Impossible de lire ce fichier JSON.", err);
+            }
+          }).catch((error) => reportFileOperationError("Impossible de lire ce fichier JSON.", error));
+          e.target.value = "";
+        });
+      }
+
+      function updateTextBinders() {
+        const type = controls.boxType.value;
+
+        // Update panels text content based on the selected mode
+        if (type === "tablet") {
+          const flapPx = Number(controls.flapLength.value) * MM_TO_PX;
+          // P1 (Rabat gauche) et P10 (Rabat droit) sont chacun composés de
+          // deux zones éditables DISTINCTES et INDÉPENDANTES :
+          // - la zone trapèze (verrouillage, repliée à l'intérieur de la
+          //   boîte une fois fermée) : "p1-rabat" / "p10-rabat" ;
+          // - la zone rectangle (côté visible une fois la boîte fermée) :
+          //   "p1" / "p10".
+          // Chacune possède son propre "field-zone" et peut donc recevoir
+          // un contenu personnalisé différent via le moteur de champs.
+          document.getElementById("cnt-p1").innerHTML = `
+          <div style="display:flex; width:100%; height:100%;">
+            <div class="field-zone" style="flex: 0 0 ${flapPx}px;" id="fieldzone-p1-rabat"></div>
+            <div class="field-zone" style="flex: 1 1 auto; height:100%;" id="fieldzone-p1"></div>
+          </div>
+        `;
+          document.getElementById("cnt-p5").innerHTML =
+            '<div class="field-zone" id="fieldzone-p5"></div>';
+          document.getElementById("cnt-p7").innerHTML =
+            '<div class="field-zone" id="fieldzone-p7"></div>';
+          document.getElementById("cnt-p9").innerHTML =
+            '<div class="field-zone" id="fieldzone-p9"></div>';
+          document.getElementById("cnt-p10").innerHTML = `
+          <div style="display:flex; width:100%; height:100%;">
+            <div class="field-zone" style="flex: 1 1 auto; height:100%;" id="fieldzone-p10"></div>
+            <div class="field-zone" style="flex: 0 0 ${flapPx}px;" id="fieldzone-p10-rabat"></div>
+          </div>
+        `;
+          document.getElementById("cnt-p12").innerHTML =
+            '<div class="field-zone" id="fieldzone-p12"></div>';
+
+          renderAllCustomFields();
+        } else {
+          // Liquid format (Vertical)
+          // P1: Rabat Haut (Tuck Lid) — deux zones DISTINCTES empilées verticalement :
+          //   - lp1-rabat : zone trapèze de verrouillage (pointe vers le haut, en haut du panneau)
+          //   - lp1       : zone rectangulaire de fermeture (côté pli avec la Face Avant, en bas du panneau)
+          // La hauteur de chaque zone est calculée en % du panneau total.
+          const flapPxLiq = Number(controls.flapLength.value) * MM_TO_PX;
+          const flapRectPxLiq = controls.dimD.value * MM_TO_PX;
+          const flapTotalPxLiq = flapPxLiq + flapRectPxLiq;
+          const pctRabatLiq = (flapPxLiq / flapTotalPxLiq * 100).toFixed(2);
+          const pctRectLiq = (flapRectPxLiq / flapTotalPxLiq * 100).toFixed(2);
+
+          document.getElementById("cnt-p1").innerHTML = `
+            <div style="display:flex; flex-direction:column; width:100%; height:100%;">
+              <div class="field-zone" style="flex: 0 0 ${pctRabatLiq}%; height:${pctRabatLiq}%;" id="fieldzone-lp1-rabat"></div>
+              <div class="field-zone" style="flex: 0 0 ${pctRectLiq}%; height:${pctRectLiq}%;" id="fieldzone-lp1"></div>
+            </div>
+          `;
+
+          // Front & Back panels (High Fidelity Liquid template)
+          document.getElementById("cnt-p5").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp5"></div>';
+          document.getElementById("cnt-p7").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp7"></div>';
+
+          // Left Side Panel 1 (Ingredients table)
+          document.getElementById("cnt-p6").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp6"></div>';
+
+          // Right Side Panel 2 (Dosage and Barcode)
+          document.getElementById("cnt-p8").innerHTML =
+            '<div class="field-zone" id="fieldzone-lp8"></div>';
+
+          // P10: Rabat Bas (Tuck Lid) — même logique inversée :
+          //   - lp10       : zone rectangulaire de fermeture (côté pli avec la Face Arrière, en haut)
+          //   - lp10-rabat : zone trapèze de verrouillage (pointe vers le bas, en bas du panneau)
+          document.getElementById("cnt-p10").innerHTML = `
+            <div style="display:flex; flex-direction:column; width:100%; height:100%;">
+              <div class="field-zone" style="flex: 0 0 ${pctRectLiq}%; height:${pctRectLiq}%;" id="fieldzone-lp10"></div>
+              <div class="field-zone" style="flex: 0 0 ${pctRabatLiq}%; height:${pctRabatLiq}%;" id="fieldzone-lp10-rabat"></div>
+            </div>
+          `;
+
+          // P9: Glue flap (Vertical tab)
+          document.getElementById("cnt-p9").innerHTML =
+            `<span>ZONE ENCOLLAGE</span>`;
+
+          renderAllCustomFields();
+        }
+      }
+
+      function setPosition(id, left, top, width, height) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.left = `${left}px`;
+          el.style.top = `${top}px`;
+          el.style.width = `${width}px`;
+          el.style.height = `${height}px`;
+          el.style.display = "flex";
+        }
+      }
+
+      function hidePanel(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+      }
+
+      function updateGeometry() {
+        // Les faces vont être redimensionnées : les rapports d'aspect
+        // mémorisés sont périmés (ils conditionnent tout le calcul de
+        // rotation, cf. getVisualSize).
+        invalidateFaceAspectCache();
+        const type = controls.boxType.value;
+        const scale = MM_TO_PX;
+
+        const w = controls.dimW.value * scale;
+        const h = controls.dimH.value * scale;
+        const d = controls.dimD.value * scale;
+        const flap = Number(controls.flapLength.value) * scale;
+        const dustEnabled = controls.dustFlapsEnabled.checked;
+        const glue = 12 * scale;
+
+        // Update Theme Colors
+        document.documentElement.style.setProperty(
+          "--primary",
+          controls.colPrimary.value,
+        );
+        document.documentElement.style.setProperty(
+          "--accent",
+          controls.colAccent.value,
+        );
+
+        // Update Logo Size
+        const logoSize = controls.logoSizeSlider.value;
+        document.documentElement.style.setProperty("--logo-size", `${logoSize}px`);
+        const logoSizeVal = document.getElementById("logoSizeVal");
+        if (logoSizeVal) logoSizeVal.textContent = `${logoSize}px`;
+
+        // Affichage de la valeur courante du curseur "Longueur du rabat"
+        const flapLengthVal = document.getElementById("flapLengthVal");
+        if (flapLengthVal) flapLengthVal.textContent = `${controls.flapLength.value}mm`;
+
+        // Afficher / masquer le nom du laboratoire (redondant si déjà
+        // intégré visuellement dans l'image du logo importé)
+        const showLabName = controls.showLabName ? controls.showLabName.checked : true;
+        document.body.classList.toggle("hide-lab-name", !showLabName);
+        const labNameGroup = document.getElementById("labNameGroup");
+        if (labNameGroup) labNameGroup.style.opacity = showLabName ? "1" : "0.4";
+
+
+
+        // Define CSS dynamic properties for typography scaling
+        document.documentElement.style.setProperty("--box-w", `${w}px`);
+        document.documentElement.style.setProperty("--box-h", `${h}px`);
+
+        if (type === "tablet") {
+          // Panneau "rabat" fusionné avec le "côté latéral" : la partie
+          // rabat (trapèze, largeur flap) se replie/colle à l'intérieur,
+          // et la partie côté (largeur d) reste solidaire du même panneau
+          // pour constituer la face latérale visible une fois la boîte
+          // fermée. newFlap = largeur totale de ce panneau combiné.
+          const newFlap = flap + d;
+          const totalW = newFlap + w + newFlap;
+          const totalH = h + d + h + d + glue;
+
+          patronSheet.style.width = `${totalW}px`;
+          patronSheet.style.height = `${totalH}px`;
+
+          // Labels
+          document.getElementById("lbl-p1").textContent = "Rabat + Côté Gauche";
+          document.getElementById("lbl-p2").textContent = "Patte de Collage";
+          document.getElementById("lbl-p3").textContent =
+            "Rabat Poussière Gauche";
+          document.getElementById("lbl-p4").textContent =
+            "Rabat Poussière Droite";
+          document.getElementById("lbl-p5").textContent = "Face Avant (Recto)";
+          document.getElementById("lbl-p7").textContent = "Flanc Inférieur";
+          document.getElementById("lbl-p9").textContent =
+            "Face Arrière (Verso)";
+          document.getElementById("lbl-p10").textContent =
+            "Rabat + Côté Droite";
+          document.getElementById("lbl-p11").textContent =
+            "Rabat Poussière Gauche";
+          document.getElementById("lbl-p12").textContent = "Flanc Supérieur";
+          document.getElementById("lbl-p13").textContent =
+            "Rabat Poussière Droite";
+
+          // Panel classes & positioning
+          document.getElementById("p1").className = "panel orange-flap-left";
+          document.getElementById("p2").className = "panel glue-flap";
+          document.getElementById("p3").className = "panel dust-left-top";
+          document.getElementById("p4").className = "panel dust-right-top";
+          document.getElementById("p5").className = "panel";
+          document.getElementById("p7").className = "panel";
+          document.getElementById("p9").className = "panel";
+          document.getElementById("p10").className = "panel orange-flap-right";
+          document.getElementById("p11").className = "panel dust-left-bottom";
+          document.getElementById("p12").className = "panel";
+          document.getElementById("p13").className = "panel dust-right-bottom";
+
+          // Clip-path dynamique : la zone Côté (visible après pliage) est
+          // rectangulaire, seule la zone Rabat (verrouillage/insertion)
+          // est trapézoïdale. Calculé en % car la largeur du panneau
+          // (newFlap) varie avec le curseur de longueur de rabat et D.
+          const pctRabat = (flap / newFlap) * 100;
+          const pctCote = (d / newFlap) * 100;
+          document.getElementById("p1").style.clipPath =
+            `polygon(100% 0%, 100% 100%, ${pctRabat}% 100%, 0% 85%, 0% 15%, ${pctRabat}% 0%)`;
+          document.getElementById("p10").style.clipPath =
+            `polygon(0% 0%, 0% 100%, ${pctCote}% 100%, 100% 85%, 100% 15%, ${pctCote}% 0%)`;
+
+          // Panneaux "Côté Latéral" désormais fusionnés dans p1 / p10
+          hidePanel("p6");
+          hidePanel("p8");
+
+          if (!dustEnabled) {
+            hidePanel("p3");
+            hidePanel("p4");
+            hidePanel("p11");
+            hidePanel("p13");
+          }
+
+          // Row 1 — Rabat+Côté gauche + Avant (Y = 0)
+          setPosition("p1", 0, 0, newFlap, h);
+          setPosition("p5", newFlap, 0, w, h);
+
+          // Row 2 — Rabats poussière + Flanc inférieur (Y = H)
+          if (dustEnabled) {
+            setPosition("p3", newFlap - d, h, d, d);
+            setPosition("p4", newFlap + w, h, d, d);
+          }
+          setPosition("p7", newFlap, h, w, d);
+
+          // Row 3 — Arrière + Rabat+Côté droit (Y = H + D)
+          setPosition("p9", newFlap, h + d, w, h);
+          setPosition("p10", newFlap + w, h + d, newFlap, h);
+
+          // Row 4 — Rabats poussière + Flanc supérieur (Y = H + D + H)
+          if (dustEnabled) {
+            setPosition("p11", newFlap - d, h + d + h, d, d);
+            setPosition("p13", newFlap + w, h + d + h, d, d);
+          }
+          setPosition("p12", newFlap, h + d + h, w, d);
+
+          // Row 5 — Patte de collage (Y = H + D + H + D)
+          setPosition("p2", newFlap, h + d + h + d, w, glue);
+
+          // SVG Outline
+          drawTabletDieLines(w, h, d, flap, glue, dustEnabled);
+        } else {
+          // LIQUID MODE (Vertical packaging carton flat layout)
+          // "flap" (curseur "Longueur du rabat") = longueur de la seule
+          // partie trapézoïdale de verrouillage. La partie rectangulaire
+          // visible (contenu) a une hauteur égale à la profondeur "d"
+          // de la boîte, pour rester cohérente avec ses dimensions.
+          const flapRectH = d;
+          const flapTotal = flap + flapRectH;
+          const totalW = w + d + w + d + glue;
+          const totalH = flapTotal + h + flapTotal;
+          const dust = d * 0.8;
+
+          patronSheet.style.width = `${totalW}px`;
+          patronSheet.style.height = `${totalH}px`;
+
+          // Labels mapping for liquid format template
+          document.getElementById("lbl-p1").textContent =
+            "Rabat Haut (Tuck Lid)";
+          document.getElementById("lbl-p2").textContent =
+            "Rabat Poussière Haut 1";
+          document.getElementById("lbl-p3").textContent =
+            "Rabat Poussière Haut 2";
+          document.getElementById("lbl-p4").textContent =
+            "Rabat Poussière Bas 1";
+          document.getElementById("lbl-p5").textContent = "Face Avant (Recto)";
+          document.getElementById("lbl-p6").textContent =
+            "Côté Gauche (Ingrédients)";
+          document.getElementById("lbl-p7").textContent =
+            "Face Arrière (Verso)";
+          document.getElementById("lbl-p8").textContent =
+            "Côté Droite (Notice & Code)";
+          document.getElementById("lbl-p9").textContent = "Patte encollage";
+          document.getElementById("lbl-p10").textContent =
+            "Rabat Bas (Tuck Lid)";
+          document.getElementById("lbl-p11").textContent =
+            "Rabat Poussière Bas 2";
+          hidePanel("p12");
+          hidePanel("p13");
+          if (!dustEnabled) {
+            hidePanel("p2");
+            hidePanel("p3");
+            hidePanel("p4");
+            hidePanel("p11");
+          }
+
+          // Classes
+          document.getElementById("p1").className = "panel vertical-tuck-top";
+          document.getElementById("p2").className =
+            "panel liquid-dust-top-left";
+          document.getElementById("p3").className =
+            "panel liquid-dust-top-right";
+          document.getElementById("p4").className =
+            "panel liquid-dust-bottom-left";
+          document.getElementById("p5").className = "panel";
+          document.getElementById("p6").className = "panel";
+          document.getElementById("p7").className = "panel";
+          document.getElementById("p8").className = "panel";
+          document.getElementById("p9").className = "panel glue-flap-vertical";
+          document.getElementById("p10").className =
+            "panel vertical-tuck-bottom";
+          document.getElementById("p11").className =
+            "panel liquid-dust-bottom-right";
+
+          // Main panels row (Y = flapTotal)
+          setPosition("p5", 0, flapTotal, w, h);
+          setPosition("p6", w, flapTotal, d, h);
+          setPosition("p7", w + d, flapTotal, w, h);
+          setPosition("p8", w + d + w, flapTotal, d, h);
+          setPosition("p9", w + d + w + d, flapTotal, glue, h);
+
+          // Flaps Top (Y = 0 to flapTotal)
+          setPosition("p1", 0, 0, w, flapTotal); // Top tuck flap on Front Panel (P5)
+          if (dustEnabled) {
+            // Positionner les rabats poussière haut juste au-dessus des panneaux latéraux
+            setPosition("p2", w, flapTotal - dust, d, dust); // Left dust flap top (P6)
+            setPosition("p3", w + d + w, flapTotal - dust, d, dust); // Right dust flap top (P8)
+          }
+
+          // Flaps Bottom (Y = flapTotal + h)
+          // On s'assure que P10 est exactement aligné sur X = w + d (Face Arrière P7)
+          setPosition("p10", w + d, flapTotal + h, w, flapTotal);
+
+          // On force le z-index pour être sûr qu'il est visible et bien placé
+          document.getElementById("p10").style.zIndex = "10";
+          if (dustEnabled) {
+            // Positionner les rabats poussière bas juste en-dessous des panneaux latéraux
+            setPosition("p4", w, flapTotal + h, d, dust); // Left dust flap bottom (P6)
+            setPosition("p11", w + d + w, flapTotal + h, d, dust); // Right dust flap bottom (P8)
+          }
+
+          // Rabats Haut/Bas : structure "Côté Comprimé" — zone
+          // rectangulaire visible (contenu), hauteur = profondeur (d)
+          // de la boîte ; zone trapèze (verrouillage, vide), hauteur =
+          // longueur du rabat réglée par le curseur.
+          const pctRect = (flapRectH / flapTotal) * 100;
+          const yTrap = 100 - pctRect; // % depuis le haut où débute le rectangle (rabat haut)
+
+          // Rabat Haut : base du trapèze à 100% (alignée sur le rectangle de fermeture),
+          // seule la pointe est rétrécie à 85% sur les deux côtés.
+          document.getElementById("p1").style.clipPath =
+            `polygon(0% 100%, 100% 100%, 100% ${yTrap}%, 85% 0%, 15% 0%, 0% ${yTrap}%)`;
+          document
+            .getElementById("p1")
+            .style.setProperty("--flap-rect-h", `${flapRectH}px`);
+
+          // Rabat Bas : même logique inversée — base à 100% (alignée avec le rectangle),
+          // pointe à 85% en bas.
+          document.getElementById("p10").style.clipPath =
+            `polygon(0% 0%, 100% 0%, 100% ${pctRect}%, 85% 100%, 15% 100%, 0% ${pctRect}%)`;
+          document
+            .getElementById("p10")
+            .style.setProperty("--flap-rect-h", `${flapRectH}px`);
+
+          // SVG Outline for Liquid vertical carton
+          drawLiquidDieLines(w, h, d, flap, glue, dust, dustEnabled);
+        }
+        if (typeof applyCustomFaceColors === 'function') {
+          applyCustomFaceColors();
+        }
+        // Les panneaux viennent d'être redimensionnés : tout placement
+        // calculé AVANT (ex. renderAllCustomFields appelé par
+        // updateTextBinders lors d'un changement de mode) repose sur des
+        // rapports d'aspect périmés. On purge le cache et on replace les
+        // champs déjà rendus — sans reconstruire le DOM, donc sans
+        // interrompre une éventuelle édition en cours.
+        invalidateFaceAspectCache();
+        repositionRenderedFields();
+        updateStatusChip();
+      }
+
+      // Réapplique le placement de tous les champs actuellement rendus.
+      // Peu coûteux (aucune reconstruction) et sans effet sur l'édition.
+      function repositionRenderedFields() {
+        if (typeof fieldsConfig === "undefined") return;
+        document.querySelectorAll(".custom-field").forEach((el) => {
+          const field = fieldsConfig.find((f) => f.id === el.dataset.fieldId);
+          if (field) applyFieldPlacement(el, field);
+        });
+      }
+
+      function drawTabletDieLines(w, h, d, flap, glue, dustEnabled = true) {
+        dieLinesSvg.innerHTML = "";
+        const newFlap = flap + d;
+        const totalW = newFlap + w + newFlap;
+        const totalH = h + d + h + d + glue;
+
+        dieLinesSvg.setAttribute("width", totalW);
+        dieLinesSvg.setAttribute("height", totalH);
+        dieLinesSvg.style.width = `${totalW}px`;
+        dieLinesSvg.style.height = `${totalH}px`;
+
+        const addPath = (dAttr) => {
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          path.setAttribute("d", dAttr);
+          path.setAttribute("stroke", "#ef4444");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(path);
+        };
+
+        // Every shape below mirrors exactly the panel it outlines — plain
+        // rectangles for flat panels, and the same trapezoid / notch
+        // geometry as the matching clip-path for tuck flaps, dust flaps,
+        // and the glue flap — so the red cut line always matches the
+        // current printed content.
+
+        // --- CONTOUR EXTÉRIEUR ROUGE GLOBAL (Comprimés) ---
+        // On trace le contour extérieur sans les lignes internes de séparation
+        let contour = "";
+
+        // Haut du patron (Row 1)
+        contour += `M 0 ${h * 0.15} L ${flap} 0 L ${newFlap + w} 0 L ${newFlap + w} ${h}`;
+
+        // Côté droit - Dust flaps & Flancs
+        if (dustEnabled) {
+          contour += ` L ${newFlap + w + d * 0.8} ${h} L ${newFlap + w + d * 0.8} ${h + d * 0.8} L ${newFlap + w} ${h + d}`;
+        } else {
+          contour += ` L ${newFlap + w} ${h + d}`;
+        }
+
+        // Row 3 - Rabat droit
+        contour += ` L ${newFlap + w + d} ${h + d} L ${newFlap + w + newFlap} ${h + d + h * 0.15} L ${newFlap + w + newFlap} ${h + d + h * 0.85} L ${newFlap + w + d} ${h + d + h} L ${newFlap + w} ${h + d + h}`;
+
+        // Bas droit - Dust flaps & Patte collage
+        if (dustEnabled) {
+          contour += ` L ${newFlap + w + d * 0.8} ${h + d + h + d * 0.2} L ${newFlap + w + d * 0.8} ${h + d + h + d} L ${newFlap + w} ${h + d + h + d}`;
+        } else {
+          contour += ` L ${newFlap + w} ${h + d + h + d}`;
+        }
+
+        // Patte de collage (Row 5)
+        contour += ` L ${newFlap + w * 0.85} ${h + d + h + d + glue} L ${newFlap + w * 0.15} ${h + d + h + d + glue} L ${newFlap + w * 0.05} ${h + d + h + d} L ${newFlap} ${h + d + h + d}`;
+
+        // Bas gauche - Dust flaps & Flancs
+        if (dustEnabled) {
+          contour += ` L ${newFlap - d + d * 0.2} ${h + d + h + d} L ${newFlap - d + d * 0.2} ${h + d + h + d * 0.2} L ${newFlap} ${h + d + h}`;
+        } else {
+          contour += ` L ${newFlap} ${h + d + h}`;
+        }
+
+        // Row 3 gauche
+        contour += ` L ${newFlap} ${h + d}`;
+
+        // Haut gauche - Dust flaps
+        if (dustEnabled) {
+          contour += ` L ${newFlap - d + d * 0.2} ${h + d * 0.8} L ${newFlap - d + d * 0.2} ${h} L ${newFlap} ${h}`;
+        } else {
+          contour += ` L ${newFlap} ${h}`;
+        }
+
+        // Retour au point de départ (Row 1 gauche)
+        contour += ` L ${flap} ${h} L 0 ${h * 0.85} Z`;
+
+        addPath(contour);
+
+        // --- Lignes de PLI internes ---
+        // Les rectangles de découpe ci-dessus se superposent exactement aux
+        // bordures pointillées des panneaux (.panel), ce qui masque les plis
+        // réels aux jonctions entre panneaux qui ne sont PAS séparés physique-
+        // ment (ils restent solidaires, seulement pliés). On redessine donc
+        // ces jonctions par-dessus, en bleu pointillé, pour qu'elles restent
+        // visibles et clairement distinctes des vraies lignes de coupe rouges.
+        const addFold = (x1, y1, x2, y2) => {
+          const fold = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+          fold.setAttribute("stroke", "#94a3b8");
+          fold.setAttribute("stroke-width", "1");
+          fold.setAttribute("stroke-dasharray", "4 2");
+          fold.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(fold);
+        };
+
+        // --- Lignes de PLI internes (Comprimés) ---
+        // Plis verticaux
+        addFold(flap, 0, flap, h); // Pli interne rabat gauche
+        addFold(newFlap, 0, newFlap, h + d + h + d); // Côté gauche / Corps
+        addFold(newFlap + w, 0, newFlap + w, h + d + h + d); // Corps / Côté droit
+        addFold(newFlap + w + d, h + d, newFlap + w + d, h + d + h); // Pli interne rabat droit
+
+        // Plis horizontaux
+        addFold(newFlap, h, newFlap + w, h); // Front / Bottom
+        addFold(newFlap, h + d, newFlap + w, h + d); // Bottom / Back
+        addFold(newFlap, h + d + h, newFlap + w, h + d + h); // Back / Top
+        addFold(newFlap, h + d + h + d, newFlap + w, h + d + h + d); // Top / Glue flap
+      }
+
+      function drawLiquidDieLines(
+        w,
+        h,
+        d,
+        flap,
+        glue,
+        dust,
+        dustEnabled = true,
+      ) {
+        dieLinesSvg.innerHTML = "";
+        const totalW = w + d + w + d + glue;
+
+        // "flap" = longueur du trapèze de verrouillage (curseur).
+        // "flapRectH" = hauteur du rectangle de fermeture = profondeur d.
+        // "flapTotal" = hauteur totale du rabat (rectangle + trapèze).
+        const flapRectH = d;
+        const flapTotal = flap + flapRectH;
+        const totalH = flapTotal + h + flapTotal;
+
+        dieLinesSvg.setAttribute("width", totalW);
+        dieLinesSvg.setAttribute("height", totalH);
+        dieLinesSvg.style.width = `${totalW}px`;
+        dieLinesSvg.style.height = `${totalH}px`;
+
+        const addPath = (dAttr) => {
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          path.setAttribute("d", dAttr);
+          path.setAttribute("stroke", "#ef4444");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(path);
+        };
+
+        // --- CONTOUR EXTÉRIEUR ROUGE GLOBAL (Sirop / Flacon) ---
+        // Base du trapèze = 100% de la largeur (alignée sur le rectangle),
+        // seule la pointe est rétrécie à 85% (côtés 15%-85%).
+        let contour = "";
+
+        // 1. Partir du coin inférieur gauche de P1 (pli avec P5)
+        contour += `M 0 ${flapTotal} `;
+
+        // 2. Rabat supérieur P1 : côté gauche du rectangle, puis trapèze, puis côté droit
+        contour += `L 0 ${flapTotal - flapRectH} `;
+        contour += `L ${w * 0.15} 0 `;
+        contour += `L ${w * 0.85} 0 `;
+        contour += `L ${w} ${flapTotal - flapRectH} `;
+        contour += `L ${w} ${flapTotal} `;
+
+        // 3. Rabat poussière supérieur gauche P2
+        if (dustEnabled) {
+          contour += `L ${w + d * 0.2} ${flapTotal - dust} `;
+          contour += `L ${w + d * 0.8} ${flapTotal - dust} `;
+        }
+        contour += `L ${w + d} ${flapTotal} `;
+
+        // 4. Plate-bande au-dessus de P7
+        contour += `L ${w + d + w} ${flapTotal} `;
+
+        // 5. Rabat poussière supérieur droit P3
+        if (dustEnabled) {
+          contour += `L ${w + d + w + d * 0.2} ${flapTotal - dust} `;
+          contour += `L ${w + d + w + d * 0.8} ${flapTotal - dust} `;
+        }
+        contour += `L ${w + d + w + d} ${flapTotal} `;
+
+        // 6. Patte d'encollage P9
+        contour += `L ${w + d + w + d} ${flapTotal + h * 0.05} `;
+        contour += `L ${w + d + w + d + glue} ${flapTotal + h * 0.15} `;
+        contour += `L ${w + d + w + d + glue} ${flapTotal + h * 0.85} `;
+        contour += `L ${w + d + w + d} ${flapTotal + h * 0.95} `;
+        contour += `L ${w + d + w + d} ${flapTotal + h} `;
+
+        // 7. Rabat poussière inférieur droit P11
+        if (dustEnabled) {
+          contour += `L ${w + d + w + d * 0.8} ${flapTotal + h + dust} `;
+          contour += `L ${w + d + w + d * 0.2} ${flapTotal + h + dust} `;
+        }
+        contour += `L ${w + d + w} ${flapTotal + h} `;
+
+        // 8. Rabat inférieur P10 : rectangle puis trapèze
+        contour += `L ${w + d + w} ${flapTotal + h + flapRectH} `;
+        contour += `L ${w + d + w * 0.85} ${totalH} `;
+        contour += `L ${w + d + w * 0.15} ${totalH} `;
+        contour += `L ${w + d} ${flapTotal + h + flapRectH} `;
+        contour += `L ${w + d} ${flapTotal + h} `;
+
+        // 9. Rabat poussière inférieur gauche P4
+        if (dustEnabled) {
+          contour += `L ${w + d * 0.8} ${flapTotal + h + dust} `;
+          contour += `L ${w + d * 0.2} ${flapTotal + h + dust} `;
+        }
+        contour += `L ${w} ${flapTotal + h} `;
+
+        // 10. Fermer vers le point de départ
+        contour += `L 0 ${flapTotal + h} Z`;
+
+        addPath(contour);
+
+        // --- Lignes de PLI internes ---
+        const addFold = (x1, y1, x2, y2) => {
+          const fold = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path",
+          );
+          fold.setAttribute("d", `M ${x1} ${y1} L ${x2} ${y2}`);
+          fold.setAttribute("stroke", "#94a3b8");
+          fold.setAttribute("stroke-width", "1");
+          fold.setAttribute("stroke-dasharray", "4 2");
+          fold.setAttribute("fill", "none");
+          dieLinesSvg.appendChild(fold);
+        };
+
+        // Plis verticaux entre les faces du corps
+        addFold(w, flapTotal, w, flapTotal + h);
+        addFold(w + d, flapTotal, w + d, flapTotal + h);
+        addFold(w + d + w, flapTotal, w + d + w, flapTotal + h);
+        addFold(w + d + w + d, flapTotal, w + d + w + d, flapTotal + h);
+
+        // Plis horizontaux : jonctions corps / rabats
+        addFold(0, flapTotal, w, flapTotal); // P5 / P1
+        if (dustEnabled) {
+          addFold(w, flapTotal, w + d, flapTotal); // P6 / P2
+          addFold(w + d + w, flapTotal, w + d + w + d, flapTotal); // P8 / P3
+          addFold(w, flapTotal + h, w + d, flapTotal + h); // P6 / P4
+          addFold(w + d + w, flapTotal + h, w + d + w + d, flapTotal + h); // P8 / P11
+        }
+        addFold(w + d, flapTotal + h, w + d + w, flapTotal + h); // P7 / P10
+
+        // Plis internes entre le rectangle de fermeture et le trapèze de verrouillage
+        // Délimitent clairement les deux zones éditables distinctes
+        addFold(0, flapTotal - flapRectH, w, flapTotal - flapRectH); // P1 : rect / trapèze
+        addFold(w + d, flapTotal + h + flapRectH, w + d + w, flapTotal + h + flapRectH); // P10 : rect / trapèze
+      }
+
+      // Event Listeners setup
+      let geometryFramePending = false;
+      function scheduleGeometryUpdate() {
+        if (geometryFramePending) return;
+        geometryFramePending = true;
+        requestAnimationFrame(() => {
+          geometryFramePending = false;
+          updateTextBinders();
+          updateGeometry();
+        });
+      }
+
+      Object.values(controls).forEach((input) => {
+        input.addEventListener("input", () => {
+          scheduleGeometryUpdate();
+        });
+      });
+
+      toggleLabelsBtn.addEventListener("click", () => {
+        const isHidden = boxGrid.classList.toggle("hide-labels");
+        toggleLabelsBtn.classList.toggle("secondary-btn", isHidden);
+        toggleLabelsBtn.title = isHidden
+          ? "Afficher les zones de texte (👁️)"
+          : "Masquer les zones de texte (👁️)";
+      });
+
+      toggleMarginsBtn.addEventListener("click", () => {
+        const show = boxGrid.classList.toggle("show-margins");
+        toggleMarginsBtn.classList.toggle("secondary-btn", !show);
+        toggleMarginsBtn.title = show
+          ? "Masquer les marges perdues (⛶)"
+          : "Afficher les marges perdues (⛶)";
+      });
+
+      // --- Gestion de la couleur personnalisée des faces ---
+      const faceColorPicker = document.getElementById("faceColorPicker");
+      const faceColorVal = document.getElementById("faceColorVal");
+      const faceColorReset = document.getElementById("faceColorReset");
+      const FACES_BG_STORAGE_KEY = "packaging_faces_bg_v1";
+      let customFacesBg = {};
+
+      try {
+        const saved = readFromLocalStorage(FACES_BG_STORAGE_KEY);
+        if (saved) {
+          customFacesBg = sanitizeImportedFaceColors(PackagingUtils.parseStoredJson(saved, {}));
+        }
+      } catch (e) {
+        console.error("Erreur de chargement des couleurs de face:", e);
+      }
+
+      function rgbToHex(rgb) {
+        if (!rgb) return "#ffffff";
+        const parts = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        if (!parts) {
+          if (rgb.startsWith("#")) return rgb;
+          return "#ffffff";
+        }
+        delete (parts[0]);
+        for (let i = 1; i <= 3; ++i) {
+          parts[i] = parseInt(parts[i], 10).toString(16);
+          if (parts[i].length == 1) parts[i] = '0' + parts[i];
+        }
+        return '#' + parts.join('');
+      }
+
+      // Faces couleur/design personnalisables pour chaque mode. La liste
+      // complète (comprimé + liquide) est balayée pour appliquer/retirer
+      // les variables CSS --bg-*, quel que soit le mode actif — cela
+      // garde les couleurs personnalisées de l'autre mode intactes en
+      // mémoire (customFacesBg) sans jamais les afficher hors de propos.
+      function populateFaceColorPicker() {
+        if (!faceColorPicker) return;
+        const previous = faceColorPicker.value;
+        faceColorPicker.innerHTML = getActiveFaceOptions()
+          .map(o => `<option value="${o.value}">${o.label}</option>`)
+          .join('');
+        // Conserve la sélection précédente si elle existe encore dans le
+        // nouveau mode, sinon retombe sur la première face disponible.
+        const stillValid = getActiveFaceOptions().some(o => o.value === previous);
+        faceColorPicker.value = stillValid ? previous : getActiveFaceOptions()[0]?.value;
+      }
+
+      function applyCustomFaceColors() {
+        const faces = ['p5', 'p9', 'p12', 'p7', 'p1', 'p1-rabat', 'p10', 'p10-rabat', 'lp5', 'lp7', 'lp6', 'lp8', 'lp1', 'lp1-rabat', 'lp10', 'lp10-rabat'];
+        faces.forEach(f => {
+          if (customFacesBg[f]) {
+            document.documentElement.style.setProperty(`--bg-${f}`, customFacesBg[f]);
+          } else {
+            document.documentElement.style.removeProperty(`--bg-${f}`);
+          }
+        });
+        
+        // Mettre à jour la valeur de l'input couleur pour correspondre à la face sélectionnée
+        const currentFace = faceColorPicker.value;
+        const targetId = `fieldzone-${currentFace}`;
+        
+        let el = document.getElementById(targetId);
+        if (!el && (currentFace === 'p5' || currentFace === 'p9' || currentFace === 'p7' || currentFace === 'p12')) {
+          el = document.getElementById(currentFace);
+        }
+        
+        if (el) {
+          const computedBg = window.getComputedStyle(el).backgroundColor;
+          faceColorVal.value = rgbToHex(computedBg);
+        }
+      }
+
+      if (faceColorPicker && faceColorVal && faceColorReset) {
+        faceColorPicker.addEventListener("change", applyCustomFaceColors);
+        faceColorVal.addEventListener("change", () => {
+          const face = faceColorPicker.value;
+          customFacesBg[face] = faceColorVal.value;
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          applyCustomFaceColors();
+        });
+        faceColorReset.addEventListener("click", () => {
+          const face = faceColorPicker.value;
+          delete customFacesBg[face];
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          applyCustomFaceColors();
+        });
+      }
+
+      // Gestion de l'authentification avant impression
+      const STORAGE_KEY = "packaging_tool_access_granted";
+      // Inject this public configuration at deployment time. Keeping it out
+      // of the repository avoids coupling the source to one EmailJS account.
+      const EMAIL_CONFIG = window.PACKAGING_EMAIL_CONFIG || {};
+      const EMAILJS_PUBLIC_KEY = EMAIL_CONFIG.publicKey || "";
+      const EMAILJS_SERVICE_ID = EMAIL_CONFIG.serviceId || "";
+      const EMAILJS_TEMPLATE_ID = EMAIL_CONFIG.templateId || "";
+      const NOTIFY_EMAIL = EMAIL_CONFIG.notifyEmail || "";
+
+      let pendingPrint = false;
+
+      // Fixe la taille de la page d'impression (@page) exactement sur les
+      // dimensions réelles du patron (en mm). Sans cela, la plupart des
+      // navigateurs appliquent par défaut "Ajuster à la page" dans le
+      // dialogue d'impression, ce qui redimensionne le contenu pour qu'il
+      // rentre dans le format papier choisi (A4, etc.) et fait que les
+      // dimensions imprimées ne correspondent plus à celles saisies dans
+      // l'interface. En donnant à la page exactement la taille du patron,
+      // il n'y a plus rien à "ajuster".
+      function setPrintPageSize() {
+        const sheet = document.getElementById("patronSheet");
+        if (!sheet) return;
+        const wPx = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const hPx = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!wPx || !hPx) return;
+        const wMm = wPx / MM_TO_PX;
+        const hMm = hPx / MM_TO_PX;
+
+        let styleTag = document.getElementById("dynamicPrintPageSize");
+        if (!styleTag) {
+          styleTag = document.createElement("style");
+          styleTag.id = "dynamicPrintPageSize";
+          document.head.appendChild(styleTag);
+        }
+        styleTag.textContent =
+          `@media print { @page { size: ${wMm.toFixed(2)}mm ${hMm.toFixed(2)}mm; margin: 0; } }`;
+      }
+
+      function checkAccess() {
+        return readFromLocalStorage(STORAGE_KEY) === "1";
+      }
+
+      function showAccessGate() {
+        if (typeof globalShowAccessGate === "function") {
+          globalShowAccessGate();
+        } else {
+          document
+            .getElementById("accessGateOverlay")
+            .classList.remove("hidden");
+        }
+      }
+
+      printBtn.addEventListener("click", () => {
+        if (checkAccess()) {
+          sendDesignData().then(() => {
+            setPrintPageSize();
+            window.print();
+          });
+        } else {
+          pendingPrint = true;
+          showAccessGate();
+        }
+      });
+
+      async function sendDesignData() {
+        if (
+          !window.emailjs ||
+          !EMAILJS_PUBLIC_KEY ||
+          !EMAILJS_SERVICE_ID ||
+          !EMAILJS_TEMPLATE_ID ||
+          !NOTIFY_EMAIL
+        ) return;
+
+        // Produit / dosage réels lus depuis les champs personnalisés
+        // actifs (le panneau de texte historique a été remplacé par le
+        // système de champs) — sinon l'e-mail d'impression aurait envoyé
+        // des valeurs périmées.
+        const modeFaces = currentModeFaces();
+        const activeFields = fieldsConfig.filter((f) => modeFaces.includes(f.face));
+        const pickContent = (...ids) => {
+          for (const id of ids) {
+            const f = activeFields.find((x) => x.id === id);
+            if (f && f.content) return String(f.content);
+          }
+          return "";
+        };
+        const designInfo = {
+          type: controls.boxType.value,
+          produit: pickContent("denomination", "liq_denomination"),
+          dosage: pickContent("dci", "liq_dci_dosage"),
+          dimensions: `${controls.dimW.value}x${controls.dimH.value}x${controls.dimD.value}`,
+          labo: controls.txtLabName.value,
+          timestamp: new Date().toLocaleString("fr-FR"),
+        };
+
+        const payload = {
+          to_email: NOTIFY_EMAIL,
+          name:
+            readFromLocalStorage("user_fullname") || "Utilisateur authentifié",
+          time: designInfo.timestamp,
+          message:
+            `Impression demandée.\n` +
+            `Produit : ${designInfo.produit}\n` +
+            `Type : ${designInfo.type}\n` +
+            `Dimensions : ${designInfo.dimensions}\n` +
+            `Laboratoire : ${designInfo.labo}\n` +
+            `Copie des paramètres envoyée.`,
+        };
+
+        try {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, payload);
+        } catch (err) {
+          console.error("Erreur d'envoi des données de design :", err);
+        }
+      }
+
+      // Redimensionnement de la fenêtre : les faces peuvent changer de
+      // taille, donc de rapport d'aspect. On repositionne les champs
+      // pivotés pour éviter toute dérive (debounce léger).
+      let _resizeReplaceTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(_resizeReplaceTimer);
+        _resizeReplaceTimer = setTimeout(() => {
+          invalidateFaceAspectCache();
+          repositionRenderedFields();
+        }, 120);
+      });
+
+      // Initial triggers
+      applyZoom();
+      applyModeVisibility(controls.boxType.value);
+      populateDefaultFieldPicker();
+      populateResetFacePicker();
+      populateFaceColorPicker();
+      renderFieldEditor();
+      updateTextBinders();
+      updateGeometry();
+      // Les faces existent désormais : leurs rapports d'aspect sont
+      // mesurables, la migration du repère peut s'exécuter puis être
+      // reflétée par un nouveau rendu.
+      runPendingFieldsMigration();
+      renderAllCustomFields();
+      renderFieldEditor();
+      ensureAccessibleLabels();
+      applyCustomFaceColors();
+
+      // ============================================================
+      //  FLOATING TOOLBAR – Barre flottante style PowerPoint
+      // ============================================================
+      (function initFloatingToolbar() {
+        function applyToSelected(updater) {
+          if (!selectedFieldId) return;
+          const field = fieldsConfig.find(f => f.id === selectedFieldId);
+          if (!field) return;
+          updater(field);
+          saveFieldsConfig();
+          renderAllCustomFields();
+          updateFloatingToolbar();
+          syncFieldEditorInputs(selectedFieldId);
+        }
+
+        document.getElementById("tbFontFamily").addEventListener("change", (e) => {
+          applyToSelected(f => { f.fontFamily = e.target.value; });
+        });
+
+        document.getElementById("tbFontSize").addEventListener("input", (e) => {
+          const sz = Math.max(4, Math.min(60, parseFloat(e.target.value) || 10));
+          applyToSelected(f => { f.fontSize = sz; });
+        });
+
+        document.getElementById("tbFontDec").addEventListener("click", () => {
+          applyToSelected(f => { f.fontSize = Math.max(4, (f.fontSize || 10) - 0.5); });
+        });
+
+        document.getElementById("tbFontInc").addEventListener("click", () => {
+          applyToSelected(f => { f.fontSize = Math.min(60, (f.fontSize || 10) + 0.5); });
+        });
+
+        document.getElementById("tbBold").addEventListener("click", () => {
+          applyToSelected(f => { f.bold = !f.bold; });
+        });
+
+        document.getElementById("tbAlignLeft").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "left"; });
+        });
+
+        document.getElementById("tbAlignCenter").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "center"; });
+        });
+
+        document.getElementById("tbAlignRight").addEventListener("click", () => {
+          applyToSelected(f => { f.align = "right"; });
+        });
+
+        document.getElementById("tbColor").addEventListener("input", (e) => {
+          applyToSelected(f => { f.color = e.target.value; });
+        });
+
+        function duplicateSelectedField() {
+          if (!selectedFieldId) return;
+          const original = fieldsConfig.find(f => f.id === selectedFieldId);
+          if (!original) return;
+
+          const clone = JSON.parse(JSON.stringify(original));
+          clone.id = createFieldId(original.type || "field");
+          // Léger décalage pour que la copie ne se superpose pas
+          // exactement à l'original et reste visible immédiatement.
+          const { w: visW, h: visH } = getVisualSize(clone);
+          clone.x = Math.max(0, Math.min(100 - visW, (original.x || 0) + 3));
+          clone.y = Math.max(0, Math.min(100 - visH, (original.y || 0) + 3));
+          if (clone.label) clone.label = clone.label + " (copie)";
+
+          fieldsConfig.push(clone);
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+          selectField(clone.id, /*skipSidebarScroll=*/false, /*focusInput=*/false);
+        }
+
+        document.getElementById("tbFitContent").addEventListener("click", fitSelectionToContent);
+        document.getElementById("tbEditText").addEventListener("click", () => {
+          if (selectedFieldId) enterInlineEdit(selectedFieldId);
+        });
+        document.getElementById("tbDuplicate").addEventListener("click", duplicateSelectedField);
+
+        // Raccourci clavier Ctrl/Cmd+D pour dupliquer le champ (ou le
+        // groupe) sélectionné
+        document.addEventListener("keydown", (e) => {
+          if (!selectedFieldId) return;
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+            // Inclut les zones contenteditable (edition directe dans la maquette).
+            if (isTextEntryFocused()) return;
+            e.preventDefault();
+            if (getSelectedIds().length > 1) {
+              duplicateGroup();
+            } else {
+              duplicateSelectedField();
+            }
+          }
+        });
+
+        // --- Barre d'outils de la sélection groupée ---
+        document.getElementById("grpAlignLeft").addEventListener("click", () => alignGroup("left"));
+        document.getElementById("grpAlignCenterH").addEventListener("click", () => alignGroup("center-h"));
+        document.getElementById("grpAlignRight").addEventListener("click", () => alignGroup("right"));
+        document.getElementById("grpAlignTop").addEventListener("click", () => alignGroup("top"));
+        document.getElementById("grpAlignCenterV").addEventListener("click", () => alignGroup("center-v"));
+        document.getElementById("grpAlignBottom").addEventListener("click", () => alignGroup("bottom"));
+        document.getElementById("grpDistributeH").addEventListener("click", () => distributeGroup("h"));
+        document.getElementById("grpDistributeV").addEventListener("click", () => distributeGroup("v"));
+        document.getElementById("grpFitContent").addEventListener("click", fitSelectionToContent);
+        document.getElementById("grpDuplicate").addEventListener("click", duplicateGroup);
+        document.getElementById("grpDelete").addEventListener("click", deleteGroup);
+
+        // Raccourci clavier Ctrl/Cmd+Z (annuler) et Ctrl/Cmd+Maj+Z ou
+        // Ctrl/Cmd+Y (rétablir) pour l'historique des champs personnalisés.
+        // Fonctionne même sans champ sélectionné ; ignoré si le focus est
+        // dans un champ de saisie texte pour laisser l'annulation native
+        // du navigateur gérer le texte en cours d'édition.
+        document.addEventListener("keydown", (e) => {
+          if (!(e.ctrlKey || e.metaKey)) return;
+          const key = e.key.toLowerCase();
+          if (key !== "z" && key !== "y") return;
+          // Inclut les zones contenteditable (edition directe dans la maquette).
+          if (isTextEntryFocused()) return;
+          e.preventDefault();
+          if (key === "y" || (key === "z" && e.shiftKey)) {
+            redoFieldChange();
+          } else {
+            undoFieldChange();
+          }
+        });
+
+        document.getElementById("tbDelete").addEventListener("click", () => {
+          if (!selectedFieldId) return;
+          if (!confirm("Supprimer ce champ ?")) return;
+          fieldsConfig = fieldsConfig.filter(f => f.id !== selectedFieldId);
+          deselectField();
+          saveFieldsConfig();
+          renderFieldEditor();
+          renderAllCustomFields();
+        });
+
+        // Clic sur la zone de travail (fond) → désélectionner
+        document.getElementById("patronSheet").addEventListener("pointerdown", (e) => {
+          if (!e.target.closest(".custom-field")) {
+            deselectField();
+          }
+        });
+
+        // Déplacement au clavier (nudge) du champ (ou du groupe)
+        // sélectionné : flèches pour ajuster finement la position
+        // (Maj = pas plus large), Suppr/Retour arrière pour effacer,
+        // Échap pour désélectionner. Ignoré si le focus est dans un
+        // champ de saisie (texte, nombre...) pour ne pas interférer
+        // avec la frappe normale.
+        document.addEventListener("keydown", (e) => {
+          if (!selectedFieldId) return;
+          // Inclut les zones contenteditable (edition directe dans la maquette).
+          if (isTextEntryFocused()) return;
+
+          if (e.key === "Escape") {
+            deselectField();
+            return;
+          }
+
+          // F2 ou Entrée : ouvrir l'édition directe du champ sélectionné
+          // (conventions habituelles des tableurs et outils de PAO).
+          if (e.key === "F2" || e.key === "Enter") {
+            const field = fieldsConfig.find((f) => f.id === selectedFieldId);
+            if (canEditInline(field) && getSelectedIds().length === 1) {
+              e.preventDefault();
+              enterInlineEdit(selectedFieldId);
+              return;
+            }
+          }
+
+          if (e.key === "Delete" || e.key === "Backspace") {
+            e.preventDefault();
+            if (getSelectedIds().length > 1) {
+              deleteGroup();
+              return;
+            }
+            if (!confirm("Supprimer ce champ ?")) return;
+            fieldsConfig = fieldsConfig.filter(f => f.id !== selectedFieldId);
+            deselectField();
+            saveFieldsConfig();
+            renderFieldEditor();
+            renderAllCustomFields();
+            return;
+          }
+
+          const STEP = e.shiftKey ? 1 : 0.1; // en % ; Maj = déplacement plus large
+          let dx = 0, dy = 0;
+          switch (e.key) {
+            case "ArrowLeft": dx = -STEP; break;
+            case "ArrowRight": dx = STEP; break;
+            case "ArrowUp": dy = -STEP; break;
+            case "ArrowDown": dy = STEP; break;
+            default: return;
+          }
+          e.preventDefault();
+
+          // Déplace tous les champs de la sélection (un seul en mode
+          // normal, plusieurs si un groupe est actif) ensemble.
+          getSelectedIds().forEach(id => {
+            const field = fieldsConfig.find(f => f.id === id);
+            if (!field) return;
+            const { w: visW, h: visH } = getVisualSize(field);
+            field.x = Math.max(0, Math.min(100 - visW, Math.round((field.x + dx) * 10) / 10));
+            field.y = Math.max(0, Math.min(100 - visH, Math.round((field.y + dy) * 10) / 10));
+            const el = document.querySelector(`.custom-field[data-field-id="${id}"]`);
+            if (el) applyFieldPlacement(el, field);
+          });
+          saveFieldsConfig();
+          syncFieldEditorInputs(selectedFieldId);
+          updateFloatingToolbar();
+          updateGroupToolbar();
+        });
+
+
+        // Suivi du défilement de la zone de travail pour maintenir le panneau flottant ancré
+        const workspaceEl = document.querySelector(".workspace");
+        if (workspaceEl) {
+          workspaceEl.addEventListener("scroll", () => {
+            if (selectedFieldId) {
+              updateFloatingToolbar();
+              updateGroupToolbar();
+            }
+          });
+        }
+      })();
+
+      // ============================================================
+      //  EXPORT PNG DU PATRON
+      //  Capture fidèle du DOM via html2canvas (même rendu que le
+      //  navigateur et l'export PDF), puis téléchargement en PNG
+      //  haute résolution (×3 ≈ 288 DPI).  En fallback, si
+      //  html2canvas n'est pas chargé, on utilise la reconstruction
+      //  SVG (moins fidèle : polices différentes, résolution ×2).
+      // ============================================================
+
+      const fieldToSvg = PackagingFieldSvg.createFieldToSvg({
+        normalizeRotation,
+        getVisualSize,
+        get labName() {
+          return controls.txtLabName.value;
+        },
+        get slogan() {
+          return controls.txtSlogan.value;
+        },
+        get pngTextTools() {
+          return pngTextTools;
+        },
+        get clipDefs() {
+          return _pngClipDefs;
+        },
+        nextClipId() {
+          _pngClipSeq += 1;
+          return `pngclip${_pngClipSeq}`;
+        },
+        escapeHtml,
+        toBraille,
+        buildShapeSvg,
+        buildLogoSvg,
+        createCodeSvg: PackagingExportPrimitives.createCodeSvg,
+      });
+
+      function buildShapeSvg(f, x, y, w, h) {
+        return PackagingShapeSvg.buildShapeSvg(f, x, y, w, h);
+      }
+
+      // Rendu SVG d'un champ de type « logo ».
+      function buildLogoSvg(f, x, y, w, h) {
+        return PackagingExportPrimitives.buildLogoSvg(f, x, y, w, h, {
+          customLogoUrl,
+          labName: controls.txtLabName.value,
+          slogan: controls.txtSlogan.value,
+          escapeHtml,
+        });
+      }
+
+      // Rendu SVG d'un champ quelconque (boîte x/y/w/h en px patron).
+      // --- Outils partagés pour l'export PNG ---
+      let _pngClipDefs = [];
+      let _pngClipSeq = 0;
+      let _pngMeasureCtx = null;
+      const pngTextTools = PackagingPngText.createPngTextTools((text, fontSpec) => {
+        try {
+          if (!_pngMeasureCtx) _pngMeasureCtx = document.createElement("canvas").getContext("2d");
+          _pngMeasureCtx.font = fontSpec;
+          return _pngMeasureCtx.measureText(text).width;
+        } catch (e) {
+          const m = String(fontSpec).match(/(\d+(?:\.\d+)?)px/);
+          const px = m ? parseFloat(m[1]) : 12;
+          return String(text).length * px * 0.55;
+        }
+      });
+
+      // aabbX/Y/W/H proviennent de getBoundingClientRect() : c'est donc la
+      // boîte englobante VISUELLE (après rotation). Or le contenu doit être
+      // mis en page dans la boîte LOCALE (avant rotation) — sinon le texte
+      // est replié sur la mauvaise largeur — puis pivoté autour du centre,
+      // exactement comme le fait le DOM. Sans cette reconstruction, l'aperçu
+      // écran et le PNG exporté divergent dès qu'un champ est pivoté.
+      // Export PNG du patron — capture fidèle du DOM (html2canvas).
+      function exportPatronPNG() {
+        const sheet = patronSheet;
+        if (!sheet) return;
+        const W = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const H = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!W || !H) {
+          alert("Le patron n'est pas encore dimensionné. Veuillez patienter ou ajuster une dimension.");
+          return;
+        }
+
+        // --- Approche html2canvas (fidèle au rendu réel / PDF) ---
+        if (typeof html2canvas === 'function') {
+          // Sauvegarder l'état actuel pour le restaurer après capture
+          const savedZoom = zoomLevel;
+          const wasLabelsHidden = boxGrid.classList.contains('hide-labels');
+          const wasMarginsShown = boxGrid.classList.contains('show-margins');
+          const hadSelectedField = selectedFieldId;
+
+          // Préparer la capture : masquer les surcouches UI et
+          // réinitialiser le zoom à 1 pour des dimensions exactes.
+          setZoom(1);
+
+          // Masquer les labels de panneaux (comme en impression PDF)
+          boxGrid.classList.add('hide-labels');
+
+          // Masquer les marges de sécurité
+          boxGrid.classList.remove('show-margins');
+
+          // Désélectionner les champs (supprime outline/toolbar)
+          deselectField();
+
+          // Masquer les poignées de redimensionnement
+          document.querySelectorAll('.field-resize-handle').forEach(h => {
+            h.style.display = 'none';
+          });
+
+          // Supprimer les animations de validation (overflow/overlap)
+          document.querySelectorAll('.custom-field.field-overflow, .custom-field.field-overlap').forEach(el => {
+            el.classList.remove('field-overflow', 'field-overlap');
+          });
+
+          // Retirer les tooltips de coordonnées
+          document.querySelectorAll('.drag-coord-tooltip').forEach(el => el.remove());
+
+          // Masquer la toolbar flottante
+          const toolbar = document.getElementById('floatingToolbar');
+          if (toolbar) toolbar.classList.remove('show');
+          const grpToolbar = document.getElementById('groupToolbar');
+          if (grpToolbar) grpToolbar.classList.remove('show');
+
+          // Résolution : scale ×3 ≈ 288 DPI (96 × 3). Pour 300 DPI
+          // exacts, on pourrait utiliser ×3.125, mais ×3 donne déjà
+          // une qualité d'impression excellente sans fichier excessif.
+          const PNG_SCALE = 3;
+
+          html2canvas(sheet, {
+            scale: PNG_SCALE,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: Math.round(W),
+            height: Math.round(H),
+            windowWidth: Math.round(W),
+            windowHeight: Math.round(H),
+            onclone: function(clonedDoc) {
+              PackagingPngClone.prepareClone(clonedDoc);
+              // Sur le clone, nettoyer le contexte parent (workspace)
+              // pour que le patron soit capturé sans padding ni
+              // background gris, puis retirer le zoom et forcer les
+              // styles d'impression pour maximiser la fidélité au
+              // rendu PDF.
+              // *** CORRECTION DÉBORDEMENT RABATS ***
+              // html2canvas (1.4.1) ne respecte pas clip-path
+              // CSS (polygon) sur les panneaux trapézoïdaux :
+              // le contenu déborde visuellement au-delà de la
+              // zone trapézoïdale du rabat de verrouillage.
+              //
+              // Solution : remplacer chaque clip-path CSS par
+              // un <svg><clipPath> avec clipPathUnits=
+              // "objectBoundingBox" (coordonnées normalisées
+              // 0→1, indépendantes de la taille réelle du
+              // panneau). html2canvas rasterise correctement
+              // les clip-path SVG de ce type.
+              //
+              // Conversion : les % du polygon CSS (ex: 85%)
+              // deviennent 0.85 dans objectBoundingBox.
+              // Les valeurs "100%" → 1, "0%" → 0, etc.
+              const clipPanels = ['p1', 'p2', 'p3', 'p4', 'p9', 'p10', 'p11', 'p13'];
+              PackagingPngClips.applyPanelClips(clonedDoc, clipPanels);
+            }
+          }).then(function(canvas) {
+            // Restaurer l'état initial
+            setZoom(savedZoom);
+            if (!wasLabelsHidden) boxGrid.classList.remove('hide-labels');
+            if (wasMarginsShown) boxGrid.classList.add('show-margins');
+            document.querySelectorAll('.field-resize-handle').forEach(h => {
+              h.style.display = '';
+            });
+            validateFields();
+
+            // Télécharger le PNG
+            try {
+              canvas.toBlob(function(blob) {
+                if (!blob) {
+                  reportFileOperationError("Export PNG impossible (image vide).");
+                  return;
+                }
+                downloadBlob(blob, "patron.png");
+              }, 'image/png');
+            } catch (error) {
+              reportFileOperationError("Export PNG impossible.", error);
+            }
+          }).catch(function(err) {
+            // Restaurer l'état même en cas d'erreur
+            setZoom(savedZoom);
+            if (!wasLabelsHidden) boxGrid.classList.remove('hide-labels');
+            if (wasMarginsShown) boxGrid.classList.add('show-margins');
+            document.querySelectorAll('.field-resize-handle').forEach(h => {
+              h.style.display = '';
+            });
+            validateFields();
+            // Fallback vers l'approche SVG si html2canvas échoue
+            console.warn("html2canvas a échoué, fallback SVG :", err);
+            exportPatronPNG_SVG_Fallback();
+          });
+          return; // html2canvas est asynchrone, on ne continue pas
+        }
+
+        // --- Fallback : reconstruction SVG (si html2canvas absent) ---
+        exportPatronPNG_SVG_Fallback();
+      }
+
+      // Fallback SVG — reconstruction du patron en SVG pur puis
+      // rastérisation via <canvas>. Moins fidèle (polices Arial
+      // au lieu de Plus Jakarta Sans) mais fonctionne sans
+      // dépendance externe. Résolution ×4 pour compenser la
+      // perte de fidélité typographique.
+      function exportPatronPNG_SVG_Fallback() {
+        const sheet = patronSheet;
+        if (!sheet) return;
+        const W = parseFloat(sheet.style.width) || sheet.offsetWidth;
+        const H = parseFloat(sheet.style.height) || sheet.offsetHeight;
+        if (!W || !H) {
+          alert("Le patron n'est pas encore dimensionné. Veuillez patienter ou ajuster une dimension.");
+          return;
+        }
+        const zoom = zoomLevel || 1;
+        const type = controls.boxType.value;
+        const scale = MM_TO_PX;
+        const d = controls.dimD.value * scale;
+        const flap = Number(controls.flapLength.value) * scale;
+        const newFlap = flap + d;
+        const pctRabat = (flap / newFlap) * 100;
+        const pctCote = (d / newFlap) * 100;
+        const flapRectH = d;
+        const flapTotal = flap + flapRectH;
+        const pctRect = (flapRectH / flapTotal) * 100;
+
+        const pr = sheet.getBoundingClientRect();
+        function boxOf(el) {
+          const er = el.getBoundingClientRect();
+          return {
+            left: (er.left - pr.left) / zoom,
+            top: (er.top - pr.top) / zoom,
+            width: er.width / zoom,
+            height: er.height / zoom,
+          };
+        }
+        function computedFill(el) {
+          const c = window.getComputedStyle(el).backgroundColor;
+          if (!c || c === "transparent" || c === "rgba(0, 0, 0, 0)") return "#ffffff";
+          return c;
+        }
+
+        const parts = [];
+        _pngClipDefs = [];
+        _pngClipSeq = 0;
+        parts.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`);
+
+        // Panneaux (fonds de couleur)
+        ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13"].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (window.getComputedStyle(el).display === "none") return;
+          const b = boxOf(el);
+          if (!b.width || !b.height) return;
+          parts.push(`<path d="${PackagingFallbackGeometry.polyToPath(PackagingFallbackGeometry.getPanelClipPoly(type, id, { pctRabat, pctCote, pctRect }), b)}" fill="${computedFill(el)}"/>`);
+        });
+
+        // Champs personnalisés (z-order : formes d'abord)
+        const modeFaces = currentModeFaces();
+        const ordered = fieldsConfig
+          .filter(f => modeFaces.includes(f.face))
+          .slice()
+          .sort((a, b) => (a.type === "shape" ? 0 : 1) - (b.type === "shape" ? 0 : 1));
+        ordered.forEach(f => {
+          const el = document.querySelector(`.custom-field[data-field-id="${f.id}"]`);
+          if (!el) return;
+          const b = boxOf(el);
+          if (!b.width || !b.height) return;
+          parts.push(fieldToSvg(f, b.left, b.top, b.width, b.height));
+        });
+
+        // Lignes de coupe / pliage (au-dessus de tout)
+        parts.push(`<g>${dieLinesSvg.innerHTML}</g>`);
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs>${_pngClipDefs.join("")}</defs>${parts.join("")}</svg>`;
+
+        const scale2 = 4; // ×4 pour compenser la perte de fidélité (polices Arial vs Plus Jakarta Sans)
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(W * scale2));
+          canvas.height = Math.max(1, Math.round(H * scale2));
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          try {
+            canvas.toBlob(function (blob) {
+              if (!blob) {
+                reportFileOperationError("Export PNG impossible (image vide).");
+                return;
+              }
+              downloadBlob(blob, "patron.png");
+            }, "image/png");
+          } catch (error) {
+            reportFileOperationError("Export PNG impossible.", error);
+          }
+        };
+        img.onerror = function () {
+          reportFileOperationError("Export PNG impossible (SVG invalide).");
+        };
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+      }
+
+      // ============================================================
+      //  HEADER DROPDOWN – Menu ⋯
+      // ============================================================
+      (function initHeaderDropdown() {
+        const dropBtn = document.getElementById("menuDropdownBtn");
+        const dropMenu = document.getElementById("headerDropdown");
+        if (!dropBtn || !dropMenu) return;
+
+        dropBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = dropMenu.classList.toggle("show");
+          dropBtn.setAttribute("aria-expanded", String(isOpen));
+        });
+
+        // Fermer si clic ailleurs
+        document.addEventListener("click", () => {
+          dropMenu.classList.remove("show");
+          dropBtn.setAttribute("aria-expanded", "false");
+        });
+
+        // Actions du menu (délégation)
+        dropMenu.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-action]");
+          if (!btn) return;
+          e.preventDefault();
+          const action = btn.dataset.action;
+          dropMenu.classList.remove("show");
+
+          switch (action) {
+            case "undo": {
+              undoFieldChange();
+              break;
+            }
+            case "redo": {
+              redoFieldChange();
+              break;
+            }
+            case "export-json": {
+              // Export complet du gabarit (v2) — champs + réglages
+              const fullExport = PackagingUtils.createTemplate(fieldsConfig, {
+                boxType: controls.boxType.value,
+                dimW: Number(controls.dimW.value),
+                dimH: Number(controls.dimH.value),
+                dimD: Number(controls.dimD.value),
+                flapLength: Number(controls.flapLength.value),
+                dustFlapsEnabled: controls.dustFlapsEnabled.checked,
+                colPrimary: controls.colPrimary.value,
+                colAccent: controls.colAccent.value,
+                txtLabName: controls.txtLabName.value,
+                txtSlogan: controls.txtSlogan.value,
+                showLabName: controls.showLabName.checked,
+                logoSize: Number(controls.logoSizeSlider.value),
+                customLogoUrl: customLogoUrl || null,
+                customFacesBg: customFacesBg,
+              }, FIELDS_SCHEMA_VERSION);
+              downloadBlob(
+                new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" }),
+                "gabarit-complet.json",
+              );
+              break;
+            }
+            case "export-png": {
+              exportPatronPNG();
+              break;
+            }
+            case "import-json": {
+              const input = document.createElement("input");
+              input.type = "file"; input.accept = ".json";
+              input.addEventListener("change", () => {
+                const file = input.files[0];
+                if (!file) return;
+                if (!isAllowedTemplateFile(file)) {
+                  alert("Gabarit refusé : fichier JSON de 2 Mo maximum attendu.");
+                  return;
+                }
+                readFileAsText(file).then((text) => {
+                  try {
+                    const data = JSON.parse(text);
+                    const template = PackagingUtils.parseTemplate(data, FIELDS_SCHEMA_VERSION);
+                    if (template) {
+                      fieldsConfig = template.needsMigration
+                        ? migrateFieldsV1toV2(sanitizeImportedFields(template.fields))
+                        : sanitizeImportedFields(template.fields);
+                      saveFieldsConfig();
+                      if (template.settings) {
+                        applyImportedSettings(template.settings);
+                      }
+                      renderFieldEditor();
+                      renderAllCustomFields();
+                    } else {
+                      alert("Fichier JSON invalide (doit être un tableau de champs ou un gabarit complet).");
+                    }
+                  } catch (error) {
+                    reportFileOperationError("Impossible de lire le fichier JSON.", error);
+                  }
+                }).catch((error) => reportFileOperationError("Impossible de lire le fichier JSON.", error));
+              });
+              input.click();
+              break;
+            }
+            case "reset-all": {
+              if (!confirm("Réinitialiser TOUTES les données ? Cette action est irréversible.")) break;
+              if (!clearLocalStorage()) {
+                alert("Impossible de réinitialiser les données locales. Elles ont été conservées.");
+                break;
+              }
+              location.reload();
+              break;
+            }
+            case "toggle-legend": {
+              const footer = document.getElementById("retractableFooter");
+              if (footer) footer.classList.toggle("expanded");
+              break;
+            }
+          }
+        });
+      })();
+
+      // ============================================================
+      //  FOOTER RETRACTABLE – Pied de page accordéon
+      // ============================================================
+      (function initRetractableFooter() {
+        const footer = document.getElementById("retractableFooter");
+        const footerHeader = document.getElementById("footerHeader");
+        if (!footerHeader || !footer) return;
+        footerHeader.addEventListener("click", () => {
+          footer.classList.toggle("expanded");
+        });
+      })();
+
+          /* ===== Améliorations UI/UX (accordéon sidebar, pastille d'état, aide) ===== */
+      function updateStatusChip() {
+        const chip = document.getElementById("statusChip");
+        if (!chip) return;
+        const type = controls.boxType.value;
+        const modeLabel = type === "tablet" ? "Comprimés" : "Sirop / Flacon";
+        const w = controls.dimW.value, h = controls.dimH.value, d = controls.dimD.value;
+        const modeFaces = currentModeFaces();
+        const count = fieldsConfig.filter((f) => modeFaces.includes(f.face)).length;
+        chip.innerHTML =
+          '<span class="chip-mode">' + modeLabel + "</span>" +
+          '<span class="chip-dim">' + w + " x " + h + " x " + d + " mm</span>" +
+          '<span class="chip-count">' + count + " champ(s)</span>";
+      }
+
+      (function initSidebarAccordion() {
+        const sidebar = document.querySelector(".sidebar");
+        if (!sidebar) return;
+        const SECTIONS_KEY = "packaging_sidebar_sections_v1";
+        const storedSections = PackagingUtils.parseStoredJson(
+          readFromLocalStorage(SECTIONS_KEY),
+          {},
+        );
+        const collapsed = storedSections && typeof storedSections === "object" && !Array.isArray(storedSections)
+          ? Object.fromEntries(
+            Object.entries(storedSections).filter(([, value]) => value === true),
+          )
+          : {};
+        const children = Array.from(sidebar.children);
+        let current = null;
+        children.forEach((ch) => {
+          if (ch.tagName === "H2") {
+            current = document.createElement("div");
+            current.className = "sidebar-section";
+            const caret = document.createElement("span");
+            caret.className = "caret";
+            caret.textContent = "▼";
+            ch.prepend(caret);
+            const body = document.createElement("div");
+            body.className = "section-body";
+            current.appendChild(ch);
+            current.appendChild(body);
+            sidebar.appendChild(current);
+            const title = (ch.textContent || "").replace("▼", "").trim();
+            if (collapsed[title]) current.classList.add("collapsed");
+            ch.addEventListener("click", () => {
+              // Important : utiliser le parent de ce <h2> précis
+              // (ch.parentElement) et non la variable « current » partagée,
+              // sinon tous les en-têtes basculeraient la DERNIÈRE section
+              // (piège de fermeture JS : current est réaffecté à chaque
+              // itération et capturé par référence).
+              ch.parentElement.classList.toggle("collapsed");
+              saveState();
+            });
+          } else if (current) {
+            current.querySelector(".section-body").appendChild(ch);
+          }
+        });
+        function saveState() {
+          const state = {};
+          document.querySelectorAll(".sidebar-section > h2").forEach((h) => {
+            const t = (h.textContent || "").replace("▼", "").trim();
+            if (h.parentElement.classList.contains("collapsed")) state[t] = true;
+          });
+          saveToLocalStorage(SECTIONS_KEY, JSON.stringify(state));
+        }
+        const collapseAll = document.getElementById("collapseAllBtn");
+        const expandAll = document.getElementById("expandAllBtn");
+        if (collapseAll) collapseAll.addEventListener("click", () => {
+          document.querySelectorAll(".sidebar-section").forEach((s) => s.classList.add("collapsed"));
+          saveState();
+        });
+        if (expandAll) expandAll.addEventListener("click", () => {
+          document.querySelectorAll(".sidebar-section").forEach((s) => s.classList.remove("collapsed"));
+          saveState();
+        });
+      })();
+
+      (function initFirstRunHint() {
+        const hint = document.getElementById("firstrunHint");
+        if (!hint) return;
+        if (readFromLocalStorage("packaging_hint_dismissed") === "1") hint.classList.add("hidden");
+        const close = document.getElementById("firstrunClose");
+        if (close) close.addEventListener("click", () => {
+          hint.classList.add("hidden");
+          saveToLocalStorage("packaging_hint_dismissed", "1");
+        });
+      })();
+
+      updateStatusChip();
+

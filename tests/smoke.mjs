@@ -5,12 +5,15 @@ import { spawnSync } from "node:child_process";
 
 const root = new URL("..", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
+const app = await readFile(new URL("src/app.js", root), "utf8");
 const workflow = await readFile(new URL(".github/workflows/quality.yml", root), "utf8");
 
 const assertions = [
   ["the document has one main landmark", (value) => (value.match(/<main\b/g) || []).length === 1],
   ["the main landmark wraps the application layout", (value) => /<main>[\s\S]*class="main-layout"[\s\S]*<\/main>\s*<!-- Retractable Footer/.test(value)],
-  ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>\s*$/.test(value)],
+  ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>/.test(value)],
+  ["the application stylesheet is externalized", (value) => value.includes('href="src/packaging.css"') && !/<style>[\s\S]*<\/style>/.test(value)],
+  ["the application controller is externalized", (value) => value.includes('src/app.js') && !/<script>\s*\/\/ Exact conversion ratio/.test(value)],
   ["the CI workflow installs dependencies and Chromium", () => workflow.includes("npm ci") && workflow.includes("playwright install --with-deps chromium")],
   ["default field presets are loaded from their module", (value) => value.includes('src/packaging-defaults.js') && value.includes("PackagingDefaults.defaultTabletFieldsConfig") && value.includes("PackagingDefaults.defaultLiquidFieldsConfig")],
   ["history state is isolated in its module", (value) => value.includes('src/history-controller.js') && value.includes("PackagingHistory.createHistoryController")],
@@ -53,7 +56,7 @@ const assertions = [
 ];
 
 const failures = assertions
-  .filter(([, assertion]) => !assertion(html))
+  .filter(([, assertion]) => !assertion(`${html}\n${app}`))
   .map(([label]) => label);
 
 const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
@@ -61,7 +64,7 @@ const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
   .filter((source) => source.trim());
 const temp = await mkdtemp(join(tmpdir(), "packaging-tool-"));
 try {
-  for (const [index, source] of scripts.entries()) {
+  for (const [index, source] of [...scripts, app].entries()) {
     const file = join(temp, `inline-${index}.js`);
     await writeFile(file, source);
     const result = spawnSync(process.execPath, ["--check", file], { encoding: "utf8" });
