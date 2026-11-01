@@ -4114,6 +4114,12 @@
           },
           onClearError: (error) => {
             console.error("Réinitialisation locale impossible :", error);
+            const summary = document.getElementById("validationSummary");
+            if (summary) {
+              summary.textContent =
+                "La réinitialisation locale a échoué. Les données existantes ont été conservées.";
+              summary.classList.add("has-warnings");
+            }
           },
         },
       );
@@ -8637,7 +8643,10 @@
             }
             case "reset-all": {
               if (!confirm("Réinitialiser TOUTES les données ? Cette action est irréversible.")) break;
-              clearLocalStorage();
+              if (!clearLocalStorage()) {
+                alert("Impossible de réinitialiser les données locales. Elles ont été conservées.");
+                break;
+              }
               location.reload();
               break;
             }

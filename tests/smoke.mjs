@@ -32,6 +32,7 @@ const assertions = [
   ["imported settings are sanitized before application", (value) => value.includes("PackagingUtils.sanitizeImportedSettings")],
   ["field identifiers are generated uniquely", (value) => value.includes("PackagingUtils.createUniqueFieldId") && value.includes("function createFieldId")],
   ["local JSON restores through safe parsing", (value) => value.includes("PackagingUtils.parseStoredJson") && value.includes("sanitizeImportedFaceColors(PackagingUtils.parseStoredJson")],
+  ["global reset handles storage failures", (value) => value.includes("if (!clearLocalStorage())") && value.includes("Les données existantes ont été conservées")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 

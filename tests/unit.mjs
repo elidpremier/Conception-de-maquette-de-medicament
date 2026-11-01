@@ -105,6 +105,13 @@ const failingAdapter = utils.createStorageAdapter({
 if (failingAdapter.write("settings", "x") || writeErrors !== 1) {
   throw new Error("Storage adapter failure handling failed.");
 }
+let clearErrors = 0;
+const failingClearAdapter = utils.createStorageAdapter({
+  clear: () => { throw new Error("blocked"); },
+}, { onClearError: () => { clearErrors++; } });
+if (failingClearAdapter.clear() || clearErrors !== 1) {
+  throw new Error("Storage adapter clear failure handling failed.");
+}
 if (fields.length !== 1 || fields[0].id !== "test-0" || fields[0].type !== "text") {
   throw new Error("Field type or identifier sanitation failed.");
 }
