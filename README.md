@@ -34,7 +34,7 @@ Chaque face du patron est une zone d'édition où l'on place librement autant de
 
 ### Apparence
 
-- **Logo personnalisé** (import PNG/SVG/JPG) ou logo par défaut
+- **Logo personnalisé** (import PNG/JPEG/GIF/WebP) ou logo par défaut
 - **Palette de couleurs** (primaire / accent) ajustable
 - **Couleur de fond par face**
 - **Typographie modulable** par zone (titres, texte courant, rabats, petits textes)

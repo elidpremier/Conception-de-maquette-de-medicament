@@ -8,11 +8,13 @@ const html = await readFile(new URL("index.html", root), "utf8");
 
 const assertions = [
   ["the document has one main landmark", (value) => (value.match(/<main\b/g) || []).length === 1],
+  ["the main landmark wraps the application layout", (value) => /<main>[\s\S]*class="main-layout"[\s\S]*<\/main>\s*<!-- Retractable Footer/.test(value)],
   ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>\s*$/.test(value)],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["EmailJS credentials are deployment configuration", (value) => value.includes("window.PACKAGING_EMAIL_CONFIG")],
   ["the access form does not persist the submitted name", (value) => !value.includes('localStorage.setItem("user_fullname"')],
+  ["imported image sources are validated", (value) => value.includes("isSafeImageDataUrl") && value.includes("sanitizeImportedFields")],
 ];
 
 const failures = assertions

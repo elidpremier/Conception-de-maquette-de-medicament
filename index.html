@@ -74,6 +74,14 @@
         flex-direction: column;
       }
 
+      main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
       header {
         background: #1e293b;
         padding: 16px 24px;
@@ -127,6 +135,11 @@
         body {
           height: auto;
           min-height: 100vh;
+          overflow: visible;
+        }
+
+        main {
+          display: block;
           overflow: visible;
         }
 
@@ -2308,8 +2321,8 @@
         <fieldset>
           <legend>Configuration du Logo</legend>
           <div class="input-group">
-            <label for="logoUpload">Importer une image (PNG/SVG/JPG)</label>
-            <input type="file" id="logoUpload" accept="image/*" />
+            <label for="logoUpload">Importer une image (PNG/JPEG/GIF/WebP)</label>
+            <input type="file" id="logoUpload" accept="image/png,image/jpeg,image/gif,image/webp" />
           </div>
           <div class="input-group">
             <button
@@ -2374,7 +2387,6 @@
               <div class="color-input-wrapper" style="flex: 1;">
                 <input type="color" id="faceColorVal" value="#ffffff" style="width: 100%; height: 32px;" />
               </div>
-              </main>
               <button type="button" id="faceColorReset" class="action-btn secondary-btn" style="padding: 10px 14px; font-size: 12px; height: 42px;">Réinitialiser</button>
             </div>
           </div>
@@ -2563,6 +2575,7 @@
         </div>
       </div>
     </div>
+    </main>
 
     <!-- Retractable Footer (Legend) -->
     <footer id="retractableFooter" class="retractable-footer">
@@ -2902,6 +2915,40 @@
       // Logo personnalisé — stocké en mémoire (data URL), utilisé par
       // getLogoMarkup() partout où un logo est affiché (Comprimé & Sirop).
       let customLogoUrl = null;
+      const SAFE_IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
+      const SAFE_COLOR = /^#[0-9a-f]{6}$/i;
+
+      function isSafeImageDataUrl(value) {
+        return typeof value === "string" && SAFE_IMAGE_DATA_URL.test(value);
+      }
+
+      function sanitizeImportedFields(fields) {
+        if (!Array.isArray(fields)) return [];
+        return fields
+          .filter((field) => field && typeof field === "object")
+          .map((field) => ({
+            ...field,
+            content: typeof field.content === "string" ? field.content : "",
+            label: typeof field.label === "string" ? field.label : "Champ",
+            src: isSafeImageDataUrl(field.src) ? field.src : null,
+          }));
+      }
+
+      function sanitizeImportedFaceColors(value) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+        return Object.fromEntries(
+          Object.entries(value).filter(
+            ([face, color]) =>
+              typeof face === "string" &&
+              SAFE_COLOR.test(color),
+          ),
+        );
+      }
+
+      function isValidImportedNumber(value, min, max) {
+        const number = Number(value);
+        return Number.isFinite(number) && number >= min && number <= max;
+      }
 
       function getLogoMarkup(sizePx) {
         if (customLogoUrl) {
@@ -2915,6 +2962,11 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = () => {
+          if (!isSafeImageDataUrl(reader.result)) {
+            alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
+            logoUpload.value = "";
+            return;
+          }
           customLogoUrl = reader.result;
           updateTextBinders();
         };
@@ -4253,19 +4305,19 @@
           applyModeVisibility(settings.boxType);
         }
         // Dimensions (mm)
-        if (settings.dimW) controls.dimW.value = settings.dimW;
-        if (settings.dimH) controls.dimH.value = settings.dimH;
-        if (settings.dimD) controls.dimD.value = settings.dimD;
+        if (isValidImportedNumber(settings.dimW, 10, 300)) controls.dimW.value = settings.dimW;
+        if (isValidImportedNumber(settings.dimH, 10, 300)) controls.dimH.value = settings.dimH;
+        if (isValidImportedNumber(settings.dimD, 5, 150)) controls.dimD.value = settings.dimD;
         // Rabat de verrouillage (mm)
-        if (settings.flapLength) controls.flapLength.value = settings.flapLength;
+        if (isValidImportedNumber(settings.flapLength, 8, 50)) controls.flapLength.value = settings.flapLength;
         // Rabats poussière
         if (settings.dustFlapsEnabled !== undefined) controls.dustFlapsEnabled.checked = settings.dustFlapsEnabled;
         // Couleurs
-        if (settings.colPrimary) {
+        if (SAFE_COLOR.test(settings.colPrimary)) {
           controls.colPrimary.value = settings.colPrimary;
           document.documentElement.style.setProperty('--primary', settings.colPrimary);
         }
-        if (settings.colAccent) {
+        if (SAFE_COLOR.test(settings.colAccent)) {
           controls.colAccent.value = settings.colAccent;
           document.documentElement.style.setProperty('--accent', settings.colAccent);
         }
@@ -4286,7 +4338,7 @@
           if (logoSizeVal) logoSizeVal.textContent = settings.logoSize + 'px';
         }
         // Logo personnalisé (image importée)
-        if (settings.customLogoUrl) {
+        if (isSafeImageDataUrl(settings.customLogoUrl)) {
           customLogoUrl = settings.customLogoUrl;
         } else {
           customLogoUrl = null;
@@ -4294,7 +4346,7 @@
         }
         // Couleurs de fond des faces
         if (settings.customFacesBg) {
-          customFacesBg = settings.customFacesBg;
+          customFacesBg = sanitizeImportedFaceColors(settings.customFacesBg);
           localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
         }
         // Rafraîchir les pickers et la géométrie pour refléter les
@@ -6094,7 +6146,7 @@
             const imageGrid = `
               <div style="grid-column: span 2;">
                 <label>Fichier image</label>
-                <input type="file" accept="image/*" data-idx="${idx}" data-prop="imgfile" />
+                <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" data-idx="${idx}" data-prop="imgfile" />
               </div>
               <div><label>Ajustement</label>
                 <select data-idx="${idx}" data-prop="fit">
@@ -6218,6 +6270,11 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = () => {
+              if (!isSafeImageDataUrl(reader.result)) {
+                alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
+                e.target.value = "";
+                return;
+              }
               fieldsConfig[idx].src = reader.result;
               saveFieldsConfig();
               _lastAddedFieldId = fieldsConfig[idx].id;
@@ -6660,15 +6717,15 @@
                 !(obj && obj.schemaVersion);
               if (Array.isArray(parsed)) {
                 // Format v1 (ancien) : tableau de champs uniquement
-                fieldsConfig = migrateFieldsV1toV2(parsed);
+                fieldsConfig = migrateFieldsV1toV2(sanitizeImportedFields(parsed));
                 saveFieldsConfig();
                 renderFieldEditor();
                 renderAllCustomFields();
               } else if (parsed && parsed.fields && Array.isArray(parsed.fields)) {
                 // Format v2 (nouveau) : champs + réglages globaux
                 fieldsConfig = needsGeomMigration(parsed)
-                  ? migrateFieldsV1toV2(parsed.fields)
-                  : parsed.fields;
+                  ? migrateFieldsV1toV2(sanitizeImportedFields(parsed.fields))
+                  : sanitizeImportedFields(parsed.fields);
                 saveFieldsConfig();
                 if (parsed.settings) {
                   applyImportedSettings(parsed.settings);
@@ -8580,13 +8637,13 @@
                     const data = JSON.parse(reader.result);
                     if (Array.isArray(data)) {
                       // Format v1 (ancien) : tableau de champs uniquement
-                      fieldsConfig = data;
+                      fieldsConfig = sanitizeImportedFields(data);
                       saveFieldsConfig();
                       renderFieldEditor();
                       renderAllCustomFields();
                     } else if (data && data.fields && Array.isArray(data.fields)) {
                       // Format v2 (nouveau) : champs + réglages globaux
-                      fieldsConfig = data.fields;
+                      fieldsConfig = sanitizeImportedFields(data.fields);
                       saveFieldsConfig();
                       if (data.settings) {
                         applyImportedSettings(data.settings);
