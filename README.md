@@ -136,6 +136,11 @@ Sur une machine neuve, installez Chromium avant le test :
 npx playwright install chromium
 ```
 
+La CI applique la même séquence sur Node.js 20 : `npm ci`, installation de
+Chromium avec ses dépendances système, `npm test` puis `git diff --check`.
+Le workflow est défini dans
+[.github/workflows/quality.yml](./.github/workflows/quality.yml).
+
 ---
 
 ## 🔐 Accès à l'impression

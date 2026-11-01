@@ -5,11 +5,13 @@ import { spawnSync } from "node:child_process";
 
 const root = new URL("..", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
+const workflow = await readFile(new URL(".github/workflows/quality.yml", root), "utf8");
 
 const assertions = [
   ["the document has one main landmark", (value) => (value.match(/<main\b/g) || []).length === 1],
   ["the main landmark wraps the application layout", (value) => /<main>[\s\S]*class="main-layout"[\s\S]*<\/main>\s*<!-- Retractable Footer/.test(value)],
   ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>\s*$/.test(value)],
+  ["the CI workflow installs dependencies and Chromium", () => workflow.includes("npm ci") && workflow.includes("playwright install --with-deps chromium")],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],
