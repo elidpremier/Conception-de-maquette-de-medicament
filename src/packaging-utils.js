@@ -12,6 +12,57 @@
     return (((Number(rot) || 0) % 360) + 360) % 360;
   }
 
+  function getVisualSize(field, aspect = 1) {
+    const rot = normalizeRotation(field.rotation);
+    if (!rot) return { w: field.w, h: field.h };
+    const rad = (rot * Math.PI) / 180;
+    const c = Math.abs(Math.cos(rad));
+    const s = Math.abs(Math.sin(rad));
+    const ratio = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
+    return {
+      w: field.w * c + (field.h * s) / ratio,
+      h: field.w * s * ratio + field.h * c,
+    };
+  }
+
+  function fitFieldIntoFace(field, getSize = (value) => getVisualSize(value)) {
+    const fitted = { ...field };
+    let visual = getSize(fitted);
+    if (visual.w > 100 || visual.h > 100) {
+      const scale = Math.min(100 / visual.w, 100 / visual.h);
+      fitted.w = Math.round(fitted.w * scale * 10) / 10;
+      fitted.h = Math.round(fitted.h * scale * 10) / 10;
+      visual = getSize(fitted);
+    }
+    fitted.x = Math.round(Math.max(0, Math.min(100 - visual.w, fitted.x)) * 10) / 10;
+    fitted.y = Math.round(Math.max(0, Math.min(100 - visual.h, fitted.y)) * 10) / 10;
+    return fitted;
+  }
+
+  function getFieldPlacement(field, zoneW, zoneH) {
+    const rot = normalizeRotation(field.rotation);
+    const placement = {
+      left: field.x,
+      top: field.y,
+      width: field.w,
+      height: field.h,
+      transformOrigin: "center center",
+      transform: "",
+    };
+    if (!rot) return placement;
+    const wPx = (field.w / 100) * zoneW;
+    const hPx = (field.h / 100) * zoneH;
+    const rad = (rot * Math.PI) / 180;
+    const c = Math.abs(Math.cos(rad));
+    const s = Math.abs(Math.sin(rad));
+    const visWpx = wPx * c + hPx * s;
+    const visHpx = wPx * s + hPx * c;
+    const dx = (visWpx - wPx) / 2;
+    const dy = (visHpx - hPx) / 2;
+    placement.transform = `translate(${dx.toFixed(3)}px, ${dy.toFixed(3)}px) rotate(${rot}deg)`;
+    return placement;
+  }
+
   function sanitizeImportedFields(fields, validFaces, validTypes, options = {}) {
     if (!Array.isArray(fields)) return [];
     const maxFields = options.maxFields ?? 250;
@@ -56,6 +107,9 @@
   root.PackagingUtils = Object.freeze({
     isSafeImageDataUrl,
     normalizeRotation,
+    getVisualSize,
+    fitFieldIntoFace,
+    getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,
   });

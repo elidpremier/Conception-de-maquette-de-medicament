@@ -4063,19 +4063,7 @@
       // est géométriquement impossible. On réduit alors la boîte locale
       // (à ratio constant) puis on ramène l'origine dans la face.
       function fitFieldIntoFace(field) {
-        const f = { ...field };
-        let vis = getVisualSize(f);
-        const maxW = 100,
-          maxH = 100;
-        if (vis.w > maxW || vis.h > maxH) {
-          const k = Math.min(maxW / vis.w, maxH / vis.h);
-          f.w = Math.round(f.w * k * 10) / 10;
-          f.h = Math.round(f.h * k * 10) / 10;
-          vis = getVisualSize(f);
-        }
-        f.x = Math.round(Math.max(0, Math.min(100 - vis.w, f.x)) * 10) / 10;
-        f.y = Math.round(Math.max(0, Math.min(100 - vis.h, f.y)) * 10) / 10;
-        return f;
+        return PackagingUtils.fitFieldIntoFace(field, getVisualSize);
       }
 
       // ==================================================================
@@ -4849,16 +4837,7 @@
       //   aabbH% = w·|sin|·r + h·|cos|      avec r = largeurFace/hauteurFace
       // (à 90° on retrouve bien aabbW% = h/r et aabbH% = w·r)
       function getVisualSize(field) {
-        const rot = normalizeRotation(field.rotation);
-        if (!rot) return { w: field.w, h: field.h };
-        const rad = (rot * Math.PI) / 180;
-        const c = Math.abs(Math.cos(rad));
-        const s = Math.abs(Math.sin(rad));
-        const r = getFaceAspect(field.face) || 1;
-        return {
-          w: field.w * c + (field.h * s) / r,
-          h: field.w * s * r + field.h * c,
-        };
+        return PackagingUtils.getVisualSize(field, getFaceAspect(field.face) || 1);
       }
 
       // Style de placement d'un champ pour que son AABB commence
@@ -4875,31 +4854,7 @@
       // zoneW / zoneH sont les dimensions de la face en px NON zoomées
       // (utiliser offsetWidth/offsetHeight, insensibles au scale() parent).
       function getFieldPlacement(field, zoneW, zoneH) {
-        const rot = normalizeRotation(field.rotation);
-        const placement = {
-          left: field.x,
-          top: field.y,
-          width: field.w,
-          height: field.h,
-          transformOrigin: "center center",
-          transform: "",
-        };
-        if (!rot) return placement;
-
-        // Tout le calcul se fait en PIXELS : c'est le seul espace où la
-        // rotation est isotrope (voir la note sur le rapport d'aspect).
-        const wPx = (field.w / 100) * zoneW;
-        const hPx = (field.h / 100) * zoneH;
-        const rad = (rot * Math.PI) / 180;
-        const c = Math.abs(Math.cos(rad));
-        const s = Math.abs(Math.sin(rad));
-        const visWpx = wPx * c + hPx * s;
-        const visHpx = wPx * s + hPx * c;
-
-        const dx = (visWpx - wPx) / 2;
-        const dy = (visHpx - hPx) / 2;
-        placement.transform = `translate(${dx.toFixed(3)}px, ${dy.toFixed(3)}px) rotate(${rot}deg)`;
-        return placement;
+        return PackagingUtils.getFieldPlacement(field, zoneW, zoneH);
       }
 
       // Applique le placement sur un élément DOM déjà rendu.

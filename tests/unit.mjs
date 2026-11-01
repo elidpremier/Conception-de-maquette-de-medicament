@@ -24,6 +24,20 @@ const fields = utils.sanitizeImportedFields(
 );
 
 if (utils.normalizeRotation(-90) !== 270) throw new Error("Rotation normalization failed.");
+const visual = utils.getVisualSize({ w: 20, h: 40, rotation: 90 }, 2);
+if (Math.abs(visual.w - 20) > 0.001 || Math.abs(visual.h - 40) > 0.001) {
+  throw new Error("Visual size calculation failed.");
+}
+const placement = utils.getFieldPlacement({ x: 10, y: 20, w: 30, h: 20, rotation: 90 }, 200, 100);
+if (!placement.transform.includes("rotate(90deg)") || !placement.transform.includes("translate(-20.000px, 20.000px)")) {
+  throw new Error("Field placement calculation failed.");
+}
+const fitted = utils.fitFieldIntoFace({ x: 95, y: 95, w: 80, h: 80, rotation: 90 }, (field) =>
+  utils.getVisualSize(field, 1),
+);
+if (fitted.x !== 20 || fitted.y !== 20 || fitted.w !== 80 || fitted.h !== 80) {
+  throw new Error("Field fitting calculation failed.");
+}
 if (fields.length !== 1 || fields[0].id !== "test-0" || fields[0].type !== "text") {
   throw new Error("Field type or identifier sanitation failed.");
 }

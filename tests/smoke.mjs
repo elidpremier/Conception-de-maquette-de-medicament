@@ -25,6 +25,7 @@ const assertions = [
   ["static security metadata is present", (value) => value.includes('name="referrer"') && value.includes('http-equiv="Permissions-Policy"')],
   ["geometry updates are frame-scheduled", (value) => value.includes("function scheduleGeometryUpdate") && value.includes("requestAnimationFrame")],
   ["pure packaging utilities are loaded before the application", (value) => value.includes('src/packaging-utils.js') && value.includes("PackagingUtils.sanitizeImportedFields")],
+  ["pure geometry utilities are used by the application", (value) => value.includes("PackagingUtils.getVisualSize") && value.includes("PackagingUtils.getFieldPlacement")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 
