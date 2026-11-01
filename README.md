@@ -172,6 +172,9 @@ Les images importées sont limitées aux formats PNG, JPEG, GIF et WebP, avec un
 taille maximale de 5 Mo. Les gabarits JSON importés sont limités à 2 Mo.
 Un gabarit peut contenir au maximum 250 champs ; les positions, dimensions,
 rotations, types et contenus sont bornés à l'import.
+Les identifiants de champs sont limités aux caractères sûrs pour les
+sélecteurs (`A-Z`, `a-z`, chiffres, `_` et `-`) et régénérés en cas de
+collision.
 Les réglages importés sont également normalisés : dimensions et rabats sont
 bornés, couleurs et logos sont validés, textes tronqués et options booléennes
 limitées à leurs types attendus. Les logos qui ne sont pas des images PNG,

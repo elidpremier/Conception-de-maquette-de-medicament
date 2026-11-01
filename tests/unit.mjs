@@ -63,6 +63,24 @@ const storage = {
   setItem: (key, value) => memory.set(key, value),
   clear: () => memory.clear(),
 };
+const uniqueIds = utils.sanitizeImportedFields(
+  [
+    { id: "same", type: "text", face: "p5" },
+    { id: "same", type: "text", face: "p5" },
+    { id: "unsafe id", type: "text", face: "p5" },
+  ],
+  ["p5"],
+  ["text"],
+  { idFactory: (index) => `imported-${index}` },
+);
+if (new Set(uniqueIds.map((field) => field.id)).size !== 3 ||
+    uniqueIds[0].id !== "same" || !/^same_/.test(uniqueIds[1].id) ||
+    !/^imported-2$/.test(uniqueIds[2].id)) {
+  throw new Error("Field identifier uniqueness failed.");
+}
+if (utils.createUniqueFieldId(["text", "text_1"], "text", () => "copy") !== "text_copy_1") {
+  throw new Error("Field identifier generation failed.");
+}
 const adapter = utils.createStorageAdapter(storage);
 if (!adapter.write("settings", '{"ok":true}') || adapter.read("settings") !== '{"ok":true}') {
   throw new Error("Storage adapter read/write failed.");

@@ -2952,6 +2952,13 @@
         });
       }
 
+      function createFieldId(preferred) {
+        return PackagingUtils.createUniqueFieldId(
+          fieldsConfig.map((field) => field.id),
+          preferred,
+        );
+      }
+
       function sanitizeImportedFaceColors(value) {
         return PackagingUtils.sanitizeImportedFaceColors(value);
       }
@@ -5271,7 +5278,7 @@
         const newIds = [];
         fields.forEach(original => {
           const clone = JSON.parse(JSON.stringify(original));
-          clone.id = (original.type || "field") + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+          clone.id = createFieldId(original.type || "field");
           const { w: visW, h: visH } = getVisualSize(clone);
           clone.x = Math.max(0, Math.min(100 - visW, (original.x || 0) + 3));
           clone.y = Math.max(0, Math.min(100 - visH, (original.y || 0) + 3));
@@ -6317,7 +6324,7 @@
           if (!template) return;
           const clone = JSON.parse(JSON.stringify(template));
           if (fieldsConfig.some((f) => f.id === clone.id)) {
-            clone.id = clone.id + "_" + Date.now();
+            clone.id = createFieldId(clone.id);
             clone.label = clone.label + " (copie)";
           }
           fieldsConfig.push(clone);
@@ -7669,7 +7676,7 @@
           if (!original) return;
 
           const clone = JSON.parse(JSON.stringify(original));
-          clone.id = (original.type || "field") + "_" + Date.now();
+          clone.id = createFieldId(original.type || "field");
           // Léger décalage pour que la copie ne se superpose pas
           // exactement à l'original et reste visible immédiatement.
           const { w: visW, h: visH } = getVisualSize(clone);

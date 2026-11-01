@@ -147,6 +147,18 @@
     };
   }
 
+  function createUniqueFieldId(existingIds, preferredId = "field", suffixFactory = () => Date.now().toString(36)) {
+    const used = new Set(existingIds);
+    const base = String(preferredId || "field").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100) || "field";
+    let candidate = base;
+    let attempt = 0;
+    while (used.has(candidate)) {
+      attempt += 1;
+      candidate = `${base}_${suffixFactory()}_${attempt}`;
+    }
+    return candidate.slice(0, 120);
+  }
+
   function getFieldPlacement(field, zoneW, zoneH) {
     const rot = normalizeRotation(field.rotation);
     const placement = {
@@ -177,6 +189,7 @@
     const faceSet = new Set(validFaces);
     const typeSet = new Set(validTypes);
     const idFactory = options.idFactory || ((index) => `imported-field-${Date.now()}-${index}`);
+    const usedIds = new Set();
     const number = (value, fallback, min, max) => {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
@@ -185,9 +198,15 @@
     return fields
       .slice(0, maxFields)
       .filter((field) => field && typeof field === "object")
-      .map((field, index) => ({
+      .map((field, index) => {
+        const preferredId = typeof field.id === "string" && /^[a-zA-Z0-9_-]{1,120}$/.test(field.id)
+          ? field.id
+          : idFactory(index);
+        const id = createUniqueFieldId(usedIds, preferredId, () => `${index}`);
+        usedIds.add(id);
+        return {
         ...field,
-        id: typeof field.id === "string" && field.id.length <= 120 ? field.id : idFactory(index),
+        id,
         type: typeSet.has(field.type) ? field.type : "text",
         face: faceSet.has(field.face) ? field.face : "p5",
         x: number(field.x, 10, -50, 200),
@@ -202,7 +221,8 @@
         content: typeof field.content === "string" ? field.content.slice(0, 20000) : "",
         label: typeof field.label === "string" ? field.label.slice(0, 200) : "Champ",
         src: isSafeImageDataUrl(field.src) ? field.src : null,
-      }));
+        };
+      });
   }
 
   function sanitizeImportedFaceColors(value) {
@@ -261,6 +281,7 @@
     createTemplate,
     parseTemplate,
     createStorageAdapter,
+    createUniqueFieldId,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,
