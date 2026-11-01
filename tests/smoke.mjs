@@ -12,6 +12,7 @@ const assertions = [
   ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>\s*$/.test(value)],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
+  ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],
   ["EmailJS credentials are deployment configuration", (value) => value.includes("window.PACKAGING_EMAIL_CONFIG")],
   ["the access form does not persist the submitted name", (value) => !value.includes('localStorage.setItem("user_fullname"')],
   ["imported image sources are validated", (value) => value.includes("isSafeImageDataUrl") && value.includes("sanitizeImportedFields")],

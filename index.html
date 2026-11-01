@@ -268,7 +268,7 @@
       }
 
       .action-btn {
-        background: #3b82f6;
+        background: #2563eb;
         color: white;
         border: none;
         padding: 12px;
@@ -284,7 +284,7 @@
       }
 
       .action-btn:hover {
-        background: #2563eb;
+        background: #1d4ed8;
       }
 
       .secondary-btn {
@@ -2014,9 +2014,9 @@
     </style>
   </head>
   <body>
-    <div id="accessGateOverlay">
+    <div id="accessGateOverlay" role="dialog" aria-modal="true" aria-labelledby="accessGateTitle">
       <form class="gate-card" id="accessGateForm" autocomplete="off">
-        <h2>Accès à l'outil</h2>
+        <h2 id="accessGateTitle">Accès à l'outil</h2>
         <p class="gate-sub">
           Cette identification sert uniquement à enregistrer une demande
           d'impression. Elle ne constitue pas une authentification sécurisée.

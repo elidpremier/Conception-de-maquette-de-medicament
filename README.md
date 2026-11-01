@@ -123,7 +123,9 @@ npm run lint
 
 La commande `npm test` inclut les contrôles de fumée et un test navigateur
 Playwright couvrant le rendu initial, les deux modes de boîte, le
-redimensionnement et l'import d'un gabarit.
+redimensionnement, l'import d'un gabarit, la porte d'accès à l'impression et
+la présence des contrôles clavier. Le test exécute également axe-core et bloque
+les violations d'accessibilité critiques ou sérieuses.
 
 Sur une machine neuve, installez Chromium avant le test :
 

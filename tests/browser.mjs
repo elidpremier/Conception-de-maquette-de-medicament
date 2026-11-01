@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import AxeBuilder from "@axe-core/playwright";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -27,12 +28,13 @@ const template = {
 };
 
 const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const temp = await mkdtemp(join(tmpdir(), "packaging-browser-"));
 const templatePath = join(temp, "template.json");
 await writeFile(templatePath, JSON.stringify(template));
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(new URL("index.html", root).href);
@@ -49,12 +51,12 @@ try {
   await page.locator("#boxType").selectOption("liquid");
   await page.waitForTimeout(100);
   const liquid = await page.evaluate(() => ({
-    visibleLiquidPanel: [...document.querySelectorAll(".panel")].some(
-      (panel) => getComputedStyle(panel).display !== "none" && /^p[0-9]+$/.test(panel.id),
-    ),
+    visibleLiquidZones: [...document.querySelectorAll('[id^="fieldzone-lp"]')]
+      .filter((zone) => zone.getBoundingClientRect().width > 0 && zone.getBoundingClientRect().height > 0)
+      .length,
     svgChildren: document.querySelector("#dieLinesSvg")?.children.length || 0,
   }));
-  if (liquid.svgChildren < 1 || !liquid.visibleLiquidPanel) {
+  if (liquid.svgChildren < 1 || liquid.visibleLiquidZones < 4) {
     throw new Error("Le changement vers le mode liquide n'a pas rendu le patron.");
   }
 
@@ -80,9 +82,36 @@ try {
     throw new Error("L'import du gabarit n'a pas restauré le rendu.");
   }
 
+  await page.locator("#printBtn").click();
+  const gate = await page.evaluate(() => ({
+    visible: !document.querySelector("#accessGateOverlay")?.classList.contains("hidden"),
+    consentRequired: document.querySelector("#gateConsent")?.required === true,
+  }));
+  if (!gate.visible || !gate.consentRequired) {
+    throw new Error("La porte d'accès à l'impression n'est pas accessible.");
+  }
+
+  await page.keyboard.press("Escape");
+  const focusable = await page.locator("main button, main input, main select, main textarea").count();
+  if (focusable < 10) {
+    throw new Error("Le parcours clavier ne contient pas assez de contrôles accessibles.");
+  }
+
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  const seriousAccessibility = accessibility.violations.filter((violation) =>
+    ["critical", "serious"].includes(violation.impact),
+  );
+  if (seriousAccessibility.length) {
+    const summary = seriousAccessibility
+      .map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`)
+      .join(", ");
+    throw new Error(`Violations axe-core critiques/serious : ${summary}`);
+  }
+
   if (errors.length) throw new Error(`Erreur JavaScript navigateur : ${errors.join("; ")}`);
-  console.log("Browser checks passed (initial render, modes, resize, template import).");
+  console.log(`Browser checks passed (render, modes, resize, import, access gate, keyboard controls, axe: ${accessibility.violations.length} violation(s)).`);
 } finally {
+  await context.close();
   await browser.close();
   await rm(temp, { recursive: true, force: true });
 }
