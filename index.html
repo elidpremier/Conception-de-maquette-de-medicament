@@ -2212,7 +2212,7 @@
         <fieldset>
           <legend>Ajouter / Gérer les champs</legend>
           <div class="input-group">
-            <label>Champs prédéfinis disponibles</label>
+            <label for="defaultFieldPicker">Champs prédéfinis disponibles</label>
             <select id="defaultFieldPicker"></select>
           </div>
           <div class="input-group">
@@ -2276,7 +2276,7 @@
           </div>
           <div class="input-group" style="display: flex; flex-direction: row; gap: 8px; align-items: flex-end;">
             <div style="flex: 1;">
-              <label for="resetFace" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px;">Face à réinitialiser</label>
+              <label for="resetFacePicker" style="font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; color: #94a3b8; display: block; margin-bottom: 4px;">Face à réinitialiser</label>
               <select id="resetFacePicker" style="width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 7px 10px; border-radius: 6px; font-size: 12px;"></select>
             </div>
             <button
@@ -2290,7 +2290,7 @@
         </fieldset>
         <fieldset>
           <legend>Liste des champs</legend>
-          <div id="validationSummary"></div>
+          <div id="validationSummary" role="status" aria-live="polite" aria-atomic="true"></div>
           <div
             id="fieldEditorContainer"
             style="display: flex; flex-direction: column; gap: 10px"></div>
@@ -2399,7 +2399,7 @@
         <!-- Floating Contextual Toolbar -->
         <div id="floatingToolbar" class="floating-toolbar">
           <div class="toolbar-group">
-            <select id="tbFontFamily" title="Police">
+            <select id="tbFontFamily" title="Police" aria-label="Police du champ sélectionné">
               <option value="inherit">Par défaut</option>
               <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
               <option value="'Space Mono', monospace">Space Mono</option>
@@ -2410,32 +2410,32 @@
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group" style="display: flex; align-items: center; gap: 4px;">
-            <button id="tbFontDec" title="Diminuer la taille" class="tb-btn">−</button>
-            <input type="number" id="tbFontSize" min="4" max="60" step="0.5" style="width: 45px; text-align: center;" />
-            <button id="tbFontInc" title="Augmenter la taille" class="tb-btn">+</button>
+            <button id="tbFontDec" title="Diminuer la taille" aria-label="Diminuer la taille" class="tb-btn">−</button>
+            <input type="number" id="tbFontSize" aria-label="Taille de police du champ sélectionné" min="4" max="60" step="0.5" style="width: 45px; text-align: center;" />
+            <button id="tbFontInc" title="Augmenter la taille" aria-label="Augmenter la taille" class="tb-btn">+</button>
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group">
-            <button id="tbBold" title="Gras" class="tb-btn" style="font-weight: bold;">B</button>
+            <button id="tbBold" title="Gras" aria-label="Activer ou désactiver le gras" class="tb-btn" style="font-weight: bold;">B</button>
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group" style="display: flex; gap: 2px;">
-            <button id="tbAlignLeft" title="Aligner à gauche" class="tb-btn">←</button>
-            <button id="tbAlignCenter" title="Centrer" class="tb-btn">↔</button>
-            <button id="tbAlignRight" title="Aligner à droite" class="tb-btn">→</button>
+            <button id="tbAlignLeft" title="Aligner à gauche" aria-label="Aligner à gauche" class="tb-btn">←</button>
+            <button id="tbAlignCenter" title="Centrer" aria-label="Centrer" class="tb-btn">↔</button>
+            <button id="tbAlignRight" title="Aligner à droite" aria-label="Aligner à droite" class="tb-btn">→</button>
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group">
             <div class="color-picker-container" title="Couleur de texte">
-              <input type="color" id="tbColor" />
+              <input type="color" id="tbColor" aria-label="Couleur du texte du champ sélectionné" />
             </div>
           </div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-group">
-            <button id="tbEditText" title="Éditer le texte dans la maquette (F2 ou double-clic)" class="tb-btn">✎</button>
-            <button id="tbFitContent" title="Ajuster la taille au contenu" class="tb-btn">▣</button>
-            <button id="tbDuplicate" title="Dupliquer le champ (Ctrl/Cmd+D)" class="tb-btn">⧉</button>
-            <button id="tbDelete" title="Supprimer le champ" class="tb-btn tb-delete-btn">✕</button>
+            <button id="tbEditText" title="Éditer le texte dans la maquette (F2 ou double-clic)" aria-label="Éditer le texte" class="tb-btn">✎</button>
+            <button id="tbFitContent" title="Ajuster la taille au contenu" aria-label="Ajuster au contenu" class="tb-btn">▣</button>
+            <button id="tbDuplicate" title="Dupliquer le champ (Ctrl/Cmd+D)" aria-label="Dupliquer le champ" class="tb-btn">⧉</button>
+            <button id="tbDelete" title="Supprimer le champ" aria-label="Supprimer le champ" class="tb-btn tb-delete-btn">✕</button>
           </div>
         </div>
 
@@ -4080,6 +4080,35 @@
       // quand il est connu ; à défaut elle suppose une face carrée. Les
       // champs NON pivotés (l'immense majorité) sont exacts dans tous les cas.
       const FIELDS_SCHEMA_VERSION = 2;
+      let storageWarningShown = false;
+
+      function readFromLocalStorage(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (error) {
+          console.error(`Lecture locale impossible pour ${key} :`, error);
+          return null;
+        }
+      }
+
+      function saveToLocalStorage(key, value) {
+        try {
+          localStorage.setItem(key, value);
+          return true;
+        } catch (error) {
+          console.error(`Sauvegarde locale impossible pour ${key} :`, error);
+          if (!storageWarningShown) {
+            storageWarningShown = true;
+            const summary = document.getElementById("validationSummary");
+            if (summary) {
+              summary.textContent =
+                "La sauvegarde locale est indisponible ou pleine. Vos modifications ne seront pas conservées après fermeture.";
+              summary.classList.add("has-warnings");
+            }
+          }
+          return false;
+        }
+      }
 
       // Reproduit fidèlement l'ANCIEN rendu (buggé) pour en déduire le
       // coin de l'AABB réellement affiché à l'écran, puis l'adopte comme
@@ -4151,7 +4180,7 @@
 
       function loadFieldsConfig() {
         try {
-          const raw = localStorage.getItem(FIELDS_STORAGE_KEY);
+          const raw = readFromLocalStorage(FIELDS_STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
             // Format v2 : { version, fields }. Format v1 : tableau nu.
@@ -4214,17 +4243,13 @@
       }
 
       function persistFieldsConfig() {
-        try {
-          localStorage.setItem(
-            FIELDS_STORAGE_KEY,
-            JSON.stringify({
-              version: FIELDS_SCHEMA_VERSION,
-              fields: fieldsConfig,
-            }),
-          );
-        } catch (e) {
-          console.error("Sauvegarde des champs échouée :", e);
-        }
+        saveToLocalStorage(
+          FIELDS_STORAGE_KEY,
+          JSON.stringify({
+            version: FIELDS_SCHEMA_VERSION,
+            fields: fieldsConfig,
+          }),
+        );
       }
 
       // --- Historique Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ---
@@ -4347,7 +4372,7 @@
         // Couleurs de fond des faces
         if (settings.customFacesBg) {
           customFacesBg = sanitizeImportedFaceColors(settings.customFacesBg);
-          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
         }
         // Rafraîchir les pickers et la géométrie pour refléter les
         // nouveaux réglages dans l'interface et le rendu du patron.
@@ -5970,8 +5995,13 @@
       let accessibleControlId = 0;
       function ensureAccessibleLabels(root = document) {
         root.querySelectorAll("label:not([for])").forEach((label, index) => {
-          const control = label.querySelector("input, select, textarea");
-          if (!control) return;
+          const control =
+            label.querySelector("input, select, textarea") ||
+            label.parentElement?.querySelector("input, select, textarea");
+          if (!control) {
+            label.setAttribute("aria-hidden", "true");
+            return;
+          }
           if (!control.id) {
             control.id = `accessible-control-${accessibleControlId++}`;
           }
@@ -7410,7 +7440,7 @@
       let customFacesBg = {};
 
       try {
-        const saved = localStorage.getItem(FACES_BG_STORAGE_KEY);
+        const saved = readFromLocalStorage(FACES_BG_STORAGE_KEY);
         if (saved) {
           customFacesBg = JSON.parse(saved);
         }
@@ -7480,13 +7510,13 @@
         faceColorVal.addEventListener("change", () => {
           const face = faceColorPicker.value;
           customFacesBg[face] = faceColorVal.value;
-          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
           applyCustomFaceColors();
         });
         faceColorReset.addEventListener("click", () => {
           const face = faceColorPicker.value;
           delete customFacesBg[face];
-          localStorage.setItem(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
+          saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
           applyCustomFaceColors();
         });
       }
@@ -7531,7 +7561,7 @@
       }
 
       function checkAccess() {
-        return localStorage.getItem(STORAGE_KEY) === "1";
+        return readFromLocalStorage(STORAGE_KEY) === "1";
       }
 
       function showAccessGate() {
@@ -7590,7 +7620,7 @@
         const payload = {
           to_email: NOTIFY_EMAIL,
           name:
-            localStorage.getItem("user_fullname") || "Utilisateur authentifié",
+            readFromLocalStorage("user_fullname") || "Utilisateur authentifié",
           time: designInfo.timestamp,
           message:
             `Impression demandée.\n` +
@@ -8709,7 +8739,7 @@
         if (!sidebar) return;
         const SECTIONS_KEY = "packaging_sidebar_sections_v1";
         let collapsed = {};
-        try { collapsed = JSON.parse(localStorage.getItem(SECTIONS_KEY) || "{}"); } catch (e) {}
+        try { collapsed = JSON.parse(readFromLocalStorage(SECTIONS_KEY) || "{}"); } catch (e) {}
         const children = Array.from(sidebar.children);
         let current = null;
         children.forEach((ch) => {
@@ -8746,7 +8776,7 @@
             const t = (h.textContent || "").replace("▼", "").trim();
             if (h.parentElement.classList.contains("collapsed")) state[t] = true;
           });
-          localStorage.setItem(SECTIONS_KEY, JSON.stringify(state));
+          saveToLocalStorage(SECTIONS_KEY, JSON.stringify(state));
         }
         const collapseAll = document.getElementById("collapseAllBtn");
         const expandAll = document.getElementById("expandAllBtn");
@@ -8763,11 +8793,11 @@
       (function initFirstRunHint() {
         const hint = document.getElementById("firstrunHint");
         if (!hint) return;
-        if (localStorage.getItem("packaging_hint_dismissed") === "1") hint.classList.add("hidden");
+        if (readFromLocalStorage("packaging_hint_dismissed") === "1") hint.classList.add("hidden");
         const close = document.getElementById("firstrunClose");
         if (close) close.addEventListener("click", () => {
           hint.classList.add("hidden");
-          localStorage.setItem("packaging_hint_dismissed", "1");
+          saveToLocalStorage("packaging_hint_dismissed", "1");
         });
       })();
 
@@ -8855,7 +8885,7 @@
             console.error("Erreur d'envoi EmailJS :", err);
           }
 
-          localStorage.setItem(STORAGE_KEY, "1");
+          saveToLocalStorage(STORAGE_KEY, "1");
           overlay.classList.add("hidden");
 
           if (pendingPrint) {

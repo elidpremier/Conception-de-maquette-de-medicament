@@ -150,6 +150,11 @@ avant les scripts de l'application :
 Les coordonnées saisies ne sont pas enregistrées dans `localStorage`. Consultez
 [SECURITY.md](./SECURITY.md) pour les limites et recommandations de production.
 
+Les réglages et champs de la maquette sont sauvegardés localement lorsque le
+navigateur l'autorise. En cas de quota dépassé ou de stockage désactivé, un
+message visible indique que les modifications ne seront pas conservées après
+fermeture.
+
 ## Confidentialité
 
 L'outil collecte une adresse email pour traiter une demande d'impression, avec

@@ -15,6 +15,11 @@ const assertions = [
   ["EmailJS credentials are deployment configuration", (value) => value.includes("window.PACKAGING_EMAIL_CONFIG")],
   ["the access form does not persist the submitted name", (value) => !value.includes('localStorage.setItem("user_fullname"')],
   ["imported image sources are validated", (value) => value.includes("isSafeImageDataUrl") && value.includes("sanitizeImportedFields")],
+  ["the predefined field picker has an associated label", (value) => value.includes('<label for="defaultFieldPicker">')],
+  ["the reset face picker has an associated label", (value) => value.includes('<label for="resetFacePicker"')],
+  ["dynamic editor labels are associated after rendering", (value) => value.includes("ensureAccessibleLabels") && value.includes("label.parentElement?.querySelector")],
+  ["local persistence reports quota failures", (value) => value.includes("function saveToLocalStorage") && value.includes("Sauvegarde locale impossible")],
+  ["local persistence handles unavailable storage reads", (value) => value.includes("function readFromLocalStorage") && value.includes("Lecture locale impossible")],
 ];
 
 const failures = assertions
