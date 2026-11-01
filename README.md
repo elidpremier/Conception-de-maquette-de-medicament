@@ -167,6 +167,9 @@ navigateur l'autorise. La persistance passe par un adaptateur isolé qui gère
 les lectures, écritures et réinitialisations. En cas de quota dépassé ou de
 stockage désactivé, un message visible indique que les modifications ne seront
 pas conservées après fermeture.
+Les valeurs JSON restaurées depuis ce stockage sont parsées de manière sûre et
+revalidées avant d'être appliquées ; une donnée corrompue est ignorée sans
+bloquer le rendu.
 
 Les images importées sont limitées aux formats PNG, JPEG, GIF et WebP, avec une
 taille maximale de 5 Mo. Les gabarits JSON importés sont limités à 2 Mo.

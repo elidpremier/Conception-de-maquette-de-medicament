@@ -4155,10 +4155,10 @@
       let _pendingDefaultsNormalize = false;
 
       function loadFieldsConfig() {
-        try {
-          const raw = readFromLocalStorage(FIELDS_STORAGE_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
+        const raw = readFromLocalStorage(FIELDS_STORAGE_KEY);
+        if (raw) {
+          const parsed = PackagingUtils.parseStoredJson(raw);
+          if (parsed) {
             // Format v2 : { version, fields }. Format v1 : tableau nu.
             if (Array.isArray(parsed) && parsed.length) {
               // Format v1 : tableau nu → migration différée.
@@ -4176,8 +4176,6 @@
               return sanitizeImportedFields(parsed.fields);
             }
           }
-        } catch (e) {
-          console.error("Lecture des champs échouée :", e);
         }
         // Aucune sauvegarde : on part des presets. Ils sont désormais
         // AUTEURÉS dans le repère v2 (pas de migration à leur appliquer),
@@ -7392,7 +7390,7 @@
       try {
         const saved = readFromLocalStorage(FACES_BG_STORAGE_KEY);
         if (saved) {
-          customFacesBg = JSON.parse(saved);
+          customFacesBg = sanitizeImportedFaceColors(PackagingUtils.parseStoredJson(saved, {}));
         }
       } catch (e) {
         console.error("Erreur de chargement des couleurs de face:", e);
@@ -8683,8 +8681,15 @@
         const sidebar = document.querySelector(".sidebar");
         if (!sidebar) return;
         const SECTIONS_KEY = "packaging_sidebar_sections_v1";
-        let collapsed = {};
-        try { collapsed = JSON.parse(readFromLocalStorage(SECTIONS_KEY) || "{}"); } catch (e) {}
+        const storedSections = PackagingUtils.parseStoredJson(
+          readFromLocalStorage(SECTIONS_KEY),
+          {},
+        );
+        const collapsed = storedSections && typeof storedSections === "object" && !Array.isArray(storedSections)
+          ? Object.fromEntries(
+            Object.entries(storedSections).filter(([, value]) => value === true),
+          )
+          : {};
         const children = Array.from(sidebar.children);
         let current = null;
         children.forEach((ch) => {

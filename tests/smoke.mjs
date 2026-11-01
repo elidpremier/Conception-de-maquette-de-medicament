@@ -31,6 +31,7 @@ const assertions = [
   ["local persistence uses the storage adapter", (value) => value.includes("PackagingUtils.createStorageAdapter") && value.includes("clearLocalStorage")],
   ["imported settings are sanitized before application", (value) => value.includes("PackagingUtils.sanitizeImportedSettings")],
   ["field identifiers are generated uniquely", (value) => value.includes("PackagingUtils.createUniqueFieldId") && value.includes("function createFieldId")],
+  ["local JSON restores through safe parsing", (value) => value.includes("PackagingUtils.parseStoredJson") && value.includes("sanitizeImportedFaceColors(PackagingUtils.parseStoredJson")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 

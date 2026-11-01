@@ -147,6 +147,15 @@
     };
   }
 
+  function parseStoredJson(value, fallback = null) {
+    if (typeof value !== "string") return fallback;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
+
   function createUniqueFieldId(existingIds, preferredId = "field", suffixFactory = () => Date.now().toString(36)) {
     const used = new Set(existingIds);
     const base = String(preferredId || "field").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 100) || "field";
@@ -282,6 +291,7 @@
     parseTemplate,
     createStorageAdapter,
     createUniqueFieldId,
+    parseStoredJson,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,

@@ -108,6 +108,21 @@ try {
     throw new Error(`Violations axe-core critiques/serious : ${summary}`);
   }
 
+  await page.evaluate(() => {
+    localStorage.setItem("packaging_fields_config_v1", "{corrupted");
+    localStorage.setItem("packaging_faces_bg_v1", '{"p5":"not-a-color"}');
+    localStorage.setItem("packaging_sidebar_sections_v1", "[]");
+  });
+  await page.reload();
+  await page.waitForTimeout(500);
+  const restored = await page.evaluate(() => ({
+    svgChildren: document.querySelector("#dieLinesSvg")?.children.length || 0,
+    summary: document.querySelector("#validationSummary")?.textContent || "",
+  }));
+  if (restored.svgChildren < 1 || restored.summary.includes("Impossible")) {
+    throw new Error("La restauration depuis un stockage local corrompu a dégradé le rendu.");
+  }
+
   if (errors.length) throw new Error(`Erreur JavaScript navigateur : ${errors.join("; ")}`);
   console.log(`Browser checks passed (render, modes, resize, import, access gate, keyboard controls, axe: ${accessibility.violations.length} violation(s)).`);
 } finally {

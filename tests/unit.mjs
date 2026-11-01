@@ -81,6 +81,11 @@ if (new Set(uniqueIds.map((field) => field.id)).size !== 3 ||
 if (utils.createUniqueFieldId(["text", "text_1"], "text", () => "copy") !== "text_copy_1") {
   throw new Error("Field identifier generation failed.");
 }
+if (utils.parseStoredJson('{"ok":true}')?.ok !== true ||
+    utils.parseStoredJson("{broken}", "fallback") !== "fallback" ||
+    utils.parseStoredJson(null, "fallback") !== "fallback") {
+  throw new Error("Stored JSON parsing failed.");
+}
 const adapter = utils.createStorageAdapter(storage);
 if (!adapter.write("settings", '{"ok":true}') || adapter.read("settings") !== '{"ok":true}') {
   throw new Error("Storage adapter read/write failed.");
