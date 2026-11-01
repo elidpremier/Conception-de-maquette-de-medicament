@@ -103,11 +103,16 @@ Points à retenir :
 ```
 .
 ├── index.html   # Application complète (HTML + CSS + JS embarqués)
-├── src/         # Utilitaires purs de sanitation, géométrie, migration, JSON et stockage
+├── src/         # Utilitaires purs et presets de champs (sanitation, géométrie, migration, JSON, stockage)
 └── tests/       # Tests unitaires, smoke et navigateur
 ```
 
-Le fichier `index.html` est autonome : toute la logique (géométrie du patron, moteur de champs, rainage, zoom, exports) y est contenue, à l'exception des polices Google Fonts, de html2canvas et d'EmailJS chargés via CDN.
+Le fichier `index.html` contient encore le markup, l'état et les contrôleurs DOM
+principaux. Les données de presets sont isolées dans
+`src/packaging-defaults.js`, l'historique Annuler/Rétablir dans
+`src/history-controller.js`, tandis que les calculs et validations partagés
+sont isolés dans `src/packaging-utils.js`. Les polices Google Fonts,
+html2canvas et EmailJS sont chargés via CDN.
 
 ---
 

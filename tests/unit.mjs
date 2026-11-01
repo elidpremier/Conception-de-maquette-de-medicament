@@ -2,9 +2,46 @@ import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
 const source = await readFile(new URL("../src/packaging-utils.js", import.meta.url), "utf8");
-const context = { window: {} };
+const context = { window: {}, clearTimeout, setTimeout };
 runInNewContext(source, context);
 const utils = context.window.PackagingUtils;
+const defaultsSource = await readFile(new URL("../src/packaging-defaults.js", import.meta.url), "utf8");
+runInNewContext(defaultsSource, context);
+const defaults = context.window.PackagingDefaults;
+const tabletDefaults = defaults.defaultTabletFieldsConfig();
+const liquidDefaults = defaults.defaultLiquidFieldsConfig();
+if (tabletDefaults.length < 20 || liquidDefaults.length < 20 ||
+    tabletDefaults.some((field) => !field.id || !field.face) ||
+    liquidDefaults.some((field) => !field.id || !field.face)) {
+  throw new Error("Default field presets module is incomplete.");
+}
+const historySource = await readFile(new URL("../src/history-controller.js", import.meta.url), "utf8");
+runInNewContext(historySource, context);
+let historyState = { value: 0 };
+const restoredStates = [];
+const history = context.window.PackagingHistory.createHistoryController({
+  getState: () => historyState,
+  restoreState: (state) => {
+    historyState = state;
+    restoredStates.push(state.value);
+  },
+  maxEntries: 2,
+  debounceMs: 10,
+});
+history.setBaseline();
+historyState = { value: 1 };
+history.commit();
+historyState = { value: 2 };
+history.commit();
+history.undo();
+if (historyState.value !== 1 || restoredStates.at(-1) !== 1) {
+  throw new Error("History undo failed.");
+}
+history.redo();
+if (historyState.value !== 2 || restoredStates.at(-1) !== 2) {
+  throw new Error("History redo failed.");
+}
+history.dispose();
 
 const fields = utils.sanitizeImportedFields(
   [{

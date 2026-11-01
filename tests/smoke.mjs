@@ -12,6 +12,8 @@ const assertions = [
   ["the main landmark wraps the application layout", (value) => /<main>[\s\S]*class="main-layout"[\s\S]*<\/main>\s*<!-- Retractable Footer/.test(value)],
   ["the document has a closing body and html tag", (value) => /<\/body>\s*<\/html>\s*$/.test(value)],
   ["the CI workflow installs dependencies and Chromium", () => workflow.includes("npm ci") && workflow.includes("playwright install --with-deps chromium")],
+  ["default field presets are loaded from their module", (value) => value.includes('src/packaging-defaults.js') && value.includes("PackagingDefaults.defaultTabletFieldsConfig") && value.includes("PackagingDefaults.defaultLiquidFieldsConfig")],
+  ["history state is isolated in its module", (value) => value.includes('src/history-controller.js') && value.includes("PackagingHistory.createHistoryController")],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],
