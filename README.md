@@ -190,6 +190,9 @@ champs et réglages après un cycle export JSON puis import et sanitation.
 
 Les modifications des contrôles sont regroupées par frame d'affichage afin de
 limiter les recalculs géométriques pendant la saisie et le déplacement des curseurs.
+Les imports de gabarits et d'images ainsi que les exports JSON et PNG utilisent
+des chemins d'erreur explicites : les échecs de lecture, de conversion ou de
+téléchargement sont affichés à l'utilisateur et journalisés.
 
 ## Confidentialité
 

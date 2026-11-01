@@ -2942,6 +2942,55 @@
         );
       }
 
+      function reportFileOperationError(message, error = null) {
+        if (error) console.error(message, error);
+        else console.error(message);
+        const summary = document.getElementById("validationSummary");
+        if (summary) {
+          summary.textContent = message;
+          summary.classList.add("has-warnings");
+        }
+        alert(message);
+      }
+
+      function downloadBlob(blob, filename) {
+        try {
+          if (!(blob instanceof Blob)) throw new TypeError("Export invalide.");
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          return true;
+        } catch (error) {
+          reportFileOperationError(`Impossible de télécharger ${filename}.`, error);
+          return false;
+        }
+      }
+
+      function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error || new Error("Lecture du fichier impossible."));
+          reader.onabort = () => reject(new Error("Lecture du fichier interrompue."));
+          reader.readAsText(file);
+        });
+      }
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error || new Error("Lecture de l'image impossible."));
+          reader.onabort = () => reject(new Error("Lecture de l'image interrompue."));
+          reader.readAsDataURL(file);
+        });
+      }
+
       function sanitizeImportedFields(fields) {
         const validFaces = new Set(
           [...TABLET_FACE_OPTIONS, ...LIQUID_FACE_OPTIONS].map((face) => face.value),
@@ -2978,17 +3027,15 @@
           logoUpload.value = "";
           return;
         }
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (!isSafeImageDataUrl(reader.result)) {
+        readFileAsDataUrl(file).then((dataUrl) => {
+          if (!isSafeImageDataUrl(dataUrl)) {
             alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
             logoUpload.value = "";
             return;
           }
-          customLogoUrl = reader.result;
+          customLogoUrl = dataUrl;
           updateTextBinders();
-        };
-        reader.readAsDataURL(file);
+        }).catch((error) => reportFileOperationError("Impossible de lire le logo.", error));
       });
 
       logoResetBtn.addEventListener("click", () => {
@@ -6251,20 +6298,18 @@
               e.target.value = "";
               return;
             }
-            const reader = new FileReader();
-            reader.onload = () => {
-              if (!isSafeImageDataUrl(reader.result)) {
+            readFileAsDataUrl(file).then((dataUrl) => {
+              if (!isSafeImageDataUrl(dataUrl)) {
                 alert("Format d'image non pris en charge. Utilisez PNG, JPEG, GIF ou WebP.");
                 e.target.value = "";
                 return;
               }
-              fieldsConfig[idx].src = reader.result;
+              fieldsConfig[idx].src = dataUrl;
               saveFieldsConfig();
               _lastAddedFieldId = fieldsConfig[idx].id;
               renderFieldEditor();
               renderAllCustomFields();
-            };
-            reader.readAsDataURL(file);
+            }).catch((error) => reportFileOperationError("Impossible de lire l'image.", error));
           });
         });
 
@@ -6659,15 +6704,10 @@
             customLogoUrl: customLogoUrl || null,
             customFacesBg: customFacesBg,
           }, FIELDS_SCHEMA_VERSION);
-          const blob = new Blob([JSON.stringify(fullExport, null, 2)], {
-            type: "application/json",
-          });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "gabarit-complet.json";
-          a.click();
-          URL.revokeObjectURL(url);
+          downloadBlob(
+            new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" }),
+            "gabarit-complet.json",
+          );
         });
       }
 
@@ -6686,10 +6726,9 @@
             e.target.value = "";
             return;
           }
-          const reader = new FileReader();
-          reader.onload = () => {
+          readFileAsText(file).then((text) => {
             try {
-              const parsed = JSON.parse(reader.result);
+              const parsed = JSON.parse(text);
               const template = PackagingUtils.parseTemplate(parsed, FIELDS_SCHEMA_VERSION);
               // NB : « v1/v2 » ci-dessous désigne le format du FICHIER
               // (tableau nu vs gabarit complet), à ne pas confondre avec
@@ -6710,10 +6749,9 @@
                 alert("Fichier JSON invalide : un tableau de champs ou un gabarit complet est attendu.");
               }
             } catch (err) {
-              alert("Impossible de lire ce fichier JSON.");
+              reportFileOperationError("Impossible de lire ce fichier JSON.", err);
             }
-          };
-          reader.readAsText(file);
+          }).catch((error) => reportFileOperationError("Impossible de lire ce fichier JSON.", error));
           e.target.value = "";
         });
       }
@@ -8370,18 +8408,14 @@
             // Télécharger le PNG
             try {
               canvas.toBlob(function(blob) {
-                if (!blob) { alert("Export PNG impossible (image vide)."); return; }
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'patron.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+                if (!blob) {
+                  reportFileOperationError("Export PNG impossible (image vide).");
+                  return;
+                }
+                downloadBlob(blob, "patron.png");
               }, 'image/png');
-            } catch (err) {
-              alert("Export PNG impossible : " + (err && err.message ? err.message : err));
+            } catch (error) {
+              reportFileOperationError("Export PNG impossible.", error);
             }
           }).catch(function(err) {
             // Restaurer l'état même en cas d'erreur
@@ -8521,21 +8555,19 @@
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           try {
             canvas.toBlob(function (blob) {
-              if (!blob) { alert("Export PNG impossible (image vide)."); return; }
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "patron.png";
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+              if (!blob) {
+                reportFileOperationError("Export PNG impossible (image vide).");
+                return;
+              }
+              downloadBlob(blob, "patron.png");
             }, "image/png");
-          } catch (err) {
-            alert("Export PNG impossible : " + (err && err.message ? err.message : err));
+          } catch (error) {
+            reportFileOperationError("Export PNG impossible.", error);
           }
         };
-        img.onerror = function () { alert("Export PNG impossible (SVG invalide)."); };
+        img.onerror = function () {
+          reportFileOperationError("Export PNG impossible (SVG invalide).");
+        };
         img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
       }
 
@@ -8594,10 +8626,10 @@
                 customLogoUrl: customLogoUrl || null,
                 customFacesBg: customFacesBg,
               }, FIELDS_SCHEMA_VERSION);
-              const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a"); a.href = url; a.download = "gabarit-complet.json"; a.click();
-              URL.revokeObjectURL(url);
+              downloadBlob(
+                new Blob([JSON.stringify(fullExport, null, 2)], { type: "application/json" }),
+                "gabarit-complet.json",
+              );
               break;
             }
             case "export-png": {
@@ -8614,10 +8646,9 @@
                   alert("Gabarit refusé : fichier JSON de 2 Mo maximum attendu.");
                   return;
                 }
-                const reader = new FileReader();
-                reader.onload = () => {
+                readFileAsText(file).then((text) => {
                   try {
-                    const data = JSON.parse(reader.result);
+                    const data = JSON.parse(text);
                     const template = PackagingUtils.parseTemplate(data, FIELDS_SCHEMA_VERSION);
                     if (template) {
                       fieldsConfig = template.needsMigration
@@ -8632,11 +8663,10 @@
                     } else {
                       alert("Fichier JSON invalide (doit être un tableau de champs ou un gabarit complet).");
                     }
-                  } catch {
-                    alert("Impossible de lire le fichier JSON.");
+                  } catch (error) {
+                    reportFileOperationError("Impossible de lire le fichier JSON.", error);
                   }
-                };
-                reader.readAsText(file);
+                }).catch((error) => reportFileOperationError("Impossible de lire le fichier JSON.", error));
               });
               input.click();
               break;
