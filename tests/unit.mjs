@@ -25,6 +25,13 @@ if (triangleGeometry.kind !== "polygon" || triangleGeometry.points.length !== 3 
     lineGeometry.kind !== "line" || lineGeometry.points.length !== 4) {
   throw new Error("Shape geometry extraction failed.");
 }
+const pngTextSource = await readFile(new URL("../src/png-text.js", import.meta.url), "utf8");
+runInNewContext(pngTextSource, context);
+const pngText = context.window.PackagingPngText.createPngTextTools((text) => text.length);
+const wrapped = pngText.wrap("alpha beta\nlongword", 7, "12px Arial");
+if (wrapped.join("|") !== "alpha|beta|longwor|d") {
+  throw new Error(`PNG text wrapping failed: ${wrapped.join("|")}`);
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({

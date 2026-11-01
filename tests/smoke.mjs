@@ -15,6 +15,7 @@ const assertions = [
   ["default field presets are loaded from their module", (value) => value.includes('src/packaging-defaults.js') && value.includes("PackagingDefaults.defaultTabletFieldsConfig") && value.includes("PackagingDefaults.defaultLiquidFieldsConfig")],
   ["history state is isolated in its module", (value) => value.includes('src/history-controller.js') && value.includes("PackagingHistory.createHistoryController")],
   ["shape geometry is shared by DOM and PNG rendering", (value) => value.includes('src/shape-geometry.js') && value.includes("PackagingShapeGeometry.getShapeGeometry")],
+  ["PNG text wrapping is isolated in its module", (value) => value.includes('src/png-text.js') && value.includes("PackagingPngText.createPngTextTools")],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],

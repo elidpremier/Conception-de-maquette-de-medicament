@@ -113,6 +113,7 @@ principaux. Les données de presets sont isolées dans
 `src/history-controller.js`, tandis que les calculs et validations partagés
 sont isolés dans `src/packaging-utils.js`. La géométrie des formes SVG
 partagée par l'éditeur et l'export est isolée dans `src/shape-geometry.js`.
+Le découpage de texte de l’export PNG est isolé dans `src/png-text.js`.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 
