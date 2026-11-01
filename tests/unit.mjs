@@ -17,6 +17,14 @@ if (tabletDefaults.length < 20 || liquidDefaults.length < 20 ||
 }
 const historySource = await readFile(new URL("../src/history-controller.js", import.meta.url), "utf8");
 runInNewContext(historySource, context);
+const shapeSource = await readFile(new URL("../src/shape-geometry.js", import.meta.url), "utf8");
+runInNewContext(shapeSource, context);
+const triangleGeometry = context.window.PackagingShapeGeometry.getShapeGeometry("triangle");
+const lineGeometry = context.window.PackagingShapeGeometry.getShapeGeometry("line-horizontal");
+if (triangleGeometry.kind !== "polygon" || triangleGeometry.points.length !== 3 ||
+    lineGeometry.kind !== "line" || lineGeometry.points.length !== 4) {
+  throw new Error("Shape geometry extraction failed.");
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({

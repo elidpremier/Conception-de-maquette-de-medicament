@@ -20,6 +20,7 @@
     <script src="src/packaging-utils.js"></script>
     <script src="src/packaging-defaults.js"></script>
     <script src="src/history-controller.js"></script>
+    <script src="src/shape-geometry.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -3791,26 +3792,6 @@
       // flèches, lignes...) construites en SVG afin de supporter
       // nativement le mode "plein" ou "contour" avec épaisseur de trait
       // réglable, en plus de la rotation déjà gérée au niveau du champ. ---
-      const GEOMETRIC_SHAPE_POINTS = {
-        triangle: "50,3 97,97 3,97",
-        "triangle-inverted": "3,3 97,3 50,97",
-        "right-triangle": "3,3 97,97 3,97",
-        diamond: "50,3 97,50 50,97 3,50",
-        pentagon: "50,3 95,38 78,95 22,95 5,38",
-        hexagon: "25,3 75,3 97,50 75,97 25,97 3,50",
-        star: "50,3 61,37 97,37 68,58 79,94 50,72 21,94 32,58 3,37 39,37",
-        "arrow-right": "3,35 60,35 60,12 97,50 60,88 60,65 3,65",
-        "arrow-left": "97,35 40,35 40,12 3,50 40,88 40,65 97,65",
-        "arrow-up": "35,97 35,40 12,40 50,3 88,40 65,40 65,97",
-        "arrow-down": "35,3 35,60 12,60 50,97 88,60 65,60 65,3",
-        "chevron-right": "10,3 55,50 10,97 30,97 75,50 30,3",
-      };
-      const GEOMETRIC_LINE_TYPES = {
-        "line-horizontal": [3, 50, 97, 50],
-        "line-vertical": [50, 3, 50, 97],
-        "line-diagonal": [5, 5, 95, 95],
-      };
-
       function buildGeometricSvgNode(shapeType, color, fillMode, strokeWidth) {
         const svgNS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(svgNS, "svg");
@@ -3822,8 +3803,9 @@
         svg.style.height = "100%";
         const sw = Math.max(0.5, Number(strokeWidth) || 4);
 
-        if (GEOMETRIC_LINE_TYPES[shapeType]) {
-          const [x1, y1, x2, y2] = GEOMETRIC_LINE_TYPES[shapeType];
+        const geometry = PackagingShapeGeometry.getShapeGeometry(shapeType);
+        if (geometry.kind === "line") {
+          const [x1, y1, x2, y2] = geometry.points;
           const line = document.createElementNS(svgNS, "line");
           line.setAttribute("x1", x1);
           line.setAttribute("y1", y1);
@@ -3838,7 +3820,7 @@
         }
 
         const poly = document.createElementNS(svgNS, "polygon");
-        poly.setAttribute("points", GEOMETRIC_SHAPE_POINTS[shapeType] || GEOMETRIC_SHAPE_POINTS.triangle);
+        poly.setAttribute("points", geometry.points.map((point) => point.join(",")).join(" "));
         if (fillMode === "outline") {
           poly.setAttribute("fill", "none");
           poly.setAttribute("stroke", color);
@@ -6988,25 +6970,7 @@
         const fill = fillMode === "outline" ? "none" : c;
         const stroke = fillMode === "outline" ? c : "none";
 
-        const POLYS = {
-          "triangle": [[50,2],[98,98],[2,98]],
-          "triangle-inverted": [[2,2],[98,2],[50,98]],
-          "right-triangle": [[2,2],[2,98],[98,98]],
-          "diamond": [[50,2],[98,50],[50,98],[2,50]],
-          "pentagon": [[50,3],[97,38],[79,96],[21,96],[3,38]],
-          "hexagon": [[25,4],[75,4],[98,50],[75,96],[25,96],[2,50]],
-          "star": [[50,2],[61,38],[98,38],[68,60],[79,96],[50,72],[21,96],[32,60],[2,38],[39,38]],
-          "arrow-right": [[10,35],[60,35],[60,15],[95,50],[60,85],[60,65],[10,65]],
-          "arrow-left": [[90,35],[40,35],[40,15],[5,50],[40,85],[40,65],[90,65]],
-          "arrow-up": [[35,10],[35,60],[15,60],[50,95],[85,60],[65,60],[65,10]],
-          "arrow-down": [[35,90],[35,40],[15,40],[50,5],[85,40],[65,40],[65,90]],
-          "chevron-right": [[20,15],[50,50],[20,85],[40,85],[70,50],[40,15]]
-        };
-        const LINES = {
-          "line-horizontal": [10,50,90,50],
-          "line-vertical": [50,10,50,90],
-          "line-diagonal": [10,10,90,90]
-        };
+        const geometry = PackagingShapeGeometry.getShapeGeometry(st);
         function polyPts(pts) { return pts.map(p => `${p[0]},${p[1]}`).join(" "); }
 
         let inner = "";
@@ -7016,10 +6980,10 @@
           inner = `<rect x="3" y="3" width="94" height="94" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
         } else if (st === "rectangle") {
           inner = `<rect x="2" y="2" width="96" height="96" fill="${fill}"/>`;
-        } else if (POLYS[st]) {
-          inner = `<polygon points="${polyPts(POLYS[st])}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>`;
-        } else if (LINES[st]) {
-          const L = LINES[st];
+        } else if (geometry.kind === "polygon" && geometry.points) {
+          inner = `<polygon points="${polyPts(geometry.points)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+        } else if (geometry.kind === "line") {
+          const L = geometry.points;
           inner = `<line x1="${L[0]}" y1="${L[1]}" x2="${L[2]}" y2="${L[3]}" stroke="${c}" stroke-width="${sw}" stroke-linecap="round"/>`;
         } else if (st === "ring") {
           inner = `<ellipse cx="50" cy="50" rx="44" ry="44" fill="none" stroke="${c}" stroke-width="${sw}"/>`;

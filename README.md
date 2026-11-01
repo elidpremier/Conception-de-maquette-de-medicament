@@ -111,7 +111,9 @@ Le fichier `index.html` contient encore le markup, l'état et les contrôleurs D
 principaux. Les données de presets sont isolées dans
 `src/packaging-defaults.js`, l'historique Annuler/Rétablir dans
 `src/history-controller.js`, tandis que les calculs et validations partagés
-sont isolés dans `src/packaging-utils.js`. Les polices Google Fonts,
+sont isolés dans `src/packaging-utils.js`. La géométrie des formes SVG
+partagée par l'éditeur et l'export est isolée dans `src/shape-geometry.js`.
+Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 
 ---
