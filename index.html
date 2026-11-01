@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
     <title>Conception de Maquette de Comprimé & Sirop - Paracétamol</title>
     <!-- SEO & Fonts -->
     <meta
@@ -2915,6 +2917,9 @@
       // Logo personnalisé — stocké en mémoire (data URL), utilisé par
       // getLogoMarkup() partout où un logo est affiché (Comprimé & Sirop).
       let customLogoUrl = null;
+      const MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024;
+      const MAX_TEMPLATE_FILE_SIZE = 2 * 1024 * 1024;
+      const MAX_IMPORTED_FIELDS = 250;
       const SAFE_IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
       const SAFE_COLOR = /^#[0-9a-f]{6}$/i;
 
@@ -2922,16 +2927,67 @@
         return typeof value === "string" && SAFE_IMAGE_DATA_URL.test(value);
       }
 
+      function isAllowedImageFile(file) {
+        return (
+          file &&
+          MAX_IMAGE_FILE_SIZE >= file.size &&
+          ["image/png", "image/jpeg", "image/gif", "image/webp"].includes(file.type)
+        );
+      }
+
+      function isAllowedTemplateFile(file) {
+        return file && file.size <= MAX_TEMPLATE_FILE_SIZE && (
+          file.type === "application/json" || /\.json$/i.test(file.name)
+        );
+      }
+
       function sanitizeImportedFields(fields) {
         if (!Array.isArray(fields)) return [];
+        const validFaces = new Set(
+          [...TABLET_FACE_OPTIONS, ...LIQUID_FACE_OPTIONS].map((face) => face.value),
+        );
+        const validTypes = new Set(TYPE_OPTIONS.map((type) => type.value));
         return fields
+          .slice(0, MAX_IMPORTED_FIELDS)
           .filter((field) => field && typeof field === "object")
-          .map((field) => ({
-            ...field,
-            content: typeof field.content === "string" ? field.content : "",
-            label: typeof field.label === "string" ? field.label : "Champ",
-            src: isSafeImageDataUrl(field.src) ? field.src : null,
-          }));
+          .map((field, index) => {
+            const number = (value, fallback, min, max) => {
+              const parsed = Number(value);
+              return Number.isFinite(parsed)
+                ? Math.max(min, Math.min(max, parsed))
+                : fallback;
+            };
+            const type = validTypes.has(field.type) ? field.type : "text";
+            const face = validFaces.has(field.face) ? field.face : "p5";
+            return {
+              ...field,
+              id: typeof field.id === "string" && field.id.length <= 120
+                ? field.id
+                : `imported-field-${Date.now()}-${index}`,
+              type,
+              face,
+              x: number(field.x, 10, -50, 200),
+              y: number(field.y, 10, -50, 200),
+              w: number(field.w, 30, 1, 200),
+              h: number(field.h, 15, 1, 200),
+              fontSize: number(field.fontSize, 10, 4, 60),
+              rotation: [0, 90, 180, 270].includes(Number(field.rotation))
+                ? Number(field.rotation)
+                : 0,
+              align: ["left", "center", "right"].includes(field.align)
+                ? field.align
+                : "left",
+              color: SAFE_COLOR.test(field.color) ? field.color : "#1e3a8a",
+              color2: SAFE_COLOR.test(field.color2) ? field.color2 : "#f97316",
+              content: typeof field.content === "string"
+                ? field.content.slice(0, 20000)
+                : "",
+              label: typeof field.label === "string"
+                ? field.label.slice(0, 200)
+                : "Champ",
+              src: isSafeImageDataUrl(field.src) ? field.src : null,
+            };
+          });
       }
 
       function sanitizeImportedFaceColors(value) {
@@ -2960,6 +3016,11 @@
       logoUpload.addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
+        if (!isAllowedImageFile(file)) {
+          alert("Image refusée : formats PNG, JPEG, GIF ou WebP de 5 Mo maximum.");
+          logoUpload.value = "";
+          return;
+        }
         const reader = new FileReader();
         reader.onload = () => {
           if (!isSafeImageDataUrl(reader.result)) {
@@ -4187,7 +4248,7 @@
             if (Array.isArray(parsed) && parsed.length) {
               // Format v1 : tableau nu → migration différée.
               _pendingFieldsMigration = true;
-              return parsed;
+              return sanitizeImportedFields(parsed);
             }
             if (
               parsed &&
@@ -4197,7 +4258,7 @@
               if (Number(parsed.version) < FIELDS_SCHEMA_VERSION) {
                 _pendingFieldsMigration = true;
               }
-              return parsed.fields;
+              return sanitizeImportedFields(parsed.fields);
             }
           }
         } catch (e) {
@@ -4208,7 +4269,7 @@
         // mais leurs champs pivotés doivent être recadrés une fois les
         // rapports d'aspect connus (voir _pendingDefaultsNormalize).
         _pendingDefaultsNormalize = true;
-        return defaultFieldsConfig();
+        return sanitizeImportedFields(defaultFieldsConfig());
       }
 
       // Exécute la migration une fois les faces rendues (rapports d'aspect
@@ -4325,7 +4386,7 @@
       function applyImportedSettings(settings) {
         if (!settings) return;
         // Type de boîte
-        if (settings.boxType) {
+        if (settings.boxType === "tablet" || settings.boxType === "liquid") {
           controls.boxType.value = settings.boxType;
           applyModeVisibility(settings.boxType);
         }
@@ -6298,6 +6359,11 @@
             const idx = Number(e.target.dataset.idx);
             const file = e.target.files && e.target.files[0];
             if (!file) return;
+            if (!isAllowedImageFile(file)) {
+              alert("Image refusée : formats PNG, JPEG, GIF ou WebP de 5 Mo maximum.");
+              e.target.value = "";
+              return;
+            }
             const reader = new FileReader();
             reader.onload = () => {
               if (!isSafeImageDataUrl(reader.result)) {
@@ -6733,6 +6799,11 @@
         importFieldsInput.addEventListener("change", (e) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
+          if (!isAllowedTemplateFile(file)) {
+            alert("Gabarit refusé : fichier JSON de 2 Mo maximum attendu.");
+            e.target.value = "";
+            return;
+          }
           const reader = new FileReader();
           reader.onload = () => {
             try {
@@ -7409,10 +7480,20 @@
       }
 
       // Event Listeners setup
-      Object.values(controls).forEach((input) => {
-        input.addEventListener("input", () => {
+      let geometryFramePending = false;
+      function scheduleGeometryUpdate() {
+        if (geometryFramePending) return;
+        geometryFramePending = true;
+        requestAnimationFrame(() => {
+          geometryFramePending = false;
           updateTextBinders();
           updateGeometry();
+        });
+      }
+
+      Object.values(controls).forEach((input) => {
+        input.addEventListener("input", () => {
+          scheduleGeometryUpdate();
         });
       });
 
@@ -8661,6 +8742,10 @@
               input.addEventListener("change", () => {
                 const file = input.files[0];
                 if (!file) return;
+                if (!isAllowedTemplateFile(file)) {
+                  alert("Gabarit refusé : fichier JSON de 2 Mo maximum attendu.");
+                  return;
+                }
                 const reader = new FileReader();
                 reader.onload = () => {
                   try {

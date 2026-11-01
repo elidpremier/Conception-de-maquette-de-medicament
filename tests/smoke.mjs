@@ -20,6 +20,10 @@ const assertions = [
   ["dynamic editor labels are associated after rendering", (value) => value.includes("ensureAccessibleLabels") && value.includes("label.parentElement?.querySelector")],
   ["local persistence reports quota failures", (value) => value.includes("function saveToLocalStorage") && value.includes("Sauvegarde locale impossible")],
   ["local persistence handles unavailable storage reads", (value) => value.includes("function readFromLocalStorage") && value.includes("Lecture locale impossible")],
+  ["image and template imports have size and type limits", (value) => value.includes("MAX_IMAGE_FILE_SIZE") && value.includes("MAX_TEMPLATE_FILE_SIZE") && value.includes("isAllowedTemplateFile")],
+  ["static security metadata is present", (value) => value.includes('name="referrer"') && value.includes('http-equiv="Permissions-Policy"')],
+  ["geometry updates are frame-scheduled", (value) => value.includes("function scheduleGeometryUpdate") && value.includes("requestAnimationFrame")],
+  ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("validTypes") && value.includes("slice(0, MAX_IMPORTED_FIELDS)") && value.includes('fontSize: number(field.fontSize, 10, 4, 60)')],
 ];
 
 const failures = assertions

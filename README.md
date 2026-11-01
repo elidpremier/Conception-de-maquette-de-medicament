@@ -155,6 +155,14 @@ navigateur l'autorise. En cas de quota dépassé ou de stockage désactivé, un
 message visible indique que les modifications ne seront pas conservées après
 fermeture.
 
+Les images importées sont limitées aux formats PNG, JPEG, GIF et WebP, avec une
+taille maximale de 5 Mo. Les gabarits JSON importés sont limités à 2 Mo.
+Un gabarit peut contenir au maximum 250 champs ; les positions, dimensions,
+rotations, types et contenus sont bornés à l'import.
+
+Les modifications des contrôles sont regroupées par frame d'affichage afin de
+limiter les recalculs géométriques pendant la saisie et le déplacement des curseurs.
+
 ## Confidentialité
 
 L'outil collecte une adresse email pour traiter une demande d'impression, avec
