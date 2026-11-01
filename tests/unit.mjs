@@ -82,6 +82,18 @@ const renderedField = fieldSvg({ type: "text", content: "Hello", x: 0, y: 0, w: 
 if (!renderedField.includes("Hello") || !renderedField.includes("testclip1") || clipDefs.length !== 1) {
   throw new Error("Field SVG rendering failed.");
 }
+const cloneSource = await readFile(new URL("../src/png-clone.js", import.meta.url), "utf8");
+runInNewContext(cloneSource, context);
+const cloneElement = () => ({
+  style: {},
+  classList: { add() {}, remove() {} },
+});
+const cloneDocument = {
+  querySelector: () => cloneElement(),
+  getElementById: () => cloneElement(),
+  querySelectorAll: () => [],
+};
+context.window.PackagingPngClone.prepareClone(cloneDocument);
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({

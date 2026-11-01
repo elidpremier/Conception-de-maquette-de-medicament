@@ -25,6 +25,7 @@
     <script src="src/png-text.js"></script>
     <script src="src/export-primitives.js"></script>
     <script src="src/field-svg.js"></script>
+    <script src="src/png-clone.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -7092,37 +7093,12 @@
             windowWidth: Math.round(W),
             windowHeight: Math.round(H),
             onclone: function(clonedDoc) {
+              PackagingPngClone.prepareClone(clonedDoc);
               // Sur le clone, nettoyer le contexte parent (workspace)
               // pour que le patron soit capturé sans padding ni
               // background gris, puis retirer le zoom et forcer les
               // styles d'impression pour maximiser la fidélité au
               // rendu PDF.
-              const clonedWorkspace = clonedDoc.querySelector('.workspace');
-              if (clonedWorkspace) {
-                clonedWorkspace.style.padding = '0';
-                clonedWorkspace.style.background = '#ffffff';
-                clonedWorkspace.style.overflow = 'visible';
-                clonedWorkspace.style.display = 'block';
-                clonedWorkspace.style.position = 'relative';
-              }
-              const clonedSheet = clonedDoc.getElementById('patronSheet');
-              if (clonedSheet) {
-                clonedSheet.style.transform = 'none';
-                clonedSheet.style.padding = '0';
-                clonedSheet.style.margin = '0';
-                clonedSheet.style.border = 'none';
-                clonedSheet.style.position = 'relative';
-              }
-              // Masquer les éléments UI sur le clone
-              const clonedBoxGrid = clonedDoc.getElementById('boxGrid');
-              if (clonedBoxGrid) clonedBoxGrid.classList.add('hide-labels');
-              // Forcer les couleurs d'impression exactes (comme @media print)
-              clonedDoc.querySelectorAll('.panel').forEach(p => {
-                p.style.colorAdjust = 'exact';
-                p.style.webkitPrintColorAdjust = 'exact';
-                p.style.printColorAdjust = 'exact';
-              });
-
               // *** CORRECTION DÉBORDEMENT RABATS ***
               // html2canvas (1.4.1) ne respecte pas clip-path
               // CSS (polygon) sur les panneaux trapézoïdaux :
@@ -7193,28 +7169,6 @@
                 el.style.border = 'none';
               });
 
-              // Masquer les poignées de resize sur le clone
-              clonedDoc.querySelectorAll('.field-resize-handle').forEach(h => {
-                h.style.display = 'none';
-              });
-              // Masquer les labels de panneaux
-              clonedDoc.querySelectorAll('.panel-label').forEach(l => {
-                l.style.display = 'none';
-              });
-              // Masquer les marges de sécurité sur le clone
-              clonedDoc.querySelectorAll('.safe-margin').forEach(m => {
-                m.style.display = 'none';
-              });
-              // Masquer la toolbar flottante et les guides sur le clone
-              const clonedToolbar = clonedDoc.getElementById('floatingToolbar');
-              if (clonedToolbar) clonedToolbar.classList.remove('show');
-              const clonedGrpToolbar = clonedDoc.getElementById('groupToolbar');
-              if (clonedGrpToolbar) clonedGrpToolbar.classList.remove('show');
-              // Supprimer les outlines de sélection / validation sur le clone
-              clonedDoc.querySelectorAll('.custom-field.selected, .custom-field.field-overflow, .custom-field.field-overlap').forEach(el => {
-                el.classList.remove('selected', 'field-overflow', 'field-overlap');
-                el.style.outline = 'none';
-              });
             }
           }).then(function(canvas) {
             // Restaurer l'état initial

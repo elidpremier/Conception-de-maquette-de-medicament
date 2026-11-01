@@ -119,6 +119,8 @@ Le générateur SVG des formes du fallback PNG est isolé dans
 Les primitives de logo, code-barres et Datamatrix de l’export sont isolées
 dans `src/export-primitives.js`.
 Le rendu SVG des champs de l’export est isolé dans `src/field-svg.js`.
+La préparation générique du clone `html2canvas` est isolée dans
+`src/png-clone.js`.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 
