@@ -103,7 +103,7 @@ Points à retenir :
 ```
 .
 ├── index.html   # Application complète (HTML + CSS + JS embarqués)
-├── src/         # Utilitaires purs de sanitation, géométrie, migration et JSON
+├── src/         # Utilitaires purs de sanitation, géométrie, migration, JSON et stockage
 └── tests/       # Tests unitaires, smoke et navigateur
 ```
 
@@ -123,7 +123,9 @@ npm run lint
 ```
 
 La commande `npm test` inclut les tests unitaires des utilitaires de
-sanitation, de géométrie, de migration de schéma et de sérialisation JSON, les contrôles de fumée et un test navigateur Playwright couvrant le rendu initial, les deux modes de boîte, le
+sanitation, de géométrie, de migration de schéma, de sérialisation JSON et
+de l'adaptateur de stockage, les contrôles de fumée et un test navigateur
+Playwright couvrant le rendu initial, les deux modes de boîte, le
 redimensionnement, l'import d'un gabarit, la porte d'accès à l'impression et
 la présence des contrôles clavier. Le test exécute également axe-core et bloque
 les violations d'accessibilité critiques ou sérieuses.
@@ -161,9 +163,10 @@ Les coordonnées saisies ne sont pas enregistrées dans `localStorage`. Consulte
 [SECURITY.md](./SECURITY.md) pour les limites et recommandations de production.
 
 Les réglages et champs de la maquette sont sauvegardés localement lorsque le
-navigateur l'autorise. En cas de quota dépassé ou de stockage désactivé, un
-message visible indique que les modifications ne seront pas conservées après
-fermeture.
+navigateur l'autorise. La persistance passe par un adaptateur isolé qui gère
+les lectures, écritures et réinitialisations. En cas de quota dépassé ou de
+stockage désactivé, un message visible indique que les modifications ne seront
+pas conservées après fermeture.
 
 Les images importées sont limitées aux formats PNG, JPEG, GIF et WebP, avec une
 taille maximale de 5 Mo. Les gabarits JSON importés sont limités à 2 Mo.

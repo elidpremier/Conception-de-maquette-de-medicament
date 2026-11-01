@@ -57,6 +57,25 @@ if (!oldTemplate?.needsMigration || oldTemplate.format !== "v1" || newTemplate?.
 if (utils.parseTemplate({ invalid: true }, 2) !== null) {
   throw new Error("Malformed template parsing failed.");
 }
+const memory = new Map();
+const storage = {
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => memory.set(key, value),
+  clear: () => memory.clear(),
+};
+const adapter = utils.createStorageAdapter(storage);
+if (!adapter.write("settings", '{"ok":true}') || adapter.read("settings") !== '{"ok":true}') {
+  throw new Error("Storage adapter read/write failed.");
+}
+adapter.clear();
+if (adapter.read("settings") !== null) throw new Error("Storage adapter clear failed.");
+let writeErrors = 0;
+const failingAdapter = utils.createStorageAdapter({
+  setItem: () => { throw new Error("quota"); },
+}, { onWriteError: () => { writeErrors++; } });
+if (failingAdapter.write("settings", "x") || writeErrors !== 1) {
+  throw new Error("Storage adapter failure handling failed.");
+}
 if (fields.length !== 1 || fields[0].id !== "test-0" || fields[0].type !== "text") {
   throw new Error("Field type or identifier sanitation failed.");
 }

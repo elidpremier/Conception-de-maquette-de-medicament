@@ -28,6 +28,7 @@ const assertions = [
   ["pure geometry utilities are used by the application", (value) => value.includes("PackagingUtils.getVisualSize") && value.includes("PackagingUtils.getFieldPlacement")],
   ["field schema migration uses the pure utility", (value) => value.includes("PackagingUtils.migrateFieldsV1toV2")],
   ["template serialization uses the pure utility", (value) => value.includes("PackagingUtils.createTemplate") && value.includes("PackagingUtils.parseTemplate")],
+  ["local persistence uses the storage adapter", (value) => value.includes("PackagingUtils.createStorageAdapter") && value.includes("clearLocalStorage")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 

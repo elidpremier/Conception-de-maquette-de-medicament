@@ -110,6 +110,43 @@
     };
   }
 
+  function createStorageAdapter(storage, handlers = {}) {
+    const reportReadError = handlers.onReadError || (() => {});
+    const reportWriteError = handlers.onWriteError || (() => {});
+    const reportClearError = handlers.onClearError || reportWriteError;
+
+    return {
+      read(key) {
+        try {
+          return storage ? storage.getItem(key) : null;
+        } catch (error) {
+          reportReadError(key, error);
+          return null;
+        }
+      },
+      write(key, value) {
+        try {
+          if (!storage) throw new Error("Storage unavailable");
+          storage.setItem(key, value);
+          return true;
+        } catch (error) {
+          reportWriteError(key, error);
+          return false;
+        }
+      },
+      clear() {
+        try {
+          if (!storage) throw new Error("Storage unavailable");
+          storage.clear();
+          return true;
+        } catch (error) {
+          reportClearError(error);
+          return false;
+        }
+      },
+    };
+  }
+
   function getFieldPlacement(field, zoneW, zoneH) {
     const rot = normalizeRotation(field.rotation);
     const placement = {
@@ -183,6 +220,7 @@
     migrateFieldsV1toV2,
     createTemplate,
     parseTemplate,
+    createStorageAdapter,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,

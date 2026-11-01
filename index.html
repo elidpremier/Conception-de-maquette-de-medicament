@@ -4086,32 +4086,46 @@
       const FIELDS_SCHEMA_VERSION = 2;
       let storageWarningShown = false;
 
+      const localStorageAdapter = PackagingUtils.createStorageAdapter(
+        (() => {
+          try {
+            return window.localStorage;
+          } catch (error) {
+            return null;
+          }
+        })(),
+        {
+          onReadError: (key, error) => {
+            console.error(`Lecture locale impossible pour ${key} :`, error);
+          },
+          onWriteError: (key, error) => {
+            console.error(`Sauvegarde locale impossible pour ${key} :`, error);
+            if (!storageWarningShown) {
+              storageWarningShown = true;
+              const summary = document.getElementById("validationSummary");
+              if (summary) {
+                summary.textContent =
+                  "La sauvegarde locale est indisponible ou pleine. Vos modifications ne seront pas conservées après fermeture.";
+                summary.classList.add("has-warnings");
+              }
+            }
+          },
+          onClearError: (error) => {
+            console.error("Réinitialisation locale impossible :", error);
+          },
+        },
+      );
+
       function readFromLocalStorage(key) {
-        try {
-          return localStorage.getItem(key);
-        } catch (error) {
-          console.error(`Lecture locale impossible pour ${key} :`, error);
-          return null;
-        }
+        return localStorageAdapter.read(key);
       }
 
       function saveToLocalStorage(key, value) {
-        try {
-          localStorage.setItem(key, value);
-          return true;
-        } catch (error) {
-          console.error(`Sauvegarde locale impossible pour ${key} :`, error);
-          if (!storageWarningShown) {
-            storageWarningShown = true;
-            const summary = document.getElementById("validationSummary");
-            if (summary) {
-              summary.textContent =
-                "La sauvegarde locale est indisponible ou pleine. Vos modifications ne seront pas conservées après fermeture.";
-              summary.classList.add("has-warnings");
-            }
-          }
-          return false;
-        }
+        return localStorageAdapter.write(key, value);
+      }
+
+      function clearLocalStorage() {
+        return localStorageAdapter.clear();
       }
 
       // Reproduit fidèlement l'ANCIEN rendu (buggé) pour en déduire le
@@ -8622,7 +8636,7 @@
             }
             case "reset-all": {
               if (!confirm("Réinitialiser TOUTES les données ? Cette action est irréversible.")) break;
-              localStorage.clear();
+              clearLocalStorage();
               location.reload();
               break;
             }
