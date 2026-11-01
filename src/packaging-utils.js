@@ -39,6 +39,44 @@
     return fitted;
   }
 
+  function migrateFieldsV1toV2(fields, getAspect = () => 1) {
+    if (!Array.isArray(fields)) return [];
+    return fields.map((field) => {
+      const rot = normalizeRotation(field.rotation);
+      if (!rot) return field;
+      const w = Number(field.w) || 0;
+      const h = Number(field.h) || 0;
+      const x = Number(field.x) || 0;
+      const y = Number(field.y) || 0;
+      const aspectValue = Number(getAspect(field.face));
+      const aspect = Number.isFinite(aspectValue) && aspectValue > 0 ? aspectValue : 1;
+      const wPx = (w / 100) * aspect;
+      const hPx = h / 100;
+      const xPx = (x / 100) * aspect;
+      const yPx = y / 100;
+      const rad = (rot * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const dxOldPct = w / 2 - ((cos * w) / 2 - (sin * h) / 2);
+      const dyOldPct = h / 2 - ((sin * w) / 2 + (cos * h) / 2);
+      const txPx = (dxOldPct / 100) * wPx;
+      const tyPx = (dyOldPct / 100) * hPx;
+      const originX = xPx + txPx;
+      const originY = yPx + tyPx;
+      let minX = Infinity;
+      let minY = Infinity;
+      for (const [offsetX, offsetY] of [[0, 0], [wPx, 0], [wPx, hPx], [0, hPx]]) {
+        minX = Math.min(minX, originX + offsetX * cos - offsetY * sin);
+        minY = Math.min(minY, originY + offsetX * sin + offsetY * cos);
+      }
+      return {
+        ...field,
+        x: Math.round((minX / aspect) * 1000) / 10,
+        y: Math.round(minY * 1000) / 10,
+      };
+    });
+  }
+
   function getFieldPlacement(field, zoneW, zoneH) {
     const rot = normalizeRotation(field.rotation);
     const placement = {
@@ -109,6 +147,7 @@
     normalizeRotation,
     getVisualSize,
     fitFieldIntoFace,
+    migrateFieldsV1toV2,
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,

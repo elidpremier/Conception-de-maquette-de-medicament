@@ -103,7 +103,7 @@ Points à retenir :
 ```
 .
 ├── index.html   # Application complète (HTML + CSS + JS embarqués)
-├── src/         # Utilitaires purs de sanitation et géométrie
+├── src/         # Utilitaires purs de sanitation, géométrie et migration
 └── tests/       # Tests unitaires, smoke et navigateur
 ```
 
@@ -123,7 +123,7 @@ npm run lint
 ```
 
 La commande `npm test` inclut les tests unitaires des utilitaires de
-sanitation et de géométrie, les contrôles de fumée et un test navigateur Playwright couvrant le rendu initial, les deux modes de boîte, le
+sanitation, de géométrie et de migration de schéma, les contrôles de fumée et un test navigateur Playwright couvrant le rendu initial, les deux modes de boîte, le
 redimensionnement, l'import d'un gabarit, la porte d'accès à l'impression et
 la présence des contrôles clavier. Le test exécute également axe-core et bloque
 les violations d'accessibilité critiques ou sérieuses.

@@ -4123,51 +4123,7 @@
       // où dxOld/dyOld étaient CALCULÉS en % de la face mais INTERPRÉTÉS
       // par le navigateur en % de l'élément — d'où le décalage.
       function migrateFieldsV1toV2(fields) {
-        return fields.map((f) => {
-          const rot = normalizeRotation(f.rotation);
-          if (!rot) return f; // champs non pivotés : x/y déjà corrects
-
-          const w = Number(f.w) || 0;
-          const h = Number(f.h) || 0;
-          const x = Number(f.x) || 0;
-          const y = Number(f.y) || 0;
-          const r = getFaceAspect(f.face) || 1; // largeurFace / hauteurFace
-
-          // On raisonne en unités « px » normalisées : largeur face = r,
-          // hauteur face = 1. Un % de largeur vaut donc r/100 px.
-          const wPx = (w / 100) * r;
-          const hPx = h / 100;
-          const xPx = (x / 100) * r;
-          const yPx = y / 100;
-
-          const rad = (rot * Math.PI) / 180;
-          const cos = Math.cos(rad);
-          const sin = Math.sin(rad);
-
-          // Valeurs de translate produites par l'ancien code (en %).
-          const dxOldPct = w / 2 - ((cos * w) / 2 - (sin * h) / 2);
-          const dyOldPct = h / 2 - ((sin * w) / 2 + (cos * h) / 2);
-          // Interprétés par CSS en % de l'ÉLÉMENT → en px :
-          const txPx = (dxOldPct / 100) * wPx;
-          const tyPx = (dyOldPct / 100) * hPx;
-
-          // Origine de rotation = coin haut-gauche, après translation.
-          const originX = xPx + txPx;
-          const originY = yPx + tyPx;
-
-          // AABB des 4 coins tournés autour de cette origine.
-          let minX = Infinity, minY = Infinity;
-          for (const [ox, oy] of [[0, 0], [wPx, 0], [wPx, hPx], [0, hPx]]) {
-            minX = Math.min(minX, originX + ox * cos - oy * sin);
-            minY = Math.min(minY, originY + ox * sin + oy * cos);
-          }
-
-          return {
-            ...f,
-            x: Math.round((minX / r) * 1000) / 10, // px → % de largeur
-            y: Math.round(minY * 1000) / 10,       // px → % de hauteur
-          };
-        });
+        return PackagingUtils.migrateFieldsV1toV2(fields, (face) => getFaceAspect(face) || 1);
       }
 
       // Nombre de champs pivotés migrés : sert à avertir l'utilisateur

@@ -26,6 +26,7 @@ const assertions = [
   ["geometry updates are frame-scheduled", (value) => value.includes("function scheduleGeometryUpdate") && value.includes("requestAnimationFrame")],
   ["pure packaging utilities are loaded before the application", (value) => value.includes('src/packaging-utils.js') && value.includes("PackagingUtils.sanitizeImportedFields")],
   ["pure geometry utilities are used by the application", (value) => value.includes("PackagingUtils.getVisualSize") && value.includes("PackagingUtils.getFieldPlacement")],
+  ["field schema migration uses the pure utility", (value) => value.includes("PackagingUtils.migrateFieldsV1toV2")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 

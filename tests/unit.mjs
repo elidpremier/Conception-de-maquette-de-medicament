@@ -38,6 +38,13 @@ const fitted = utils.fitFieldIntoFace({ x: 95, y: 95, w: 80, h: 80, rotation: 90
 if (fitted.x !== 20 || fitted.y !== 20 || fitted.w !== 80 || fitted.h !== 80) {
   throw new Error("Field fitting calculation failed.");
 }
+const migrated = utils.migrateFieldsV1toV2(
+  [{ id: "rotated", face: "p5", x: 10, y: 20, w: 30, h: 20, rotation: 90 }],
+  () => 2,
+);
+if (migrated[0].x !== 7.5 || migrated[0].y !== 19) {
+  throw new Error("Field schema migration failed.");
+}
 if (fields.length !== 1 || fields[0].id !== "test-0" || fields[0].type !== "text") {
   throw new Error("Field type or identifier sanitation failed.");
 }
