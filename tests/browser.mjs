@@ -127,6 +127,21 @@ try {
     throw new Error("La structure du gabarit JSON exporté est invalide.");
   }
 
+  let invalidImageMessage = "";
+  page.once("dialog", async (dialog) => {
+    invalidImageMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#logoUpload").setInputFiles({
+    name: "logo.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from("<svg></svg>"),
+  });
+  await page.waitForTimeout(100);
+  if (!invalidImageMessage.includes("Image refusée")) {
+    throw new Error("L'image non autorisée n'a pas été refusée.");
+  }
+
   await page.locator("#printBtn").click();
   const gate = await page.evaluate(() => ({
     visible: !document.querySelector("#accessGateOverlay")?.classList.contains("hidden"),
@@ -177,6 +192,23 @@ try {
   const download = await fallbackDownload;
   if (!download.suggestedFilename().endsWith(".png")) {
     throw new Error("Le fallback SVG n'a pas produit un téléchargement PNG.");
+  }
+
+  await page.evaluate(() => {
+    window.URL.createObjectURL = () => {
+      throw new Error("download blocked");
+    };
+  });
+  let downloadErrorMessage = "";
+  page.once("dialog", async (dialog) => {
+    downloadErrorMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator("#menuDropdownBtn").click();
+  await page.locator("#exportPngAction").click();
+  await page.waitForTimeout(150);
+  if (!downloadErrorMessage.includes("Impossible de télécharger patron.png")) {
+    throw new Error("L'échec de téléchargement PNG n'a pas été signalé.");
   }
 
   if (errors.length) throw new Error(`Erreur JavaScript navigateur : ${errors.join("; ")}`);

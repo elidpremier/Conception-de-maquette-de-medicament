@@ -201,6 +201,8 @@ Elle couvre aussi les erreurs d'import JSON : contenu invalide et fichier
 dépassant la limite de 2 Mo.
 Le téléchargement JSON est également relu par le test navigateur pour
 confirmer la version du schéma, les champs et les réglages exportés.
+Les tests couvrent enfin le rejet d'un format d'image interdit et le
+signalement d'un échec de téléchargement PNG.
 
 ## Confidentialité
 
