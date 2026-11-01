@@ -42,6 +42,46 @@ if (!triangleSvg.includes("<polygon") || !triangleSvg.includes('fill="#123456"')
     !triangleSvg.includes('x="1.00"') || !triangleSvg.includes('height="40.00"')) {
   throw new Error("Shape SVG generation failed.");
 }
+const primitivesSource = await readFile(new URL("../src/export-primitives.js", import.meta.url), "utf8");
+runInNewContext(primitivesSource, context);
+const logoSvg = context.window.PackagingExportPrimitives.buildLogoSvg(
+  { color: "#123456", color2: "#abcdef", content: "Demo", fontSize: 10 },
+  0, 0, 100, 30,
+  { labName: "Lab", slogan: "Test", escapeHtml: (value) => value },
+);
+const barcodeSvg = context.window.PackagingExportPrimitives.createCodeSvg(
+  { type: "barcode" }, 0, 0, 100, 30, "1234", "#000", 10, 400,
+);
+const matrixSvg = context.window.PackagingExportPrimitives.createCodeSvg(
+  { type: "datamatrix" }, 0, 0, 100, 30, "1234", "#000", 10, 400,
+);
+if (!logoSvg.includes("<svg") || !logoSvg.includes("Demo") ||
+    !barcodeSvg.includes("<rect") || !barcodeSvg.includes("1234") ||
+    !matrixSvg.includes("<rect")) {
+  throw new Error("PNG export primitive generation failed.");
+}
+const fieldSvgSource = await readFile(new URL("../src/field-svg.js", import.meta.url), "utf8");
+runInNewContext(fieldSvgSource, context);
+const clipDefs = [];
+let clipSequence = 0;
+const fieldSvg = context.window.PackagingFieldSvg.createFieldToSvg({
+  normalizeRotation: (value) => Number(value) || 0,
+  getVisualSize: (field) => ({ w: field.w, h: field.h }),
+  labName: "Lab",
+  slogan: "Test",
+  pngTextTools: { wrap: (value) => [value] },
+  clipDefs,
+  nextClipId: () => `testclip${++clipSequence}`,
+  escapeHtml: (value) => String(value),
+  toBraille: (value) => value,
+  buildShapeSvg: () => "<shape />",
+  buildLogoSvg: () => "<logo />",
+  createCodeSvg: () => "<code />",
+});
+const renderedField = fieldSvg({ type: "text", content: "Hello", x: 0, y: 0, w: 20, h: 10 }, 1, 2, 20, 10);
+if (!renderedField.includes("Hello") || !renderedField.includes("testclip1") || clipDefs.length !== 1) {
+  throw new Error("Field SVG rendering failed.");
+}
 let historyState = { value: 0 };
 const restoredStates = [];
 const history = context.window.PackagingHistory.createHistoryController({

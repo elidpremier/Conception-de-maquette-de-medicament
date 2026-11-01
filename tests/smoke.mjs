@@ -17,6 +17,8 @@ const assertions = [
   ["shape geometry is shared by DOM and PNG rendering", (value) => value.includes('src/shape-geometry.js') && value.includes("PackagingShapeGeometry.getShapeGeometry")],
   ["PNG text wrapping is isolated in its module", (value) => value.includes('src/png-text.js') && value.includes("PackagingPngText.createPngTextTools")],
   ["fallback shape SVG is isolated in its module", (value) => value.includes('src/shape-svg.js') && value.includes("PackagingShapeSvg.buildShapeSvg")],
+  ["PNG export primitives are isolated in their module", (value) => value.includes('src/export-primitives.js') && value.includes("PackagingExportPrimitives.createCodeSvg") && value.includes("PackagingExportPrimitives.buildLogoSvg")],
+  ["field SVG rendering is isolated in its module", (value) => value.includes('src/field-svg.js') && value.includes("PackagingFieldSvg.createFieldToSvg")],
   ["the Cloudflare challenge injection is absent", (value) => !value.includes("/cdn-cgi/challenge-platform/")],
   ["the access form requires explicit consent", (value) => /id="gateConsent"[^>]*required/.test(value)],
   ["the access gate is exposed as a labelled dialog", (value) => value.includes('role="dialog"') && value.includes('aria-labelledby="accessGateTitle"')],

@@ -23,6 +23,8 @@
     <script src="src/shape-geometry.js"></script>
     <script src="src/shape-svg.js"></script>
     <script src="src/png-text.js"></script>
+    <script src="src/export-primitives.js"></script>
+    <script src="src/field-svg.js"></script>
     <style>
       :root {
         --primary: #1e3a8a;
@@ -6960,32 +6962,44 @@
       //  SVG (moins fidèle : polices différentes, résolution ×2).
       // ============================================================
 
+      const fieldToSvg = PackagingFieldSvg.createFieldToSvg({
+        normalizeRotation,
+        getVisualSize,
+        get labName() {
+          return controls.txtLabName.value;
+        },
+        get slogan() {
+          return controls.txtSlogan.value;
+        },
+        get pngTextTools() {
+          return pngTextTools;
+        },
+        get clipDefs() {
+          return _pngClipDefs;
+        },
+        nextClipId() {
+          _pngClipSeq += 1;
+          return `pngclip${_pngClipSeq}`;
+        },
+        escapeHtml,
+        toBraille,
+        buildShapeSvg,
+        buildLogoSvg,
+        createCodeSvg: PackagingExportPrimitives.createCodeSvg,
+      });
+
       function buildShapeSvg(f, x, y, w, h) {
         return PackagingShapeSvg.buildShapeSvg(f, x, y, w, h);
       }
 
       // Rendu SVG d'un champ de type « logo ».
       function buildLogoSvg(f, x, y, w, h) {
-        const c = f.color || "#1e3a8a";
-        const c2 = f.color2 || "#f97316";
-        const showText = f.content !== "logo-only" && f.content !== "icon-only";
-        const sizePx = Math.min(h * 0.8, w * 0.5, 40);
-        let inner = "";
-        const ix = x + 2, iy = y + (h - sizePx) / 2;
-        if (customLogoUrl) {
-          inner += `<image x="${ix.toFixed(2)}" y="${iy.toFixed(2)}" width="${sizePx.toFixed(2)}" height="${sizePx.toFixed(2)}" href="${customLogoUrl}" xlink:href="${customLogoUrl}" preserveAspectRatio="xMidYMid meet"/>`;
-        } else {
-          inner += `<svg x="${ix.toFixed(2)}" y="${iy.toFixed(2)}" width="${sizePx.toFixed(2)}" height="${sizePx.toFixed(2)}" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="${c}"/><path d="M30 50H70M50 30V70" stroke="${c2}" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="50" r="10" fill="#ffffff"/></svg>`;
-        }
-        if (showText) {
-          const tx = ix + sizePx + 4;
-          const name = f.content ? f.content : controls.txtLabName.value;
-          const slogan = controls.txtSlogan.value;
-          const nf = Math.max(6, f.fontSize || 10);
-          inner += `<text x="${tx.toFixed(2)}" y="${(y + h / 2 - nf * 0.3).toFixed(2)}" font-family="Arial, sans-serif" font-size="${nf}" font-weight="800" fill="${c}">${escapeHtml(name)}</text>`;
-          inner += `<text x="${tx.toFixed(2)}" y="${(y + h / 2 + nf * 0.9).toFixed(2)}" font-family="Arial, sans-serif" font-size="${(nf * 0.7).toFixed(1)}" font-weight="700" fill="${c2}">${escapeHtml(slogan)}</text>`;
-        }
-        return inner;
+        return PackagingExportPrimitives.buildLogoSvg(f, x, y, w, h, {
+          customLogoUrl,
+          labName: controls.txtLabName.value,
+          slogan: controls.txtSlogan.value,
+          escapeHtml,
+        });
       }
 
       // Rendu SVG d'un champ quelconque (boîte x/y/w/h en px patron).
@@ -7011,131 +7025,6 @@
       // est replié sur la mauvaise largeur — puis pivoté autour du centre,
       // exactement comme le fait le DOM. Sans cette reconstruction, l'aperçu
       // écran et le PNG exporté divergent dès qu'un champ est pivoté.
-      function fieldToSvg(f, aabbX, aabbY, aabbW, aabbH) {
-        const rot = normalizeRotation(f.rotation);
-        // Centre de l'AABB = centre de la boîte locale (transform-origin:center).
-        const cx = aabbX + aabbW / 2, cy = aabbY + aabbH / 2;
-        let x = aabbX, y = aabbY, w = aabbW, h = aabbH;
-        if (rot) {
-          const vis = getVisualSize(f);
-          // Reconstruit les dimensions locales en px SVG à partir du ratio
-          // local/AABB calculé sur le modèle (indépendant des unités).
-          w = vis.w > 0 ? (f.w / vis.w) * aabbW : aabbW;
-          h = vis.h > 0 ? (f.h / vis.h) * aabbH : aabbH;
-          x = cx - w / 2;
-          y = cy - h / 2;
-        }
-        const c = f.color || "#0f172a";
-        const fs = f.fontSize || 10;
-        const content = String(f.content || "")
-          .replace(/COMPANY NAME/g, controls.txtLabName.value)
-          .replace(/YOUR SLOGAN HERE/g, controls.txtSlogan.value);
-        const align = f.align || "left";
-        const fw = f.bold ? 800 : 400;
-        const fontSpec = `${fw} ${fs}px Arial, Helvetica, sans-serif`;
-        const monoSpec = `${fw} ${fs}px "Courier New", monospace`;
-
-        const anchorX = align === "center" ? x + w / 2 : (align === "right" ? x + w - 2 : x + 2);
-        const textAnchor = align === "center" ? "middle" : (align === "right" ? "end" : "start");
-        const rotAttr = rot ? ` transform="rotate(${rot} ${cx.toFixed(2)} ${cy.toFixed(2)})"` : "";
-        let inner = "";
-
-        // Clip par champ — équivalent à overflow:hidden du DOM, empêche
-        // tout débordement du contenu hors de la zone du champ.
-        _pngClipSeq++;
-        const clipId = "pngclip" + _pngClipSeq;
-        _pngClipDefs.push(`<clipPath id="${clipId}"><rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"/></clipPath>`);
-
-        if (f.type === "barcode") {
-          let bars = "";
-          let bx = x + 2;
-          let seed = 0;
-          const s = content || "1234567890123";
-          for (let i = 0; i < s.length; i++) seed = (seed * 31 + s.charCodeAt(i)) >>> 0;
-          const n = 38;
-          const bw = (w - 4) / n;
-          for (let i = 0; i < n; i++) {
-            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
-            const on = (seed >>> 16) % 2 === 0;
-            const lw = on ? bw * (0.5 + ((seed >>> 8) % 3) / 4) : bw * 0.3;
-            if (on) bars += `<rect x="${bx.toFixed(2)}" y="${(y + 2).toFixed(2)}" width="${lw.toFixed(2)}" height="${(h * 0.6).toFixed(2)}" fill="#000000"/>`;
-            bx += bw;
-          }
-          const numY = y + h * 0.62 + fs * 0.9;
-          inner = bars + `<text x="${anchorX.toFixed(2)}" y="${numY.toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${(fs * 0.7).toFixed(1)}" font-weight="${fw}" fill="${c}">${escapeHtml(content)}</text>`;
-        } else if (f.type === "datamatrix") {
-          const size = 12, cw = w / size, ch = h / size;
-          let cells = "";
-          let seed = 0;
-          for (let i = 0; i < content.length; i++) seed = (seed * 31 + content.charCodeAt(i)) >>> 0;
-          for (let i = 0; i < size * size; i++) {
-            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
-            if ((seed >>> 16) % 2 === 0) {
-              const gx = i % size, gy = Math.floor(i / size);
-              cells += `<rect x="${(x + gx * cw).toFixed(2)}" y="${(y + gy * ch).toFixed(2)}" width="${cw.toFixed(2)}" height="${ch.toFixed(2)}" fill="${c}"/>`;
-            }
-          }
-          inner = cells;
-        } else if (f.type === "braille") {
-          const bText = toBraille(content);
-          const bFont = `${fw} ${fs}px "Courier New", monospace`;
-          const lines = pngTextTools.wrap(bText, w - 4, bFont);
-          let t = "";
-          lines.forEach((ln, i) => {
-            t += `<tspan x="${anchorX.toFixed(2)}" dy="${i === 0 ? fs : fs * 1.2}">${escapeHtml(ln)}</tspan>`;
-          });
-          inner = `<text y="${(y + 2).toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${fs}" fill="${c}">${t}</text>`
-            + `<text x="${anchorX.toFixed(2)}" y="${(y + 2 + lines.length * fs * 1.2 + fs * 0.55).toFixed(2)}" text-anchor="${textAnchor}" font-family="monospace" font-size="${(fs * 0.55).toFixed(1)}" fill="#64748b">${escapeHtml(content)}</text>`;
-        } else if (f.type === "pictogram") {
-          const r = Math.min(w, h) / 2 * 0.92;
-          const lines = pngTextTools.wrap(content, Math.min(w, h) * 0.86, fontSpec);
-          const n = lines.length;
-          let t = "";
-          lines.forEach((ln, i) => {
-            t += `<tspan x="${cx.toFixed(2)}" dy="${i === 0 ? (-(n - 1) * fs * 0.5) : fs}">${escapeHtml(ln)}</tspan>`;
-          });
-          inner = `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(2)}" fill="none" stroke="${c}" stroke-width="3"/>`
-            + `<text y="${cy.toFixed(2)}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${t}</text>`;
-        } else if (f.type === "table") {
-          const rows = content.split("\n").map(l => l.trim()).filter(Boolean).map(line => {
-            const idx = line.indexOf(":");
-            return { name: idx >= 0 ? line.slice(0, idx).trim() : line, val: idx >= 0 ? line.slice(idx + 1).trim() : "" };
-          });
-          let t = "";
-          const lh = fs * 1.25;
-          const halfW = Math.max(4, (w / 2) - 6);
-          rows.forEach((row, i) => {
-            const ty = y + fs + i * lh;
-            const nm = pngTextTools.wrap(row.name, halfW, fontSpec)[0] || "";
-            const vl = pngTextTools.wrap(row.val, halfW, fontSpec)[0] || "";
-            t += `<text x="${(x + 2).toFixed(2)}" y="${ty.toFixed(2)}" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${escapeHtml(nm)}</text>`;
-            t += `<text x="${(x + w - 2).toFixed(2)}" y="${ty.toFixed(2)}" text-anchor="end" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${escapeHtml(vl)}</text>`;
-          });
-          inner = t;
-        } else if (f.type === "shape") {
-          inner = buildShapeSvg(f, x, y, w, h);
-        } else if (f.type === "logo") {
-          inner = buildLogoSvg(f, x, y, w, h);
-        } else if (f.type === "image") {
-          if (f.src && f.src.indexOf("data:") === 0) {
-            const fit = f.fit || "contain";
-            const par = fit === "fill" ? "none" : (fit === "cover" ? "xMidYMid slice" : "xMidYMid meet");
-            inner = `<image x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" href="${f.src}" xlink:href="${f.src}" preserveAspectRatio="${par}"/>`;
-          } else {
-            inner = `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" fill="none" stroke="#94a3b8" stroke-dasharray="3 2"/><text x="${cx.toFixed(2)}" y="${cy.toFixed(2)}" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#94a3b8">Image</text>`;
-          }
-        } else {
-          const lines = pngTextTools.wrap(content, w - 4, fontSpec);
-          let t = "";
-          lines.forEach((ln, i) => {
-            const dy = i === 0 ? fs : fs * 1.2;
-            t += `<tspan x="${anchorX.toFixed(2)}" dy="${dy.toFixed(2)}">${escapeHtml(ln)}</tspan>`;
-          });
-          inner = `<text y="${(y + 2).toFixed(2)}" text-anchor="${textAnchor}" font-family="Arial, sans-serif" font-size="${fs}" font-weight="${fw}" fill="${c}">${t}</text>`;
-        }
-        return `<g clip-path="url(#${clipId})"${rotAttr}>${inner}</g>`;
-      }
-
       // Export PNG du patron — capture fidèle du DOM (html2canvas).
       function exportPatronPNG() {
         const sheet = patronSheet;

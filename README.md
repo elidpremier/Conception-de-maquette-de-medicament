@@ -116,6 +116,9 @@ partagée par l'éditeur et l'export est isolée dans `src/shape-geometry.js`.
 Le découpage de texte de l’export PNG est isolé dans `src/png-text.js`.
 Le générateur SVG des formes du fallback PNG est isolé dans
 `src/shape-svg.js`.
+Les primitives de logo, code-barres et Datamatrix de l’export sont isolées
+dans `src/export-primitives.js`.
+Le rendu SVG des champs de l’export est isolé dans `src/field-svg.js`.
 Les polices Google Fonts,
 html2canvas et EmailJS sont chargés via CDN.
 
