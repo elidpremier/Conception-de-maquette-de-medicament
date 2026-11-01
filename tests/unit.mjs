@@ -88,5 +88,21 @@ if (fields[0].content.length !== 20000 || fields[0].src !== null) {
 if (JSON.stringify(utils.sanitizeImportedFaceColors({ p5: "#123456", p6: "red" })) !== '{"p5":"#123456"}') {
   throw new Error("Face color sanitation failed.");
 }
+const settings = utils.sanitizeImportedSettings({
+  boxType: "liquid",
+  dimW: 999,
+  dimH: "bad",
+  flapLength: 1,
+  colPrimary: "red",
+  txtLabName: "x".repeat(300),
+  showLabName: false,
+  logoSize: 999,
+  customLogoUrl: "data:image/svg+xml;base64,bad",
+});
+if (settings.boxType !== "liquid" || settings.dimW !== 300 || settings.dimH !== undefined ||
+    settings.flapLength !== 8 || settings.colPrimary !== undefined || settings.txtLabName.length !== 200 ||
+    settings.showLabName !== false || settings.logoSize !== 80 || settings.customLogoUrl !== null) {
+  throw new Error("Imported settings sanitation failed.");
+}
 
 console.log("Unit checks passed (utility sanitation and rotation).");

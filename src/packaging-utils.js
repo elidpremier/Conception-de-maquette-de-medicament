@@ -212,6 +212,46 @@
     );
   }
 
+  function sanitizeImportedSettings(settings) {
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) return {};
+    const number = (value, min, max) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : null;
+    };
+    const text = (value, maxLength) =>
+      typeof value === "string" ? value.slice(0, maxLength) : null;
+    const sanitized = {};
+    if (settings.boxType === "tablet" || settings.boxType === "liquid") {
+      sanitized.boxType = settings.boxType;
+    }
+    for (const [key, min, max] of [
+      ["dimW", 10, 300],
+      ["dimH", 10, 300],
+      ["dimD", 5, 150],
+      ["flapLength", 8, 50],
+    ]) {
+      const value = number(settings[key], min, max);
+      if (value !== null) sanitized[key] = value;
+    }
+    if (typeof settings.dustFlapsEnabled === "boolean") {
+      sanitized.dustFlapsEnabled = settings.dustFlapsEnabled;
+    }
+    if (SAFE_COLOR.test(settings.colPrimary)) sanitized.colPrimary = settings.colPrimary;
+    if (SAFE_COLOR.test(settings.colAccent)) sanitized.colAccent = settings.colAccent;
+    for (const [key, maxLength] of [["txtLabName", 200], ["txtSlogan", 500]]) {
+      const value = text(settings[key], maxLength);
+      if (value !== null) sanitized[key] = value;
+    }
+    if (typeof settings.showLabName === "boolean") sanitized.showLabName = settings.showLabName;
+    const logoSize = number(settings.logoSize, 10, 80);
+    if (logoSize !== null) sanitized.logoSize = logoSize;
+    sanitized.customLogoUrl = isSafeImageDataUrl(settings.customLogoUrl)
+      ? settings.customLogoUrl
+      : null;
+    sanitized.customFacesBg = sanitizeImportedFaceColors(settings.customFacesBg);
+    return sanitized;
+  }
+
   root.PackagingUtils = Object.freeze({
     isSafeImageDataUrl,
     normalizeRotation,
@@ -224,5 +264,6 @@
     getFieldPlacement,
     sanitizeImportedFields,
     sanitizeImportedFaceColors,
+    sanitizeImportedSettings,
   });
 })(window);

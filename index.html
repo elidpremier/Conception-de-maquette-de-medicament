@@ -2956,11 +2956,6 @@
         return PackagingUtils.sanitizeImportedFaceColors(value);
       }
 
-      function isValidImportedNumber(value, min, max) {
-        const number = Number(value);
-        return Number.isFinite(number) && number >= min && number <= max;
-      }
-
       function getLogoMarkup(sizePx) {
         if (customLogoUrl) {
           return `<img src="${customLogoUrl}" alt="Logo" style="width:var(--logo-size, ${sizePx}px); height:var(--logo-size, ${sizePx}px); object-fit:contain; flex-shrink:0;" />`;
@@ -4297,55 +4292,56 @@
       // Cette fonction restaure fidèlement l'état complet de l'outil,
       // ce qui manquait dans l'export v1 (champs uniquement).
       function applyImportedSettings(settings) {
-        if (!settings) return;
+        const safeSettings = PackagingUtils.sanitizeImportedSettings(settings);
+        if (!Object.keys(safeSettings).length) return;
         // Type de boîte
-        if (settings.boxType === "tablet" || settings.boxType === "liquid") {
-          controls.boxType.value = settings.boxType;
-          applyModeVisibility(settings.boxType);
+        if (safeSettings.boxType) {
+          controls.boxType.value = safeSettings.boxType;
+          applyModeVisibility(safeSettings.boxType);
         }
         // Dimensions (mm)
-        if (isValidImportedNumber(settings.dimW, 10, 300)) controls.dimW.value = settings.dimW;
-        if (isValidImportedNumber(settings.dimH, 10, 300)) controls.dimH.value = settings.dimH;
-        if (isValidImportedNumber(settings.dimD, 5, 150)) controls.dimD.value = settings.dimD;
+        if (safeSettings.dimW !== undefined) controls.dimW.value = safeSettings.dimW;
+        if (safeSettings.dimH !== undefined) controls.dimH.value = safeSettings.dimH;
+        if (safeSettings.dimD !== undefined) controls.dimD.value = safeSettings.dimD;
         // Rabat de verrouillage (mm)
-        if (isValidImportedNumber(settings.flapLength, 8, 50)) controls.flapLength.value = settings.flapLength;
+        if (safeSettings.flapLength !== undefined) controls.flapLength.value = safeSettings.flapLength;
         // Rabats poussière
-        if (settings.dustFlapsEnabled !== undefined) controls.dustFlapsEnabled.checked = settings.dustFlapsEnabled;
+        if (safeSettings.dustFlapsEnabled !== undefined) controls.dustFlapsEnabled.checked = safeSettings.dustFlapsEnabled;
         // Couleurs
-        if (SAFE_COLOR.test(settings.colPrimary)) {
-          controls.colPrimary.value = settings.colPrimary;
-          document.documentElement.style.setProperty('--primary', settings.colPrimary);
+        if (safeSettings.colPrimary) {
+          controls.colPrimary.value = safeSettings.colPrimary;
+          document.documentElement.style.setProperty('--primary', safeSettings.colPrimary);
         }
-        if (SAFE_COLOR.test(settings.colAccent)) {
-          controls.colAccent.value = settings.colAccent;
-          document.documentElement.style.setProperty('--accent', settings.colAccent);
+        if (safeSettings.colAccent) {
+          controls.colAccent.value = safeSettings.colAccent;
+          document.documentElement.style.setProperty('--accent', safeSettings.colAccent);
         }
         // Laboratoire / Slogan
-        if (settings.txtLabName) controls.txtLabName.value = settings.txtLabName;
-        if (settings.txtSlogan) controls.txtSlogan.value = settings.txtSlogan;
-        if (settings.showLabName !== undefined) {
-          controls.showLabName.checked = settings.showLabName;
+        if (safeSettings.txtLabName !== undefined) controls.txtLabName.value = safeSettings.txtLabName;
+        if (safeSettings.txtSlogan !== undefined) controls.txtSlogan.value = safeSettings.txtSlogan;
+        if (safeSettings.showLabName !== undefined) {
+          controls.showLabName.checked = safeSettings.showLabName;
           const labNameGroup = document.getElementById('labNameGroup');
-          if (labNameGroup) labNameGroup.style.opacity = settings.showLabName ? '1' : '0.4';
-          document.body.classList.toggle('hide-lab-name', !settings.showLabName);
+          if (labNameGroup) labNameGroup.style.opacity = safeSettings.showLabName ? '1' : '0.4';
+          document.body.classList.toggle('hide-lab-name', !safeSettings.showLabName);
         }
         // Taille du logo
-        if (settings.logoSize) {
-          controls.logoSizeSlider.value = settings.logoSize;
-          document.documentElement.style.setProperty('--logo-size', settings.logoSize + 'px');
+        if (safeSettings.logoSize !== undefined) {
+          controls.logoSizeSlider.value = safeSettings.logoSize;
+          document.documentElement.style.setProperty('--logo-size', safeSettings.logoSize + 'px');
           const logoSizeVal = document.getElementById('logoSizeVal');
-          if (logoSizeVal) logoSizeVal.textContent = settings.logoSize + 'px';
+          if (logoSizeVal) logoSizeVal.textContent = safeSettings.logoSize + 'px';
         }
         // Logo personnalisé (image importée)
-        if (isSafeImageDataUrl(settings.customLogoUrl)) {
-          customLogoUrl = settings.customLogoUrl;
+        if (safeSettings.customLogoUrl) {
+          customLogoUrl = safeSettings.customLogoUrl;
         } else {
           customLogoUrl = null;
           logoUpload.value = '';
         }
         // Couleurs de fond des faces
-        if (settings.customFacesBg) {
-          customFacesBg = sanitizeImportedFaceColors(settings.customFacesBg);
+        if (safeSettings.customFacesBg) {
+          customFacesBg = safeSettings.customFacesBg;
           saveToLocalStorage(FACES_BG_STORAGE_KEY, JSON.stringify(customFacesBg));
         }
         // Rafraîchir les pickers et la géométrie pour refléter les

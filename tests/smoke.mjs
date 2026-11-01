@@ -29,6 +29,7 @@ const assertions = [
   ["field schema migration uses the pure utility", (value) => value.includes("PackagingUtils.migrateFieldsV1toV2")],
   ["template serialization uses the pure utility", (value) => value.includes("PackagingUtils.createTemplate") && value.includes("PackagingUtils.parseTemplate")],
   ["local persistence uses the storage adapter", (value) => value.includes("PackagingUtils.createStorageAdapter") && value.includes("clearLocalStorage")],
+  ["imported settings are sanitized before application", (value) => value.includes("PackagingUtils.sanitizeImportedSettings")],
   ["imported fields are bounded and type-sanitized", (value) => value.includes("MAX_IMPORTED_FIELDS") && value.includes("PackagingUtils.sanitizeImportedFields")],
 ];
 
